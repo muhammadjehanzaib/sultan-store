@@ -9,7 +9,7 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({
-  title = "Welcome to ShopEasy",
+  title = "Welcome to SultanStore",
   subtitle = "Discover amazing products at unbeatable prices",
   buttonText = "Shop Now",
   onButtonClick,

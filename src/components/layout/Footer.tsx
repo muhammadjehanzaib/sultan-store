@@ -11,7 +11,7 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">ShopEasy</h3>
+            <h3 className="text-lg font-semibold mb-4">SultanStore</h3>
             <p className="text-gray-400 mb-4">
               Your one-stop shop for everything you need. Quality products at unbeatable prices.
             </p>

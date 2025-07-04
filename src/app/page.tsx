@@ -1,17 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { Header, Hero, ProductGrid, Footer } from '@/components';
+import { Header, Hero, ProductGrid, Footer, CartSidebar } from '@/components';
 import { products } from '@/data/products';
 import { Product } from '@/types';
 import { scrollToElement } from '@/lib/utils';
+import { useCart } from '@/contexts/CartContext';
 
 export default function Home() {
-  const [cartItems, setCartItems] = useState(0);
+  const { state, dispatch } = useCart();
 
   const handleAddToCart = (product: Product) => {
-    setCartItems(prev => prev + 1);
-    console.log('Added to cart:', product.name);
+    dispatch({ type: 'ADD_ITEM', payload: product });
   };
 
   const handleViewProduct = (product: Product) => {
@@ -19,7 +18,7 @@ export default function Home() {
   };
 
   const handleCartClick = () => {
-    console.log('Cart clicked, items:', cartItems);
+    dispatch({ type: 'TOGGLE_CART' });
   };
 
   const handleSearchClick = () => {
@@ -33,7 +32,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
-        cartItemCount={cartItems}
+        cartItemCount={state.itemCount}
         onCartClick={handleCartClick}
         onSearchClick={handleSearchClick}
       />
@@ -49,6 +48,8 @@ export default function Home() {
       />
       
       <Footer />
+      
+      <CartSidebar />
     </div>
   );
 }

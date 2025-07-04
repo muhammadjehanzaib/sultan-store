@@ -7,5 +7,8 @@ export { Footer } from './layout/Footer';
 export { ProductCard } from './product/ProductCard';
 export { ProductGrid } from './product/ProductGrid';
 
+// Cart Components
+export { CartSidebar } from './cart/CartSidebar';
+
 // UI Components
 export { Button } from './ui/Button';

@@ -19,7 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex justify-between items-center py-6">
           {/* Logo */}
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-gray-900">ShopEasy</h1>
+            <h1 className="text-2xl font-bold text-gray-900">SultanStore</h1>
           </div>
 
           {/* Navigation */}
