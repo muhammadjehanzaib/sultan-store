@@ -10,5 +10,11 @@ export { ProductGrid } from './product/ProductGrid';
 // Cart Components
 export { CartSidebar } from './cart/CartSidebar';
 
+// Search Components
+export { SearchModal } from './search/SearchModal';
+
 // UI Components
 export { Button } from './ui/Button';
+export { LanguageSwitcher } from './ui/LanguageSwitcher';
+export { LoadingSpinner } from './ui/LoadingSpinner';
+export { Breadcrumb } from './ui/Breadcrumb';

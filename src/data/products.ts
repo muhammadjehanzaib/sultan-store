@@ -72,5 +72,5 @@ export const products: Product[] = [
 export const categories = [
   { id: 'electronics', name: 'Electronics', slug: 'electronics' },
   { id: 'fashion', name: 'Fashion', slug: 'fashion' },
-  { id: 'home', name: 'Home', slug: 'home' },
+  { id: 'home', name: 'Home & Kitchen', slug: 'home' },
 ];
