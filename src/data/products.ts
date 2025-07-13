@@ -10,7 +10,19 @@ export const products: Product[] = [
     description: "High-quality wireless headphones with noise cancellation",
     inStock: true,
     rating: 4.5,
-    reviews: 128
+    reviews: 128,
+    attributes: [
+      {
+        id: 'color',
+        name: 'Color',
+        type: 'color',
+        values: [
+          { id: 'black', value: 'Black', hexColor: '#000000' },
+          { id: 'white', value: 'White', hexColor: '#FFFFFF' },
+          { id: 'silver', value: 'Silver', hexColor: '#C0C0C0' }
+        ]
+      }
+    ]
   },
   {
     id: 2,
@@ -19,9 +31,21 @@ export const products: Product[] = [
     image: "/images/products/smartwatch.jpg",
     category: "Electronics",
     description: "Feature-rich smartwatch with health tracking",
-    inStock: true,
+    inStock: false,
     rating: 4.3,
-    reviews: 89
+    reviews: 89,
+     attributes: [
+      {
+        id: 'color',
+        name: 'Color',
+        type: 'color',
+        values: [
+          { id: 'black', value: 'Black', hexColor: '#000000' },
+          { id: 'white', value: 'White', hexColor: '#FFFFFF' },
+          { id: 'silver', value: 'Silver', hexColor: '#C0C0C0' }
+        ]
+      }
+    ]
   },
   {
     id: 3,
@@ -41,9 +65,34 @@ export const products: Product[] = [
     image: "/images/products/running-shoes.jpg",
     category: "Fashion",
     description: "Lightweight running shoes with superior comfort",
-    inStock: false,
+    inStock: true,
     rating: 4.2,
-    reviews: 156
+    reviews: 156,
+    attributes: [
+      {
+        id: 'size',
+        name: 'Size',
+        type: 'size',
+        values: [
+          { id: 'us7', value: 'US 7' },
+          { id: 'us8', value: 'US 8' },
+          { id: 'us9', value: 'US 9' },
+          { id: 'us10', value: 'US 10' },
+          { id: 'us11', value: 'US 11' }
+        ]
+      },
+      {
+        id: 'color',
+        name: 'Color',
+        type: 'color',
+        values: [
+          { id: 'black', value: 'Black', hexColor: '#000000' },
+          { id: 'white', value: 'White', hexColor: '#FFFFFF' },
+          { id: 'blue', value: 'Blue', hexColor: '#0000FF' },
+          { id: 'red', value: 'Red', hexColor: '#FF0000' }
+        ]
+      }
+    ]
   },
   {
     id: 5,
@@ -65,12 +114,84 @@ export const products: Product[] = [
     description: "Adjustable LED desk lamp with multiple brightness levels",
     inStock: true,
     rating: 4.6,
-    reviews: 67
+    reviews: 67,
+    attributes: [
+      {
+        id: 'size',
+        name: 'Size',
+        type: 'size',
+        values: [
+          { id: 'small', value: 'S' },
+          { id: 'medium', value: 'M' },
+          { id: 'large', value: 'L' }
+        ]
+      },
+      {
+        id: 'color',
+        name: 'Color',
+        type: 'color',
+        values: [
+          { id: 'red', value: 'Red', hexColor: '#FF0000' },
+          { id: 'blue', value: 'Blue', hexColor: '#0000FF' }
+        ]
+      }
+    ]
   }
 ];
 
 export const categories = [
-  { id: 'electronics', name: 'Electronics', slug: 'electronics' },
-  { id: 'fashion', name: 'Fashion', slug: 'fashion' },
-  { id: 'home', name: 'Home & Kitchen', slug: 'home' },
+  {
+    id: 'electronics',
+    name: { en: 'Electronics', ar: 'الإلكترونيات' },
+    slug: 'electronics',
+    description: { en: 'Electronic devices and gadgets', ar: 'الأجهزة الإلكترونية والأدوات' },
+    icon: '📱',
+    isActive: true,
+    sortOrder: 1
+  },
+  {
+    id: 'fashion',
+    name: { en: 'Fashion', ar: 'الأزياء' },
+    slug: 'fashion',
+    description: { en: 'Clothing and fashion accessories', ar: 'الملابس وإكسسوارات الأزياء' },
+    icon: '👕',
+    isActive: true,
+    sortOrder: 2
+  },
+  {
+    id: 'home',
+    name: { en: 'Home & Kitchen', ar: 'المنزل والمطبخ' },
+    slug: 'home',
+    description: { en: 'Home appliances and kitchen essentials', ar: 'الأجهزة المنزلية وأساسيات المطبخ' },
+    icon: '🏠',
+    isActive: true,
+    sortOrder: 3
+  },
+  {
+    id: 'sports',
+    name: { en: 'Sports', ar: 'الرياضة' },
+    slug: 'sports',
+    description: { en: 'Sports equipment and athletic wear', ar: 'معدات رياضية وملابس رياضية' },
+    icon: '⚽',
+    isActive: true,
+    sortOrder: 4
+  },
+  {
+    id: 'books',
+    name: { en: 'Books', ar: 'الكتب' },
+    slug: 'books',
+    description: { en: 'Books and educational materials', ar: 'الكتب والمواد التعليمية' },
+    icon: '📚',
+    isActive: true,
+    sortOrder: 5
+  },
+  {
+    id: 'beauty',
+    name: { en: 'Beauty', ar: 'الجمال' },
+    slug: 'beauty',
+    description: { en: 'Beauty and personal care products', ar: 'منتجات الجمال والعناية الشخصية' },
+    icon: '💄',
+    isActive: true,
+    sortOrder: 6
+  }
 ];

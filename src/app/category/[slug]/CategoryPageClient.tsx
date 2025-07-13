@@ -35,9 +35,10 @@ export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
   }
 
   // Filter products by category
-  const categoryProducts = products.filter(product => 
-    product.category.toLowerCase() === category.name.toLowerCase()
-  );
+  const categoryProducts = products.filter(product => {
+    const categoryName = typeof category.name === 'string' ? category.name : category.name.en;
+    return product.category.toLowerCase() === categoryName.toLowerCase();
+  });
 
   // Sort products
   const sortedProducts = [...categoryProducts].sort((a, b) => {
@@ -55,8 +56,8 @@ export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
     }
   });
 
-  const handleAddToCart = (product: Product) => {
-    dispatch({ type: 'ADD_ITEM', payload: product });
+  const handleAddToCart = (product: Product, selectedAttributes?: { [attributeId: string]: string }) => {
+    dispatch({ type: 'ADD_ITEM', payload: { product, selectedAttributes } });
   };
 
   const handleViewProduct = (product: Product) => {
@@ -70,7 +71,7 @@ export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className={`${isRTL ? 'rtl' : 'ltr'}`}>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {category.name}
+              {typeof category.name === 'string' ? category.name : category.name.en}
             </h1>
             <p className="text-gray-600 mb-4">
               {t('category.productsCount').replace('{{count}}', categoryProducts.length.toString())}

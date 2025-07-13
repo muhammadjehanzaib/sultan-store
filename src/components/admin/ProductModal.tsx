@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Product } from '@/types';
+import { Product, LocalizedContent } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { categories } from '@/data/products';
 
@@ -124,7 +124,9 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
               >
                 <option value="">Select category</option>
                 {categories.map(cat => (
-                  <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  <option key={cat.id} value={typeof cat.name === 'string' ? cat.name : cat.name.en}>
+                    {typeof cat.name === 'string' ? cat.name : cat.name.en}
+                  </option>
                 ))}
               </select>
             </div>

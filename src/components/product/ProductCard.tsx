@@ -9,7 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ProductCardProps {
   product: Product;
-  onAddToCart?: (product: Product) => void;
+  onAddToCart?: (product: Product, selectedAttributes?: { [attributeId: string]: string }) => void;
   onViewProduct?: (product: Product) => void;
 }
 
@@ -22,7 +22,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleAddToCart = () => {
     if (onAddToCart) {
-      onAddToCart(product);
+      onAddToCart(product, undefined); // No attributes selected from product card
     }
   };
 

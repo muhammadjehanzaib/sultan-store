@@ -1,3 +1,26 @@
+export interface ProductAttribute {
+  id: string;
+  name: string;
+  type: 'color' | 'size' | 'material' | 'style';
+  values: ProductAttributeValue[];
+  required?: boolean;
+}
+
+export interface ProductAttributeValue {
+  id: string;
+  value: string;
+  label?: string;
+  hexColor?: string; // For color attributes
+  priceModifier?: number; // Price adjustment for this option
+  inStock?: boolean;
+  imageUrl?: string; // Optional image for this variant
+}
+
+export interface LocalizedContent {
+  en: string;
+  ar: string;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -8,11 +31,45 @@ export interface Product {
   inStock?: boolean;
   rating?: number;
   reviews?: number;
+  attributes?: ProductAttribute[];
+  variants?: ProductVariant[];
+}
+
+// Multilingual version for admin panel
+export interface MultilingualProduct {
+  id: number;
+  name: LocalizedContent;
+  price: number;
+  image: string;
+  category: LocalizedContent;
+  description?: LocalizedContent;
+  inStock?: boolean;
+  rating?: number;
+  reviews?: number;
+  attributes?: ProductAttribute[];
+  variants?: ProductVariant[];
+  seo?: {
+    title?: LocalizedContent;
+    metaDescription?: LocalizedContent;
+    keywords?: LocalizedContent;
+  };
+}
+
+export interface ProductVariant {
+  id: string;
+  attributeValues: { [attributeId: string]: string }; // Maps attribute ID to selected value ID
+  price?: number; // Override price for this variant
+  image?: string; // Specific image for this variant
+  sku?: string;
+  inStock?: boolean;
+  stockQuantity?: number;
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
+  selectedAttributes?: { [attributeId: string]: string };
+  variantId?: string; // Unique identifier for this specific variant
 }
 
 export interface Cart {
@@ -25,6 +82,18 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
+}
+
+// Multilingual version for admin panel
+export interface MultilingualCategory {
+  id: string;
+  name: LocalizedContent;
+  slug: string;
+  description?: LocalizedContent;
+  icon?: string;
+  parentId?: string; // For subcategories
+  isActive?: boolean;
+  sortOrder?: number;
 }
 
 export interface User {

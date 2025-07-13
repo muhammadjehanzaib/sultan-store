@@ -184,8 +184,8 @@ function SearchPageContent() {
     return score;
   };
 
-  const handleAddToCart = (product: Product) => {
-    dispatch({ type: 'ADD_ITEM', payload: product });
+  const handleAddToCart = (product: Product, selectedAttributes?: { [attributeId: string]: string }) => {
+    dispatch({ type: 'ADD_ITEM', payload: { product, selectedAttributes } });
   };
 
   const handleViewProduct = (product: Product) => {
@@ -367,17 +367,17 @@ function SearchPageContent() {
                   </label>
                   {categories.map(category => (
                     <label key={category.id} className="flex items-center">
-                      <input
-                        type="radio"
-                        name="category"
-                        value={category.name}
-                        checked={filters.category === category.name}
-                        onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
-                        className="text-purple-600 focus:ring-purple-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">
-                        {t(`categories.${category.id}`)}
-                      </span>
+                        <input
+                          type="radio"
+                          name="category"
+                          value={typeof category.name === 'string' ? category.name : category.name.en}
+                          checked={filters.category === (typeof category.name === 'string' ? category.name : category.name.en)}
+                          onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                          className="text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="ml-2 text-sm text-gray-600">
+                          {typeof category.name === 'string' ? category.name : category.name.en}
+                        </span>
                     </label>
                   ))}
                 </div>

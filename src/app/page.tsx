@@ -12,8 +12,8 @@ export default function Home() {
   const { dispatch } = useCart();
   const router = useRouter();
 
-  const handleAddToCart = (product: Product) => {
-    dispatch({ type: 'ADD_ITEM', payload: product });
+  const handleAddToCart = (product: Product, selectedAttributes?: { [attributeId: string]: string }) => {
+    dispatch({ type: 'ADD_ITEM', payload: { product, selectedAttributes } });
   };
 
   const handleViewProduct = (product: Product) => {

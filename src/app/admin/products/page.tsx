@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { ProductsTable } from '@/components/admin/ProductsTable';
-import { ProductModal } from '@/components/admin/ProductModal';
+import { MultilingualProductModal } from '@/components/admin/MultilingualProductModal';
 import { Button } from '@/components/ui/Button';
 import { products } from '@/data/products';
-import { Product } from '@/types';
+import { Product, MultilingualProduct } from '@/types';
+import { convertToLegacyProduct } from '@/lib/multilingualUtils';
 
 export default function AdminProducts() {
   const { t, isRTL } = useLanguage();
@@ -29,16 +30,19 @@ export default function AdminProducts() {
     setProductsData(prev => prev.filter(p => p.id !== productId));
   };
 
-  const handleSaveProduct = (product: Product) => {
+  const handleSaveProduct = (multilingualProduct: MultilingualProduct) => {
+    // Convert multilingual product back to legacy format for frontend compatibility
+    const legacyProduct = convertToLegacyProduct(multilingualProduct, 'en');
+    
     if (selectedProduct) {
       // Edit existing product
       setProductsData(prev => 
-        prev.map(p => p.id === product.id ? product : p)
+        prev.map(p => p.id === legacyProduct.id ? legacyProduct : p)
       );
     } else {
       // Add new product
       const newProduct = {
-        ...product,
+        ...legacyProduct,
         id: Math.max(...productsData.map(p => p.id)) + 1
       };
       setProductsData(prev => [...prev, newProduct]);
@@ -69,7 +73,7 @@ export default function AdminProducts() {
           onDelete={handleDeleteProduct}
         />
 
-        <ProductModal
+        <MultilingualProductModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSave={handleSaveProduct}

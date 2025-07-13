@@ -1,12 +1,13 @@
 'use client';
 
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Category } from '@/types';
+import { Category, MultilingualCategory } from '@/types';
+import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
 import { Button } from '@/components/ui/Button';
 
 interface CategoriesTableProps {
-  categories: Category[];
-  onEdit: (category: Category) => void;
+  categories: MultilingualCategory[];
+  onEdit: (category: MultilingualCategory) => void;
   onDelete: (categoryId: string) => void;
 }
 
@@ -80,10 +81,10 @@ export function CategoriesTable({ categories, onEdit, onDelete }: CategoriesTabl
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {category.name}
+                    {getLocalizedString(category.name, 'en')} / {getLocalizedString(category.name, 'ar')}
                   </div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {t(`categories.${category.id}`)}
+                    ID: {category.id}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">

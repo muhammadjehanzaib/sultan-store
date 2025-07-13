@@ -10,12 +10,12 @@ export const CartSidebar: React.FC = () => {
   const { state, dispatch } = useCart();
   const { t, isRTL } = useLanguage();
 
-  const updateQuantity = (productId: number, quantity: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { id: productId, quantity } });
+  const updateQuantity = (productId: number, variantId: string | undefined, quantity: number) => {
+    dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, variantId, quantity } });
   };
 
-  const removeItem = (productId: number) => {
-    dispatch({ type: 'REMOVE_ITEM', payload: productId });
+  const removeItem = (productId: number, variantId: string | undefined) => {
+    dispatch({ type: 'REMOVE_ITEM', payload: { productId, variantId } });
   };
 
   const clearCart = () => {
@@ -68,7 +68,7 @@ export const CartSidebar: React.FC = () => {
           ) : (
             <div className="space-y-3">
               {state.items.map((item) => (
-                <div key={item.product.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div key={item.variantId || `${item.product.id}-default`} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <div className={`flex items-start ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
                     {/* Product Image */}
                     <div className="relative">
@@ -82,6 +82,35 @@ export const CartSidebar: React.FC = () => {
                     {/* Product Details */}
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-800 text-sm truncate">{item.product.name}</h3>
+                      
+                      {/* Selected Attributes */}
+                      {item.selectedAttributes && Object.keys(item.selectedAttributes).length > 0 && (
+                        <div className="mt-1 space-y-1">
+                          {Object.entries(item.selectedAttributes).map(([attributeId, valueId]) => {
+                            const attribute = item.product.attributes?.find(attr => attr.id === attributeId);
+                            const value = attribute?.values.find(val => val.id === valueId);
+                            if (!attribute || !value) return null;
+                            
+                            return (
+                              <div key={attributeId} className="flex items-center space-x-2 text-xs text-gray-600">
+                                <span className="font-medium">{attribute.name}:</span>
+                                {attribute.type === 'color' && value.hexColor ? (
+                                  <div className="flex items-center space-x-1">
+                                    <div 
+                                      className="w-3 h-3 rounded-full border border-gray-300"
+                                      style={{ backgroundColor: value.hexColor }}
+                                    ></div>
+                                    <span>{value.value}</span>
+                                  </div>
+                                ) : (
+                                  <span>{value.value}</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      
                       <p className="text-purple-600 font-bold text-lg mt-1">
                         {formatPrice(item.product.price)}
                       </p>
@@ -89,7 +118,7 @@ export const CartSidebar: React.FC = () => {
                       {/* Quantity Controls */}
                       <div className={`flex items-center mt-3 ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.product.id, item.variantId, item.quantity - 1)}
                           className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-purple-100 hover:border-purple-300 transition-colors font-semibold text-gray-600"
                           disabled={item.quantity <= 1}
                         >
@@ -97,7 +126,7 @@ export const CartSidebar: React.FC = () => {
                         </button>
                         <span className="w-8 text-center font-semibold text-gray-700">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.product.id, item.variantId, item.quantity + 1)}
                           className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-purple-100 hover:border-purple-300 transition-colors font-semibold text-gray-600"
                         >
                           +
@@ -107,7 +136,7 @@ export const CartSidebar: React.FC = () => {
                     
                     {/* Remove Button */}
                     <button
-                      onClick={() => removeItem(item.product.id)}
+                      onClick={() => removeItem(item.product.id, item.variantId)}
                       className="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition-colors flex items-center justify-center font-bold"
                       title="Remove item"
                     >

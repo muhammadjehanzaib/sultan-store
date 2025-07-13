@@ -167,7 +167,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('search.placeholder')}
-              className="placeholder-gray-300 w-full pl-12 pr-4 py-3 md:py-4 text-base md:text-lg border border-gray-400 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+              className="text-gray-600 placeholder-gray-300 w-full pl-12 pr-4 py-3 md:py-4 text-base md:text-lg border border-gray-400 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
             />
             {searchQuery && (
               <button

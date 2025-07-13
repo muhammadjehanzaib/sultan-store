@@ -4,23 +4,23 @@ import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { CategoriesTable } from '@/components/admin/CategoriesTable';
-import { CategoryModal } from '@/components/admin/CategoryModal';
+import { MultilingualCategoryModal } from '@/components/admin/MultilingualCategoryModal';
 import { Button } from '@/components/ui/Button';
 import { categories } from '@/data/products';
-import { Category } from '@/types';
+import { Category, MultilingualCategory } from '@/types';
 
 export default function AdminCategories() {
   const { t, isRTL } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [categoriesData, setCategoriesData] = useState(categories);
+  const [selectedCategory, setSelectedCategory] = useState<MultilingualCategory | null>(null);
+  const [categoriesData, setCategoriesData] = useState<MultilingualCategory[]>(categories);
 
   const handleAddCategory = () => {
     setSelectedCategory(null);
     setIsModalOpen(true);
   };
 
-  const handleEditCategory = (category: Category) => {
+  const handleEditCategory = (category: MultilingualCategory) => {
     setSelectedCategory(category);
     setIsModalOpen(true);
   };
@@ -29,7 +29,7 @@ export default function AdminCategories() {
     setCategoriesData(prev => prev.filter(c => c.id !== categoryId));
   };
 
-  const handleSaveCategory = (category: Category) => {
+  const handleSaveCategory = (category: MultilingualCategory) => {
     if (selectedCategory) {
       // Edit existing category
       setCategoriesData(prev => 
@@ -64,8 +64,7 @@ export default function AdminCategories() {
           onEdit={handleEditCategory}
           onDelete={handleDeleteCategory}
         />
-
-        <CategoryModal
+        <MultilingualCategoryModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSave={handleSaveCategory}

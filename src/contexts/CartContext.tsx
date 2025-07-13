@@ -11,9 +11,9 @@ interface CartState {
 }
 
 type CartAction =
-  | { type: 'ADD_ITEM'; payload: Product }
-  | { type: 'REMOVE_ITEM'; payload: number }
-  | { type: 'UPDATE_QUANTITY'; payload: { id: number; quantity: number } }
+  | { type: 'ADD_ITEM'; payload: { product: Product; selectedAttributes?: { [attributeId: string]: string } } }
+  | { type: 'REMOVE_ITEM'; payload: { productId: number; variantId?: string } }
+  | { type: 'UPDATE_QUANTITY'; payload: { productId: number; variantId?: string; quantity: number } }
   | { type: 'CLEAR_CART' }
   | { type: 'TOGGLE_CART' }
   | { type: 'LOAD_CART'; payload: CartItem[] };
@@ -25,6 +25,28 @@ const initialState: CartState = {
   itemCount: 0,
 };
 
+// Helper function to generate variant ID from selected attributes
+function generateVariantId(productId: number, selectedAttributes?: { [attributeId: string]: string }): string {
+  if (!selectedAttributes || Object.keys(selectedAttributes).length === 0) {
+    return `${productId}-default`;
+  }
+  
+  const attributeString = Object.entries(selectedAttributes)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}:${value}`)
+    .join('|');
+  
+  return `${productId}-${attributeString}`;
+}
+
+// Helper function to find cart item by product ID and variant ID
+function findCartItem(items: CartItem[], productId: number, variantId: string): CartItem | undefined {
+  return items.find(item => 
+    item.product.id === productId && 
+    (item.variantId || generateVariantId(productId, item.selectedAttributes)) === variantId
+  );
+}
+
 const CartContext = createContext<{
   state: CartState;
   dispatch: React.Dispatch<CartAction>;
@@ -33,17 +55,24 @@ const CartContext = createContext<{
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'ADD_ITEM': {
-      const existingItem = state.items.find(item => item.product.id === action.payload.id);
+      const { product, selectedAttributes } = action.payload;
+      const variantId = generateVariantId(product.id, selectedAttributes);
+      const existingItem = findCartItem(state.items, product.id, variantId);
       
       let newItems: CartItem[];
       if (existingItem) {
         newItems = state.items.map(item =>
-          item.product.id === action.payload.id
+          (item.variantId || generateVariantId(item.product.id, item.selectedAttributes)) === variantId
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       } else {
-        newItems = [...state.items, { product: action.payload, quantity: 1 }];
+        newItems = [...state.items, { 
+          product, 
+          quantity: 1, 
+          selectedAttributes,
+          variantId 
+        }];
       }
 
       const newTotal = newItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
@@ -58,7 +87,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     }
 
     case 'REMOVE_ITEM': {
-      const newItems = state.items.filter(item => item.product.id !== action.payload);
+      const { productId, variantId } = action.payload;
+      const targetVariantId = variantId || generateVariantId(productId);
+      
+      const newItems = state.items.filter(item => {
+        const itemVariantId = item.variantId || generateVariantId(item.product.id, item.selectedAttributes);
+        return !(item.product.id === productId && itemVariantId === targetVariantId);
+      });
+      
       const newTotal = newItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
       const newItemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -71,11 +107,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     }
 
     case 'UPDATE_QUANTITY': {
-      const newItems = state.items.map(item =>
-        item.product.id === action.payload.id
-          ? { ...item, quantity: Math.max(0, action.payload.quantity) }
-          : item
-      ).filter(item => item.quantity > 0);
+      const { productId, variantId, quantity } = action.payload;
+      const targetVariantId = variantId || generateVariantId(productId);
+      
+      const newItems = state.items.map(item => {
+        const itemVariantId = item.variantId || generateVariantId(item.product.id, item.selectedAttributes);
+        return (item.product.id === productId && itemVariantId === targetVariantId)
+          ? { ...item, quantity: Math.max(0, quantity) }
+          : item;
+      }).filter(item => item.quantity > 0);
 
       const newTotal = newItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
       const newItemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);

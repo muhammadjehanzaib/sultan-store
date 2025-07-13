@@ -7,6 +7,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/product/ProductCard';
+import { ProductAttributeSelector } from '@/components/product/ProductAttributeSelector';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { formatPrice, generateStarRating } from '@/lib/utils';
 import { Product } from '@/types';
@@ -21,10 +22,17 @@ const ProductDetailClient = memo(function ProductDetailClient({ product }: Produ
   const { dispatch } = useCart();
   const { t, isRTL } = useLanguage();
   const [quantity, setQuantity] = useState(1);
+  const [selectedAttributes, setSelectedAttributes] = useState<{ [attributeId: string]: string }>({});
 
   const handleAddToCart = () => {
     for (let i = 0; i < quantity; i++) {
-      dispatch({ type: 'ADD_ITEM', payload: product });
+      dispatch({ 
+        type: 'ADD_ITEM', 
+        payload: { 
+          product, 
+          selectedAttributes: Object.keys(selectedAttributes).length > 0 ? selectedAttributes : undefined 
+        } 
+      });
     }
     // Show success message or notification here
   };
@@ -142,6 +150,20 @@ const ProductDetailClient = memo(function ProductDetailClient({ product }: Produ
                 {product.description || t('site.description')}
               </p>
               
+              {/* Product Attributes */}
+              {product.attributes && product.attributes.length > 0 && (
+                <ProductAttributeSelector
+                  attributes={product.attributes}
+                  selectedValues={selectedAttributes}
+                  onAttributeChange={(attributeId, valueId) => {
+                    setSelectedAttributes(prev => ({
+                      ...prev,
+                      [attributeId]: valueId
+                    }));
+                  }}
+                />
+              )}
+
               {/* Additional product details */}
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                 <h4 className="font-semibold text-gray-900">{t('product.description')}:</h4>
@@ -340,7 +362,7 @@ const ProductDetailClient = memo(function ProductDetailClient({ product }: Produ
               <ProductCard
                 key={relatedProduct.id}
                 product={relatedProduct}
-                onAddToCart={(product) => dispatch({ type: 'ADD_ITEM', payload: product })}
+                onAddToCart={(product, selectedAttributes) => dispatch({ type: 'ADD_ITEM', payload: { product, selectedAttributes } })}
                 onViewProduct={(product) => router.push(`/product/${product.id}`)}
               />
             ))}

@@ -11,7 +11,12 @@ interface CustomersTableProps {
   onDelete: (customerId: string) => void;
 }
 
-export function CustomersTable({ customers, onView, onUpdateStatus, onDelete }: CustomersTableProps) {
+export function CustomersTable({
+  customers,
+  onView,
+  onUpdateStatus,
+  onDelete,
+}: CustomersTableProps) {
   const { t, isRTL } = useLanguage();
 
   const getStatusColor = (status: Customer['status']) => {
@@ -31,7 +36,7 @@ export function CustomersTable({ customers, onView, onUpdateStatus, onDelete }: 
     return new Intl.DateTimeFormat(isRTL ? 'ar-EG' : 'en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     }).format(date);
   };
 
@@ -51,40 +56,42 @@ export function CustomersTable({ customers, onView, onUpdateStatus, onDelete }: 
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th className={`px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider ${isRTL ? 'text-right' : 'text-left'}`}>
-                {t('admin.customers.customer')}
-              </th>
-              <th className={`px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider ${isRTL ? 'text-right' : 'text-left'}`}>
-                {t('admin.customers.email')}
-              </th>
-              <th className={`px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider ${isRTL ? 'text-right' : 'text-left'}`}>
-                {t('admin.customers.orders')}
-              </th>
-              <th className={`px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider ${isRTL ? 'text-right' : 'text-left'}`}>
-                {t('admin.customers.totalSpent')}
-              </th>
-              <th className={`px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider ${isRTL ? 'text-right' : 'text-left'}`}>
-                {t('admin.customers.status')}
-              </th>
-              <th className={`px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider ${isRTL ? 'text-right' : 'text-left'}`}>
-                {t('admin.customers.joined')}
-              </th>
-              <th className={`px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider ${isRTL ? 'text-right' : 'text-left'}`}>
-                {t('admin.customers.actions')}
-              </th>
+              {[
+                'customer',
+                'email',
+                'orders',
+                'totalSpent',
+                'status',
+                'joined',
+                'actions',
+              ].map((key) => (
+                <th
+                  key={key}
+                  className={`px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider ${
+                    isRTL ? 'text-right' : 'text-left'
+                  }`}
+                >
+                  {t(`admin.customers.${key}`)}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {customers.map((customer) => (
               <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <div className={`h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center ${isRTL ? 'ml-4' : 'mr-4'}`}>
+                <td className="px-6 py-4 whitespace-nowrap" dir={isRTL ? 'rtl' : 'ltr'}>
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center overflow-hidden rtl:ml-4 ltr:mr-4">
                       {customer.avatar ? (
-                        <img src={customer.avatar} alt={customer.firstName} className="h-full w-full rounded-full object-cover" />
+                        <img
+                          src={customer.avatar}
+                          alt={customer.firstName}
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         <span className="text-gray-500 dark:text-gray-400 font-medium">
-                          {customer.firstName.charAt(0)}{customer.lastName.charAt(0)}
+                          {customer.firstName.charAt(0)}
+                          {customer.lastName.charAt(0)}
                         </span>
                       )}
                     </div>
@@ -98,37 +105,44 @@ export function CustomersTable({ customers, onView, onUpdateStatus, onDelete }: 
                     </div>
                   </div>
                 </td>
+
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 dark:text-white">
-                    {customer.email}
-                  </div>
+                  <div className="text-sm text-gray-900 dark:text-white">{customer.email}</div>
                   {customer.phone && (
                     <div className="text-sm text-gray-500 dark:text-gray-400">
                       {customer.phone}
                     </div>
                   )}
                 </td>
+
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900 dark:text-white">
                     {customer.totalOrders}
                   </div>
                 </td>
+
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900 dark:text-white">
                     ${customer.totalSpent.toFixed(2)}
                   </div>
                 </td>
+
                 <td className="px-6 py-4 whitespace-nowrap">
                   <select
                     value={customer.status}
-                    onChange={(e) => onUpdateStatus(customer.id, e.target.value as Customer['status'])}
-                    className={`text-xs px-2 py-1 rounded-full font-semibold ${getStatusColor(customer.status)} border-none`}
+                    onChange={(e) =>
+                      onUpdateStatus(customer.id, e.target.value as Customer['status'])
+                    }
+                    className={`text-xs px-2 py-1 rounded-full font-semibold ${getStatusColor(
+                      customer.status
+                    )} border-none`}
                   >
                     <option value="active">{t('admin.customers.active')}</option>
                     <option value="inactive">{t('admin.customers.inactive')}</option>
                     <option value="blocked">{t('admin.customers.blocked')}</option>
                   </select>
                 </td>
+
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900 dark:text-white">
                     {formatDate(customer.createdAt)}
@@ -139,8 +153,9 @@ export function CustomersTable({ customers, onView, onUpdateStatus, onDelete }: 
                     </div>
                   )}
                 </td>
+
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className={`flex space-x-2 ${isRTL ? 'space-x-reverse' : ''}`}>
+                  <div className={`flex gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <Button
                       onClick={() => onView(customer)}
                       variant="outline"
