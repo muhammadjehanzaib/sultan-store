@@ -3,6 +3,7 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Order } from '@/types';
 import { Button } from '@/components/ui/Button';
+import Price from '@/components/ui/Price';
 
 interface OrdersTableProps {
   orders: Order[];
@@ -99,7 +100,7 @@ export function OrdersTable({ orders, onView, onUpdateStatus }: OrdersTableProps
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    ${order.total.toFixed(2)}
+                    <Price amount={order.total} locale={isRTL ? 'ar' : 'en'} className="text-sm font-medium text-gray-900 dark:text-white" />
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

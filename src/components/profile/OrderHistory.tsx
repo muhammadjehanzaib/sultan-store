@@ -3,6 +3,7 @@
 import React from 'react';
 import { User, Order } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
+import Price from '@/components/ui/Price';
 
 interface OrderHistoryProps {
   user: User;
@@ -71,7 +72,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
                 {t('profile.placedOn')}: {order.createdAt.toLocaleDateString()}
               </p>
               <p className="text-gray-600">
-                {t('cart.total')}: ${order.total.toFixed(2)}
+                {t('cart.total')}: <Price amount={order.total} locale={t('lang') === 'ar' ? 'ar' : 'en'} />
               </p>
             </div>
           ))}

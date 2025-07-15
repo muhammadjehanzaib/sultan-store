@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { User, AuthState, LoginCredentials, RegisterCredentials, GuestCheckoutData } from '@/types';
@@ -11,18 +11,6 @@ interface AuthContextType extends AuthState {
   clearError: () => void;
 }
 
-type AuthAction =
-  | { type: 'LOGIN_START' }
-  | { type: 'LOGIN_SUCCESS'; payload: User }
-  | { type: 'LOGIN_ERROR'; payload: string }
-  | { type: 'REGISTER_START' }
-  | { type: 'REGISTER_SUCCESS'; payload: User }
-  | { type: 'REGISTER_ERROR'; payload: string }
-  | { type: 'LOGOUT' }
-  | { type: 'GUEST_LOGIN'; payload: User }
-  | { type: 'CLEAR_ERROR' }
-  | { type: 'LOAD_USER'; payload: User };
-
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
@@ -32,7 +20,7 @@ const initialState: AuthState = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-function authReducer(state: AuthState, action: AuthAction): AuthState {
+function authReducer(state: AuthState, action: any): AuthState {
   switch (action.type) {
     case 'LOGIN_START':
     case 'REGISTER_START':
@@ -41,7 +29,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         isLoading: true,
         error: null,
       };
-
     case 'LOGIN_SUCCESS':
     case 'REGISTER_SUCCESS':
       return {
@@ -51,7 +38,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         isLoading: false,
         error: null,
       };
-
     case 'LOGIN_ERROR':
     case 'REGISTER_ERROR':
       return {
@@ -61,7 +47,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         isLoading: false,
         error: action.payload,
       };
-
     case 'GUEST_LOGIN':
       return {
         ...state,
@@ -70,7 +55,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         isLoading: false,
         error: null,
       };
-
     case 'LOGOUT':
       return {
         ...state,
@@ -79,7 +63,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         isLoading: false,
         error: null,
       };
-
     case 'LOAD_USER':
       return {
         ...state,
@@ -87,13 +70,11 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         isAuthenticated: true,
         isLoading: false,
       };
-
     case 'CLEAR_ERROR':
       return {
         ...state,
         error: null,
       };
-
     default:
       return state;
   }
@@ -102,7 +83,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Load user from localStorage on mount
   useEffect(() => {
     const savedUser = localStorage.getItem('ecommerce-user');
     if (savedUser) {
@@ -110,13 +90,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const user = JSON.parse(savedUser);
         dispatch({ type: 'LOAD_USER', payload: user });
       } catch (error) {
-        console.error('Error loading user from localStorage:', error);
         localStorage.removeItem('ecommerce-user');
       }
     }
   }, []);
 
-  // Save user to localStorage whenever it changes
   useEffect(() => {
     if (state.user) {
       localStorage.setItem('ecommerce-user', JSON.stringify(state.user));
@@ -127,12 +105,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (credentials: LoginCredentials) => {
     dispatch({ type: 'LOGIN_START' });
-    
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user data - in real app, this would come from your API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      // Mock user data
       const mockUser: User = {
         id: '1',
         email: credentials.email,
@@ -142,8 +118,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         phone: '+1234567890',
         isGuest: false,
         createdAt: new Date(),
+        role: 'viewer',
       };
-
       dispatch({ type: 'LOGIN_SUCCESS', payload: mockUser });
     } catch (error) {
       dispatch({ type: 'LOGIN_ERROR', payload: 'Invalid email or password' });
@@ -152,17 +128,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (credentials: RegisterCredentials) => {
     dispatch({ type: 'REGISTER_START' });
-    
     try {
-      // Validate passwords match
       if (credentials.password !== credentials.confirmPassword) {
         throw new Error('Passwords do not match');
       }
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user data - in real app, this would come from your API
+      await new Promise(resolve => setTimeout(resolve, 500));
       const mockUser: User = {
         id: Date.now().toString(),
         email: credentials.email,
@@ -171,11 +141,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         lastName: credentials.lastName,
         isGuest: false,
         createdAt: new Date(),
+        role: 'viewer',
       };
-
       dispatch({ type: 'REGISTER_SUCCESS', payload: mockUser });
-    } catch (error) {
-      dispatch({ type: 'REGISTER_ERROR', payload: error instanceof Error ? error.message : 'Registration failed' });
+    } catch (error: any) {
+      dispatch({ type: 'REGISTER_ERROR', payload: error.message || 'Registration failed' });
     }
   };
 
@@ -189,8 +159,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       phone: guestData.phone,
       isGuest: true,
       createdAt: new Date(),
+      role: 'viewer',
     };
-
     dispatch({ type: 'GUEST_LOGIN', payload: guestUser });
   };
 
@@ -203,14 +173,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{
-      ...state,
-      login,
-      register,
-      logout,
-      loginAsGuest,
-      clearError,
-    }}>
+    <AuthContext.Provider
+      value={{
+        ...state,
+        login,
+        register,
+        logout,
+        loginAsGuest,
+        clearError,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

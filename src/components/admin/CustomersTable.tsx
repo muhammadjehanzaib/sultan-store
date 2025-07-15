@@ -3,6 +3,7 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Customer } from '@/types';
 import { Button } from '@/components/ui/Button';
+import Price from '@/components/ui/Price';
 
 interface CustomersTableProps {
   customers: Customer[];
@@ -123,7 +124,7 @@ export function CustomersTable({
 
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    ${customer.totalSpent.toFixed(2)}
+                    <Price amount={customer.totalSpent} locale={isRTL ? 'ar' : 'en'} className="text-sm font-medium text-gray-900 dark:text-white" />
                   </div>
                 </td>
 

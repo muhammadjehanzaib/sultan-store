@@ -9,6 +9,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 // import { ShippingSettingsPanel } from '@/components/admin/ShippingSettingsPanel';
 // import { TaxSettingsPanel } from '@/components/admin/TaxSettingsPanel';
 // import { EmailTemplatesPanel } from '@/components/admin/EmailTemplatesPanel';
+import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 
 export default function AdminSettings() {
   const { t, isRTL } = useLanguage();
@@ -32,18 +33,19 @@ export default function AdminSettings() {
   // };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {t('admin.settings.title')}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            {t('admin.settings.subtitle')}
-          </p>
-        </div>
+    <AdminAuthGuard requiredRole="admin">
+      <AdminLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {t('admin.settings.title')}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              {t('admin.settings.subtitle')}
+            </p>
+          </div>
 
-        {/* <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1">
             <SettingsNavigation 
               activeTab={activeTab} 
@@ -55,7 +57,8 @@ export default function AdminSettings() {
             {renderSettingsPanel()}
           </div>
         </div> */}
-      </div>
-    </AdminLayout>
+        </div>
+      </AdminLayout>
+    </AdminAuthGuard>
   );
 }

@@ -10,6 +10,7 @@ import { ProductCard } from '@/components/product/ProductCard';
 import { ProductAttributeSelector } from '@/components/product/ProductAttributeSelector';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { formatPrice, generateStarRating } from '@/lib/utils';
+import Price from '@/components/ui/Price';
 import { Product } from '@/types';
 import { products } from '@/data/products';
 
@@ -34,6 +35,7 @@ const ProductDetailClient = memo(function ProductDetailClient({ product }: Produ
         } 
       });
     }
+    dispatch({ type: 'TOGGLE_CART' });
     // Show success message or notification here
   };
 
@@ -136,10 +138,10 @@ const ProductDetailClient = memo(function ProductDetailClient({ product }: Produ
             {/* Price */}
             <div className="space-y-2">
               <div className="text-3xl font-bold text-purple-600">
-                {formatPrice(product.price)}
+                <Price amount={product.price} locale={isRTL ? 'ar' : 'en'} className="text-3xl font-bold text-purple-600" />
               </div>
               <p className="text-sm text-green-600 font-medium">
-                ✓ Free shipping on orders over $50
+                ✓ Free shipping on orders over <Price amount={50} locale={isRTL ? 'ar' : 'en'} />
               </p>
             </div>
 
@@ -215,7 +217,7 @@ const ProductDetailClient = memo(function ProductDetailClient({ product }: Produ
                     size="lg"
                     className="flex-1"
                   >
-                    {t('product.addToCart')} {quantity > 1 ? `${quantity} ` : ''}- {formatPrice(product.price * quantity)}
+                    {t('product.addToCart')} {quantity > 1 ? `${quantity} ` : ''}- <Price amount={product.price * quantity} locale={isRTL ? 'ar' : 'en'} />
                   </Button>
                   <button className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     ❤️

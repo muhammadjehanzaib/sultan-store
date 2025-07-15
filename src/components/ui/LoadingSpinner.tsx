@@ -13,12 +13,14 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 }) => {
   const sizeClasses = {
     sm: 'w-4 h-4',
-    md: 'w-8 h-8',
-    lg: 'w-12 h-12'
+    md: 'w-12 h-12',
+    lg: 'w-20 h-20'
   };
 
   return (
-    <div className={`inline-block animate-spin rounded-full border-2 border-gray-300 border-t-purple-600 ${sizeClasses[size]} ${className}`}>
+    <div className={`inline-block animate-spin rounded-full border-4 border-t-4 border-t-blue-500 border-b-purple-500 border-x-transparent shadow-lg bg-gradient-to-tr from-blue-400 to-purple-500 opacity-0 animate-fadeIn ${sizeClasses[size]} ${className}`}
+      style={{ animationDuration: '1s' }}
+    >
       <span className="sr-only">Loading...</span>
     </div>
   );

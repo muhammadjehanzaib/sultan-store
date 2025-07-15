@@ -4,11 +4,14 @@ import React from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/Button';
+import { useRouter } from 'next/navigation';
 import { formatPrice } from '@/lib/utils';
+import Price from '@/components/ui/Price';
 
 export const CartSidebar: React.FC = () => {
   const { state, dispatch } = useCart();
   const { t, isRTL } = useLanguage();
+  const router = useRouter();
 
   const updateQuantity = (productId: number, variantId: string | undefined, quantity: number) => {
     dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, variantId, quantity } });
@@ -66,86 +69,96 @@ export const CartSidebar: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
-              {state.items.map((item) => (
-                <div key={item.variantId || `${item.product.id}-default`} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                  <div className={`flex items-start ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
-                    {/* Product Image */}
-                    <div className="relative">
-                      <img
-                        src={item.product.image}
-                        alt={item.product.name}
-                        className="w-16 h-16 object-cover rounded-lg border border-gray-200"
-                      />
-                    </div>
-                    
-                    {/* Product Details */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-800 text-sm truncate">{item.product.name}</h3>
-                      
-                      {/* Selected Attributes */}
-                      {item.selectedAttributes && Object.keys(item.selectedAttributes).length > 0 && (
-                        <div className="mt-1 space-y-1">
-                          {Object.entries(item.selectedAttributes).map(([attributeId, valueId]) => {
-                            const attribute = item.product.attributes?.find(attr => attr.id === attributeId);
-                            const value = attribute?.values.find(val => val.id === valueId);
-                            if (!attribute || !value) return null;
-                            
-                            return (
-                              <div key={attributeId} className="flex items-center space-x-2 text-xs text-gray-600">
-                                <span className="font-medium">{attribute.name}:</span>
-                                {attribute.type === 'color' && value.hexColor ? (
-                                  <div className="flex items-center space-x-1">
-                                    <div 
-                                      className="w-3 h-3 rounded-full border border-gray-300"
-                                      style={{ backgroundColor: value.hexColor }}
-                                    ></div>
-                                    <span>{value.value}</span>
-                                  </div>
-                                ) : (
-                                  <span>{value.value}</span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      
-                      <p className="text-purple-600 font-bold text-lg mt-1">
-                        {formatPrice(item.product.price)}
-                      </p>
-                      
-                      {/* Quantity Controls */}
-                      <div className={`flex items-center mt-3 ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
-                        <button
-                          onClick={() => updateQuantity(item.product.id, item.variantId, item.quantity - 1)}
-                          className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-purple-100 hover:border-purple-300 transition-colors font-semibold text-gray-600"
-                          disabled={item.quantity <= 1}
-                        >
-                          -
-                        </button>
-                        <span className="w-8 text-center font-semibold text-gray-700">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.product.id, item.variantId, item.quantity + 1)}
-                          className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-purple-100 hover:border-purple-300 transition-colors font-semibold text-gray-600"
-                        >
-                          +
-                        </button>
+            <>
+              <div className="space-y-3">
+                {state.items.map((item) => (
+                  <div key={item.variantId || `${item.product.id}-default`} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div className={`flex items-start ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
+                      {/* Product Image */}
+                      <div className="relative">
+                        <img
+                          src={item.product.image}
+                          alt={item.product.name}
+                          className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                        />
                       </div>
+                      
+                      {/* Product Details */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-800 text-sm truncate">{item.product.name}</h3>
+                        
+                        {/* Selected Attributes */}
+                        {item.selectedAttributes && Object.keys(item.selectedAttributes).length > 0 && (
+                          <div className="mt-1 space-y-1">
+                            {Object.entries(item.selectedAttributes).map(([attributeId, valueId]) => {
+                              const attribute = item.product.attributes?.find(attr => attr.id === attributeId);
+                              const value = attribute?.values.find(val => val.id === valueId);
+                              if (!attribute || !value) return null;
+                              
+                              return (
+                                <div key={attributeId} className="flex items-center space-x-2 text-xs text-gray-600">
+                                  <span className="font-medium">{attribute.name}:</span>
+                                  {attribute.type === 'color' && value.hexColor ? (
+                                    <div className="flex items-center space-x-1">
+                                      <div 
+                                        className="w-3 h-3 rounded-full border border-gray-300"
+                                        style={{ backgroundColor: value.hexColor }}
+                                      ></div>
+                                      <span>{value.value}</span>
+                                    </div>
+                                  ) : (
+                                    <span>{value.value}</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        
+                        <Price amount={item.product.price} locale={isRTL ? 'ar' : 'en'} className="text-purple-600 font-bold text-lg mt-1" />
+                        
+                        {/* Quantity Controls */}
+                        <div className={`flex items-center mt-3 ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
+                          <button
+                            onClick={() => updateQuantity(item.product.id, item.variantId, item.quantity - 1)}
+                            className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-purple-100 hover:border-purple-300 transition-colors font-semibold text-gray-600"
+                            disabled={item.quantity <= 1}
+                          >
+                            -
+                          </button>
+                          <span className="w-8 text-center font-semibold text-gray-700">{item.quantity}</span>
+                          <button
+                            onClick={() => updateQuantity(item.product.id, item.variantId, item.quantity + 1)}
+                            className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-purple-100 hover:border-purple-300 transition-colors font-semibold text-gray-600"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Remove Button */}
+                      <button
+                        onClick={() => removeItem(item.product.id, item.variantId)}
+                        className="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition-colors flex items-center justify-center font-bold"
+                        title="Remove item"
+                      >
+                        ×
+                      </button>
                     </div>
-                    
-                    {/* Remove Button */}
-                    <button
-                      onClick={() => removeItem(item.product.id, item.variantId)}
-                      className="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition-colors flex items-center justify-center font-bold"
-                      title="Remove item"
-                    >
-                      ×
-                    </button>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              <Button
+                fullWidth
+                variant="outline"
+                className="mt-6 mb-2"
+                onClick={() => {
+                  dispatch({ type: 'TOGGLE_CART' });
+                }}
+              >
+                {t('cart.continueShopping') || 'Continue Shopping'}
+              </Button>
+            </>
           )}
         </div>
 
@@ -156,7 +169,9 @@ export const CartSidebar: React.FC = () => {
             <div className="space-y-2 text-black">
               <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('cart.subtotal')} ({state.itemCount === 1 ? t('cart.itemCountSingular').replace('{{count}}', state.itemCount.toString()) : t('cart.itemCount').replace('{{count}}', state.itemCount.toString())})</span>
-                <span>{formatPrice(state.total)}</span>
+                <span>
+                  <Price amount={state.total} locale={isRTL ? 'ar' : 'en'} className="font-medium" />
+                </span>
               </div>
               <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('cart.shipping')}</span>
@@ -164,7 +179,9 @@ export const CartSidebar: React.FC = () => {
               </div>
               <div className={`flex justify-between font-semibold text-lg border-t pt-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('cart.total')}</span>
-                <span>{formatPrice(state.total)}</span>
+                <span>
+                  <Price amount={state.total} locale={isRTL ? 'ar' : 'en'} className="font-medium" />
+                </span>
               </div>
             </div>
 

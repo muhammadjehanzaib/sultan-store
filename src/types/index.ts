@@ -107,6 +107,8 @@ export interface User {
   isGuest?: boolean;
   addresses?: Address[];
   createdAt?: Date;
+  // Add role for RBAC
+  role: 'admin' | 'manager' | 'support' | 'viewer';
 }
 
 export interface Address {

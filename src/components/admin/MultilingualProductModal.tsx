@@ -1,15 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Product, MultilingualProduct, LocalizedContent, ProductAttribute, ProductAttributeValue } from '@/types';
 import { Button } from '@/components/ui/Button';
+import ProductAttributesSection from './ProductAttributesSection';
+import ProductVariantsSection from './ProductVariantsSection';
+import SEOSection from './SEOSection';
+import Image from 'next/image';
 
 interface MultilingualProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (product: MultilingualProduct) => void;
-  product: Product | null;
+  product: MultilingualProduct | null;
 }
 
 type FormDataType = {
@@ -22,6 +26,12 @@ type FormDataType = {
   rating: number;
   reviews: number;
   attributes: ProductAttribute[];
+  variants: any[]; // Added for variants
+  seo: { // Added for SEO
+    title: LocalizedContent;
+    metaDescription: LocalizedContent;
+    keywords: LocalizedContent;
+  };
 };
 
 export function MultilingualProductModal({ isOpen, onClose, onSave, product }: MultilingualProductModalProps) {
@@ -36,19 +46,20 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
     inStock: true,
     rating: 0,
     reviews: 0,
-    attributes: []
+    attributes: [],
+    variants: [],
+    seo: {
+      title: { en: '', ar: '' },
+      metaDescription: { en: '', ar: '' },
+      keywords: { en: '', ar: '' }
+    }
   });
 
-  // Add states for managing attributes
-  const [showAttributeForm, setShowAttributeForm] = useState(false);
-  const [editingAttribute, setEditingAttribute] = useState<ProductAttribute | null>(null);
-  const [newAttribute, setNewAttribute] = useState<ProductAttribute>({
-    id: '',
-    name: '',
-    type: 'color',
-    values: [],
-    required: false
-  });
+  // Image upload states
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [imageUploadMethod, setImageUploadMethod] = useState<'url' | 'upload'>('url');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Helper function to handle conversion between old and new data formats
   const convertToLocalizedContent = (value: any): LocalizedContent => {
@@ -69,8 +80,15 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
         inStock: product.inStock !== false,
         rating: product.rating || 0,
         reviews: product.reviews || 0,
-        attributes: product.attributes || []
+        attributes: product.attributes || [],
+        variants: product.variants || [],
+        seo: {
+          title: (product.seo && product.seo.title) ? product.seo.title : { en: '', ar: '' },
+          metaDescription: (product.seo && product.seo.metaDescription) ? product.seo.metaDescription : { en: '', ar: '' },
+          keywords: (product.seo && product.seo.keywords) ? product.seo.keywords : { en: '', ar: '' }
+        }
       });
+      setImagePreview(product.image || '');
     } else {
       setFormData({
         name: { en: '', ar: '' },
@@ -81,8 +99,15 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
         inStock: true,
         rating: 0,
         reviews: 0,
-        attributes: []
+        attributes: [],
+        variants: [],
+        seo: {
+          title: { en: '', ar: '' },
+          metaDescription: { en: '', ar: '' },
+          keywords: { en: '', ar: '' }
+        }
       });
+      setImagePreview('');
     }
   }, [product]);
 
@@ -107,14 +132,16 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
       inStock: formData.inStock,
       rating: formData.rating,
       reviews: formData.reviews,
-      attributes: formData.attributes
+      attributes: formData.attributes,
+      variants: formData.variants,
+      seo: formData.seo
     };
 
     onSave(productData);
   };
 
   const handleLocalizedInputChange = (
-    field: keyof Pick<FormDataType, 'name' | 'category' | 'description'>,
+    field: keyof Pick<FormDataType, 'name' | 'category' | 'description' | 'seo'>,
     language: 'en' | 'ar',
     value: string
   ) => {
@@ -134,6 +161,60 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
     }));
   };
 
+  // Image handling functions
+  const handleImageUrlChange = (url: string) => {
+    setFormData(prev => ({ ...prev, image: url }));
+    setImagePreview(url);
+  };
+
+  const handleFileUpload = (file: File) => {
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setImagePreview(result);
+        // In a real app, you would upload to a server and get back a URL
+        // For now, we'll use the data URL as a placeholder
+        setFormData(prev => ({ ...prev, image: result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        handleFileUpload(file);
+      }
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
   if (!isOpen) return null;
 
   const categories = [
@@ -148,9 +229,10 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div className="relative top-10 mx-auto p-5 border w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+        {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-            {product ? 'Edit Product' : 'Add Product'} (Multilingual)
+            {product ? t('admin.products.editProduct') : t('admin.products.addProduct')} (Multilingual)
           </h3>
           <button
             onClick={onClose}
@@ -189,10 +271,20 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+        <form onSubmit={handleSubmit} className="mt-6">
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Left Column - Basic Information */}
+            <div className="space-y-6">
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                  Basic Information
+                </h4>
+                
           {/* Product Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <div className="space-y-2 mb-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Product Name ({selectedLanguage === 'en' ? 'English' : 'Arabic'}) *
             </label>
             <input
@@ -206,15 +298,14 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
               placeholder={selectedLanguage === 'en' ? 'Enter product name in English' : 'أدخل اسم المنتج بالعربية'}
               dir={selectedLanguage === 'ar' ? 'rtl' : 'ltr'}
             />
-            {/* Show preview of the other language */}
-            <p className="mt-1 text-xs text-gray-500">
+                  <p className="text-xs text-gray-500">
               {selectedLanguage === 'en' ? 'Arabic' : 'English'}: {formData.name[selectedLanguage === 'en' ? 'ar' : 'en'] || 'Not filled'}
             </p>
           </div>
 
           {/* Category */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <div className="space-y-2 mb-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Category ({selectedLanguage === 'en' ? 'English' : 'Arabic'}) *
             </label>
             <select
@@ -235,15 +326,42 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-gray-500">
+                  <p className="text-xs text-gray-500">
               {selectedLanguage === 'en' ? 'Arabic' : 'English'}: {formData.category[selectedLanguage === 'en' ? 'ar' : 'en'] || 'Not filled'}
             </p>
+                </div>
+
+                {/* Price */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Price *
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                      <Image src="/icons/Saudi_Riyal_Symbo.svg" alt="Riyal" width={18} height={18} style={{ display: 'inline-block' }} />
+                    </span>
+                    <input
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) => handleSimpleInputChange('price', parseFloat(e.target.value) || 0)}
+                      required
+                      step="0.01"
+                      min="0"
+                      className="w-full p-3 pl-8 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
           </div>
 
           {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Description ({selectedLanguage === 'en' ? 'English' : 'Arabic'})
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                  Description
+                </h4>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Product Description ({selectedLanguage === 'en' ? 'English' : 'Arabic'})
             </label>
             <textarea
               value={formData.description[selectedLanguage]}
@@ -255,270 +373,191 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
               placeholder={selectedLanguage === 'en' ? 'Enter product description in English' : 'أدخل وصف المنتج بالعربية'}
               dir={selectedLanguage === 'ar' ? 'rtl' : 'ltr'}
             />
-            <p className="mt-1 text-xs text-gray-500">
+                  <p className="text-xs text-gray-500">
               {selectedLanguage === 'en' ? 'Arabic' : 'English'}: {formData.description[selectedLanguage === 'en' ? 'ar' : 'en'] || 'Not filled'}
             </p>
           </div>
-
-          {/* Non-localized fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Price ($) *
-              </label>
-              <input
-                type="number"
-                value={formData.price}
-                onChange={(e) => handleSimpleInputChange('price', parseFloat(e.target.value) || 0)}
-                required
-                step="0.01"
-                min="0"
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Image URL
-              </label>
-              <input
-                type="url"
-                value={formData.image}
-                onChange={(e) => handleSimpleInputChange('image', e.target.value)}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Rating (0-5)
-              </label>
-              <input
-                type="number"
-                value={formData.rating}
-                onChange={(e) => handleSimpleInputChange('rating', parseFloat(e.target.value) || 0)}
-                step="0.1"
-                min="0"
-                max="5"
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Number of Reviews
-              </label>
-              <input
-                type="number"
-                value={formData.reviews}
-                onChange={(e) => handleSimpleInputChange('reviews', parseInt(e.target.value) || 0)}
-                min="0"
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          {/* Stock Status */}
-          <div>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={formData.inStock}
-                onChange={(e) => handleSimpleInputChange('inStock', e.target.checked)}
-                className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                In Stock
-              </span>
-            </label>
-          </div>
-
-          {/* Attributes Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Product Attributes</h3>
-            {formData.attributes.map((attribute, index) => (
-              <div key={index} className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-gray-700 dark:text-gray-300">{attribute.name} ({attribute.type})</h4>
+            {/* Right Column - Media & Settings */}
+            <div className="space-y-6">
+              
+              {/* Image Upload */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                  {t('admin.products.imageUpload.title')}
+                </h4>
+                
+                {/* Image Upload Method Toggle */}
+                <div className="flex space-x-2 mb-4">
                   <button
-                    className="text-red-500"
-                    onClick={() =>
-                      setFormData(prev => ({
-                        ...prev,
-                        attributes: prev.attributes.filter((_, i) => i !== index)
-                      }))
-                    }
+                    type="button"
+                    onClick={() => setImageUploadMethod('url')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      imageUploadMethod === 'url'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
                   >
-                    Remove
+                    {t('admin.products.imageUpload.urlInput')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageUploadMethod('upload')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      imageUploadMethod === 'upload'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {t('admin.products.imageUpload.fileUpload')}
                   </button>
                 </div>
 
-                {/* Attribute Values */}
-                <div className="mt-2 space-y-2">
-                  {attribute.values.map((value, vIndex) => (
-                    <div 
-                      key={vIndex} 
-                      className="flex items-center justify-between p-2 bg-white dark:bg-gray-600 rounded-md"
+                {/* Image Upload Area */}
+                <div className="space-y-4">
+                  {imageUploadMethod === 'url' ? (
+                    // URL Input
+            <div>
+              <input
+                type="url"
+                value={formData.image}
+                        onChange={(e) => handleImageUrlChange(e.target.value)}
+                        placeholder={t('admin.products.imageUpload.urlPlaceholder')}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+                  ) : (
+                    // File Upload
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                        isDragOver
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                      }`}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
                     >
-                      <span className="text-gray-900 dark:text-white">
-                        {value.value} {attribute.type === 'color' && value.hexColor && (
-                          <span 
-                            className="inline-block w-4 h-4 ml-2 rounded-full border"
-                            style={{ backgroundColor: value.hexColor }}
-                          ></span>
-                        )}
-                      </span>
-                      <button
-                        className="text-red-500"
-                        onClick={() =>
-                          setFormData(prev => ({
-                            ...prev,
-                            attributes: prev.attributes.map((attr, aIndex) =>
-                              aIndex === index
-                                ? { ...attr, values: attr.values.filter((_, valIndex) => valIndex !== vIndex) }
-                                : attr
-                            )
-                          }))
-                        }
-                      >
-                        Remove
-                      </button>
+                      <div className="space-y-4">
+                        <div className="text-4xl">📁</div>
+                        <div>
+                          <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                            {t('admin.products.imageUpload.dropImage')}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {t('admin.products.imageUpload.orClickToBrowse')}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={triggerFileInput}
+                          variant="outline"
+                          className="mx-auto"
+                        >
+                          {t('admin.products.imageUpload.chooseFile')}
+                        </Button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileInputChange}
+                          className="hidden"
+                        />
+                      </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Image Preview */}
+                  {imagePreview && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t('admin.products.imageUpload.imagePreview')}
+                      </label>
+                      <div className="relative w-32 h-32 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                        <img
+                          src={imagePreview}
+                          alt="Product preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = '/images/products/placeholder.jpg';
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImagePreview('');
+                            setFormData(prev => ({ ...prev, image: '' }));
+                          }}
+                          className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
+              </div>
 
-                {/* Add New Value */}
-                <div className="mt-2">
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      placeholder={attribute.type === 'color' ? 'Enter color name or hex code (#FF0000)' : 'Enter value'}
-                      className="flex-1 p-2 border border-gray-300 rounded"
-                      onKeyPress={e => {
-                        if (e.key === 'Enter') {
-                          const value = e.currentTarget.value.trim();
-                          if (!value) return;
-
-                          const newValue: ProductAttributeValue = {
-                            id: value.toLowerCase().replace(/\s+/g, '-'),
-                            value,
-                            hexColor: attribute.type === 'color' && value.startsWith('#') ? value : undefined
-                          };
-
-                          setFormData(prev => ({
-                            ...prev,
-                            attributes: prev.attributes.map((attr, aIndex) =>
-                              aIndex === index
-                                ? { ...attr, values: [...attr.values, newValue] }
-                                : attr
-                            )
-                          }));
-
-                          e.currentTarget.value = '';
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                      onClick={(e) => {
-                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                        const value = input.value.trim();
-                        if (!value) return;
-
-                        const newValue: ProductAttributeValue = {
-                          id: value.toLowerCase().replace(/\s+/g, '-'),
-                          value,
-                          hexColor: attribute.type === 'color' && value.startsWith('#') ? value : undefined
-                        };
-
-                        setFormData(prev => ({
-                          ...prev,
-                          attributes: prev.attributes.map((attr, aIndex) =>
-                            aIndex === index
-                              ? { ...attr, values: [...attr.values, newValue] }
-                              : attr
-                          )
-                        }));
-
-                        input.value = '';
-                      }}
-                    >
-                      Add
-                    </button>
+              {/* Product Settings */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                  Product Settings
+                </h4>
+                <div className="space-y-4">
+                  {/* Stock Status */}
+                  <div>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={formData.inStock}
+                        onChange={(e) => handleSimpleInputChange('inStock', e.target.checked)}
+                        className="mr-2"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        In Stock
+                      </span>
+                    </label>
                   </div>
                 </div>
               </div>
-            ))}
 
-            {/* Add New Attribute */}
-            <div className="mt-4">
-              <button
-                type="button"
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
-                onClick={() => setShowAttributeForm(true)}
-              >
-                <span className="mr-2">+</span> Add Attribute
-              </button>
-            </div>
-
-            {showAttributeForm && (
-              <div className="mt-4 p-4 bg-white dark:bg-gray-700 rounded-lg">
-                <h4 className="font-semibold text-gray-900 dark:text-white">New Attribute</h4>
-                <input
-                  type="text"
-                  placeholder="Attribute Name"
-                  value={newAttribute.name}
-                  onChange={e => setNewAttribute({ ...newAttribute, name: e.target.value })}
-                  className="w-full p-2 mb-2 border"
+              {/* Attributes Section */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mt-6">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Product Attributes</h4>
+                <ProductAttributesSection
+                  attributes={formData.attributes}
+                  setAttributes={(attributes) => setFormData(prev => ({ ...prev, attributes }))}
+                  selectedLanguage={selectedLanguage}
                 />
-                <select
-                  value={newAttribute.type}
-                  onChange={e => setNewAttribute({ ...newAttribute, type: e.target.value as any })}
-                  className="w-full p-2 mb-2 border"
-                >
-                  <option value="color">Color</option>
-                  <option value="size">Size</option>
-                  <option value="material">Material</option>
-                  <option value="style">Style</option>
-                </select>
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mr-2"
-                  onClick={() => {
-                    if (!newAttribute.name.trim()) {
-                      alert('Please enter an attribute name');
-                      return;
-                    }
-                    
-                    const attributeToAdd = {
-                      ...newAttribute,
-                      id: newAttribute.name.toLowerCase().replace(/\s+/g, '-')
-                    };
-                    
-                    setFormData(prev => ({
-                      ...prev,
-                      attributes: [...prev.attributes, attributeToAdd]
-                    }));
-                    setNewAttribute({ id: '', name: '', type: 'color', values: [], required: false });
-                    setShowAttributeForm(false);
-                  }}
-                >
-                  Save Attribute
-                </button>
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-                  onClick={() => setShowAttributeForm(false)}
-                >
-                  Cancel
-                </button>
               </div>
-            )}
+
+              {/* Variants Section */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mt-6">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Product Variants</h4>
+                <ProductVariantsSection
+                  attributes={formData.attributes}
+                  variants={formData.variants || []}
+                  setVariants={(variants) => setFormData(prev => ({ ...prev, variants }))}
+                  selectedLanguage={selectedLanguage}
+                />
+              </div>
+
+              {/* SEO Section */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mt-6">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">SEO Settings</h4>
+                <SEOSection
+                  seo={formData.seo || { title: { en: '', ar: '' }, metaDescription: { en: '', ar: '' }, keywords: { en: '', ar: '' } }}
+                  setSEO={(seo) => setFormData(prev => ({ ...prev, seo }))}
+                  selectedLanguage={selectedLanguage}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Action Buttons */}
-          <div className={`flex space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700 ${isRTL ? 'space-x-reverse' : ''}`}>
+          <div className={`flex space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700 mt-6 ${isRTL ? 'space-x-reverse' : ''}`}>
             <Button
               type="submit"
               className="bg-blue-600 hover:bg-blue-700 text-white"

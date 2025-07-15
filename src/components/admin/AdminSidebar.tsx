@@ -3,6 +3,7 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRouter, usePathname } from 'next/navigation';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -13,6 +14,21 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const { t, isRTL } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
+  const { user } = useAdminAuth();
+
+  // RBAC: Define allowed roles for each nav item
+  const navRoles: Record<string, string[]> = {
+    '/admin': ['admin', 'manager', 'support', 'viewer'],
+    '/admin/products': ['admin', 'manager'],
+    '/admin/categories': ['admin', 'manager', 'support'],
+    '/admin/orders': ['admin', 'manager', 'support'],
+    '/admin/customers': ['admin', 'manager', 'support'],
+    '/admin/reviews': ['admin', 'manager', 'support'],
+    '/admin/inventory': ['admin', 'manager', 'support'],
+    '/admin/analytics': ['admin'],
+    '/admin/settings': ['admin'],
+    '/admin/queries': ['admin', 'manager', 'support'],
+  };
 
   const navigation = [
     { name: t('admin.nav.dashboard'), href: '/admin', icon: '📊' },
@@ -61,32 +77,46 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         {/* Navigation */}
         <nav className="mt-8">
           <div className="px-4 space-y-2">
-            {navigation.map((item) => {
-              const current = pathname === item.href;
-              return (
-                <button
-                  key={item.name}
-                  onClick={() => handleNavigation(item.href)}
-                  className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                    current
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
-                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700'
-                  }`}
+            {navigation
+              .filter(item => user && navRoles[item.href]?.includes(user.role))
+              .map((item) => {
+                const current = pathname === item.href;
+                return (
+                  <button
+                    key={item.name}
+                    onClick={() => handleNavigation(item.href)}
+                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                      current
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
+                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {isRTL ? (
+                      <>
+                        <span className="text-xl ml-3">{item.icon}</span>
+                        <span className="text-right flex-1">{item.name}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-xl mr-3">{item.icon}</span>
+                        <span className="text-left flex-1">{item.name}</span>
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            {/* Contact Queries link (RBAC) */}
+            {user && navRoles['/admin/queries']?.includes(user.role) && (
+              <div>
+                <a
+                  href="/admin/queries"
+                  className="flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                 >
-                  {isRTL ? (
-                    <>
-                      <span className="text-xl ml-3">{item.icon}</span>
-                      <span className="text-right flex-1">{item.name}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-xl mr-3">{item.icon}</span>
-                      <span className="text-left flex-1">{item.name}</span>
-                    </>
-                  )}
-                </button>
-              );
-            })}
+                  <span className="mr-3">📩</span>
+                  Contact Queries
+                </a>
+              </div>
+            )}
           </div>
         </nav>
 

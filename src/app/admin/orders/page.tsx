@@ -7,6 +7,7 @@ import { OrdersTable } from '@/components/admin/OrdersTable';
 import { OrderModal } from '@/components/admin/OrderModal';
 import { mockOrders } from '@/data/mockOrders';
 import { Order } from '@/types';
+import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 
 export default function AdminOrders() {
   const { t, isRTL } = useLanguage();
@@ -30,30 +31,32 @@ export default function AdminOrders() {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {t('admin.orders.title')}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            {t('admin.orders.subtitle')}
-          </p>
+    <AdminAuthGuard requiredRole={["admin", "manager", "support"]}>
+      <AdminLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {t('admin.orders.title')}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              {t('admin.orders.subtitle')}
+            </p>
+          </div>
+
+          <OrdersTable
+            orders={ordersData}
+            onView={handleViewOrder}
+            onUpdateStatus={handleUpdateOrderStatus}
+          />
+
+          <OrderModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            order={selectedOrder}
+            onUpdateStatus={handleUpdateOrderStatus}
+          />
         </div>
-
-        <OrdersTable
-          orders={ordersData}
-          onView={handleViewOrder}
-          onUpdateStatus={handleUpdateOrderStatus}
-        />
-
-        <OrderModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          order={selectedOrder}
-          onUpdateStatus={handleUpdateOrderStatus}
-        />
-      </div>
-    </AdminLayout>
+      </AdminLayout>
+    </AdminAuthGuard>
   );
 }

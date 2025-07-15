@@ -2,6 +2,7 @@
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { mockOrders } from '@/data/mockOrders';
+import Price from '@/components/ui/Price';
 
 export function RecentOrders() {
   const { t, isRTL } = useLanguage();
@@ -48,7 +49,7 @@ export function RecentOrders() {
                     {order.billingAddress.firstName} {order.billingAddress.lastName}
                   </div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    ${order.total.toFixed(2)}
+                    <Price amount={order.total} locale={isRTL ? 'ar' : 'en'} className="text-sm text-gray-500 dark:text-gray-400" />
                   </div>
                 </div>
               </div>

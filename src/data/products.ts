@@ -22,6 +22,29 @@ export const products: Product[] = [
           { id: 'silver', value: 'Silver', hexColor: '#C0C0C0' }
         ]
       }
+    ],
+    variants: [
+      {
+        id: "wh-black",
+        attributeValues: { color: "black" },
+        price: 99.99,
+        stockQuantity: 20,
+        inStock: true
+      },
+      {
+        id: "wh-white",
+        attributeValues: { color: "white" },
+        price: 99.99,
+        stockQuantity: 15,
+        inStock: true
+      },
+      {
+        id: "wh-silver",
+        attributeValues: { color: "silver" },
+        price: 99.99,
+        stockQuantity: 10,
+        inStock: false
+      }
     ]
   },
   {
@@ -134,6 +157,52 @@ export const products: Product[] = [
           { id: 'red', value: 'Red', hexColor: '#FF0000' },
           { id: 'blue', value: 'Blue', hexColor: '#0000FF' }
         ]
+      }
+    ]
+  },
+  // Add demo product with variants
+  {
+    id: 7,
+    name: "Demo T-Shirt",
+    price: 25,
+    image: "/images/products/tshirt.jpg",
+    category: "Fashion",
+    description: "A demo t-shirt with variants.",
+    inStock: true,
+    attributes: [
+      {
+        id: 'size',
+        name: 'Size',
+        type: 'size',
+        values: [
+          { id: 's', value: 'S' },
+          { id: 'm', value: 'M' }
+        ]
+      },
+      {
+        id: 'color',
+        name: 'Color',
+        type: 'color',
+        values: [
+          { id: 'red', value: 'Red', hexColor: '#FF0000' },
+          { id: 'blue', value: 'Blue', hexColor: '#0000FF' }
+        ]
+      }
+    ],
+    variants: [
+      {
+        id: "v1",
+        attributeValues: { size: "s", color: "red" },
+        price: 25,
+        stockQuantity: 10,
+        inStock: true
+      },
+      {
+        id: "v2",
+        attributeValues: { size: "m", color: "blue" },
+        price: 25,
+        stockQuantity: 5,
+        inStock: false
       }
     ]
   }

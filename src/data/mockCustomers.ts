@@ -436,5 +436,65 @@ export const mockInventory: InventoryItem[] = [
         createdAt: new Date('2024-01-16')
       }
     ]
+  },
+  {
+    productId: 7,
+    currentStock: 15,
+    minimumStock: 2,
+    maximumStock: 30,
+    reorderPoint: 3,
+    lastRestocked: new Date('2024-01-17'),
+    stockHistory: [
+      {
+        id: 'hist-100',
+        productId: 7,
+        type: 'in',
+        quantity: 15,
+        reason: 'Initial stock',
+        adminId: 'admin-001',
+        adminName: 'Admin User',
+        createdAt: new Date('2024-01-17')
+      }
+    ]
+  }
+];
+
+// Mock admin users for authentication and RBAC
+export const mockAdminUsers = [
+  {
+    id: 'admin-001',
+    email: 'admin@example.com',
+    name: 'Super Admin',
+    role: 'admin',
+    password: 'adminpass',
+    avatar: '/images/avatars/john.jpg',
+    createdAt: new Date('2023-01-01')
+  },
+  {
+    id: 'manager-001',
+    email: 'manager@example.com',
+    name: 'Product Manager',
+    role: 'manager',
+    password: 'managerpass',
+    avatar: '/images/avatars/jane.jpg',
+    createdAt: new Date('2023-02-01')
+  },
+  {
+    id: 'support-001',
+    email: 'support@example.com',
+    name: 'Support Staff',
+    role: 'support',
+    password: 'supportpass',
+    avatar: '/images/avatars/ahmed.jpg',
+    createdAt: new Date('2023-03-01')
+  },
+  {
+    id: 'viewer-001',
+    email: 'viewer@example.com',
+    name: 'Read Only',
+    role: 'viewer',
+    password: 'viewerpass',
+    avatar: '/images/avatars/maria.jpg',
+    createdAt: new Date('2023-04-01')
   }
 ];

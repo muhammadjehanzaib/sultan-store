@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { products, categories } from '@/data/products';
 import { formatPrice } from '@/lib/utils';
+import Price from '@/components/ui/Price';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Product } from '@/types';
 
@@ -231,65 +232,15 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900 truncate text-sm md:text-base">{product.name}</h3>
                       <p className="text-xs md:text-sm text-gray-500 mb-1">{product.category}</p>
-                      <p className="text-base md:text-lg font-bold text-purple-600">{formatPrice(product.price)}</p>
+                      <p className="text-base md:text-lg font-bold text-purple-600">
+                        <Price amount={product.price} locale={isRTL ? 'ar' : 'en'} className="text-base md:text-lg font-bold text-purple-600" />
+                      </p>
                     </div>
-                    <div className="hidden sm:flex flex-shrink-0">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${product.inStock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {product.inStock ? 'In Stock' : 'Out of Stock'}
-                      </span>
-                    </div>
-                    <div className="flex-shrink-0 text-gray-400 text-lg">→</div>
                   </div>
                 ))}
               </div>
             )}
           </div>
-
-          {/* Quick Actions */}
-          {searchQuery.trim() === '' && (
-            <div className="mt-8 pt-6 border-t border-gray-200 space-y-6">
-              {recentSearches.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-gray-700">Recent Searches</h3>
-                    <button
-                      onClick={clearRecentSearches}
-                      className="text-xs text-gray-500 hover:text-gray-700"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {recentSearches.map((search, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleRecentSearchClick(search)}
-                        className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors flex items-center"
-                      >
-                        <span className="text-xs mr-1">🕐</span>
-                        {search}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Popular Categories</h3>
-                <div className="flex flex-wrap gap-2">
-                  {['Electronics', 'Fashion', 'Home & Kitchen', 'Sports', 'Books'].map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => setSearchQuery(category)}
-                      className="px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200 transition-colors"
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </>

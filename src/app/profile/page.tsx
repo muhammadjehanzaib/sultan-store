@@ -16,21 +16,13 @@ import { redirect } from 'next/navigation';
 type ProfileSection = 'overview' | 'personal' | 'addresses' | 'orders' | 'security' | 'notifications';
 
 export default function ProfilePage() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { t, isRTL } = useLanguage();
   const [activeSection, setActiveSection] = useState<ProfileSection>('overview');
 
   // Redirect if not authenticated
-  if (!isLoading && !isAuthenticated) {
+  if (!isAuthenticated) {
     redirect('/');
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
   }
 
   if (!user) {

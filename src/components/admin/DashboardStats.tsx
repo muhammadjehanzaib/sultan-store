@@ -1,6 +1,7 @@
 'use client';
 
 import { useLanguage } from '@/contexts/LanguageContext';
+import Price from '@/components/ui/Price';
 
 interface DashboardStatsProps {}
 
@@ -9,7 +10,7 @@ export function DashboardStats({}: DashboardStatsProps) {
 
   // Dummy stats data
   const stats = [
-    { title: t('admin.dashboard.totalSales'), value: '$12000' },
+    { title: t('admin.dashboard.totalSales'), value: <Price amount={12000} className="text-2xl font-semibold text-gray-900 dark:text-white" /> },
     { title: t('admin.dashboard.orders'), value: '150' },
     { title: t('admin.dashboard.products'), value: '45' },
     { title: t('admin.dashboard.customers'), value: '300' }

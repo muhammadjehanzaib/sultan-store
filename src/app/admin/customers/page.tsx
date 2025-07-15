@@ -8,6 +8,7 @@ import { CustomersTable } from '@/components/admin/CustomersTable';
 import { Button } from '@/components/ui/Button';
 import { mockCustomers } from '@/data/mockCustomers';
 import { Customer } from '@/types';
+import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 
 export default function AdminCustomers() {
   const { t, isRTL } = useLanguage();
@@ -37,42 +38,44 @@ export default function AdminCustomers() {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className={`flex justify-between items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {t('admin.customers.title')}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              {t('admin.customers.subtitle')}
-            </p>
+    <AdminAuthGuard requiredRole={["admin", "manager", "support"]}>
+      <AdminLayout>
+        <div className="space-y-6">
+          <div className={`flex justify-between items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {t('admin.customers.title')}
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300">
+                {t('admin.customers.subtitle')}
+              </p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button 
+                onClick={() => {/* TODO: Export customers */}}
+                variant="outline"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                {t('admin.customers.export')}
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <Button 
-              onClick={() => {/* TODO: Export customers */}}
-              variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              {t('admin.customers.export')}
-            </Button>
-          </div>
+
+          <CustomersTable
+            customers={customersData}
+            onView={handleViewCustomer}
+            onUpdateStatus={handleUpdateCustomerStatus}
+            onDelete={handleDeleteCustomer}
+          />
+
+          {/* <CustomerModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            customer={selectedCustomer}
+            onUpdateStatus={handleUpdateCustomerStatus}
+          /> */}
         </div>
-
-        <CustomersTable
-          customers={customersData}
-          onView={handleViewCustomer}
-          onUpdateStatus={handleUpdateCustomerStatus}
-          onDelete={handleDeleteCustomer}
-        />
-
-        {/* <CustomerModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          customer={selectedCustomer}
-          onUpdateStatus={handleUpdateCustomerStatus}
-        /> */}
-      </div>
-    </AdminLayout>
+      </AdminLayout>
+    </AdminAuthGuard>
   );
 }

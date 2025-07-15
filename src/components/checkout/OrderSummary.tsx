@@ -4,6 +4,7 @@ import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CartItem } from '@/types';
 import { formatPrice } from '@/lib/utils';
+import Price from '@/components/ui/Price';
 
 interface OrderSummaryProps {
   items: CartItem[];
@@ -64,9 +65,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
                   </p>
                 )}
                 
-                <p className="text-purple-600 font-semibold text-sm mt-1">
-                  {formatPrice(item.product.price * item.quantity)}
-                </p>
+                <Price amount={item.product.price * item.quantity} locale={isRTL ? 'ar' : 'en'} className="text-purple-600 font-semibold text-sm mt-1" />
               </div>
             </div>
           );
@@ -79,7 +78,9 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
       <div className="space-y-2">
         <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
           <span className="text-gray-600">{t('cart.subtotal')}</span>
-          <span className="font-medium text-purple-600">{formatPrice(subtotal)}</span>
+          <span className="font-medium text-purple-600">
+            <Price amount={subtotal} locale={isRTL ? 'ar' : 'en'} className="font-medium text-purple-600" />
+          </span>
         </div>
         
         <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
@@ -89,14 +90,18 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
         
         <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
           <span className="text-gray-600">{t('cart.tax')}</span>
-          <span className="font-medium text-gray-600">{formatPrice(tax)}</span>
+          <span className="font-medium text-gray-600">
+            <Price amount={tax} locale={isRTL ? 'ar' : 'en'} className="font-medium text-gray-600" />
+          </span>
         </div>
         
         <hr className="my-2" />
         
         <div className={`flex justify-between text-lg font-semibold text-purple-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <span>{t('cart.total')}</span>
-          <span className="text-purple-600">{formatPrice(grandTotal)}</span>
+          <span className="text-purple-600">
+            <Price amount={grandTotal} locale={isRTL ? 'ar' : 'en'} className="font-semibold text-lg text-purple-600" />
+          </span>
         </div>
       </div>
 

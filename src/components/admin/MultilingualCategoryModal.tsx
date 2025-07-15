@@ -28,6 +28,7 @@ export function MultilingualCategoryModal({
     isActive: true,
     sortOrder: 1
   });
+  const [showEmojiGrid, setShowEmojiGrid] = useState(false);
 
   useEffect(() => {
     if (category) {
@@ -95,6 +96,21 @@ export function MultilingualCategoryModal({
 
   if (!isOpen) return null;
 
+  // Deduplicated emoji list for category icons
+  const categoryEmojis = Array.from(new Set([
+    '📱','👕','🏠','⚽','📚','💄','🧸','🚗','🍽️','🏥','🎨','🎮','👶','🐕','🏃','🎵','🎬','🛠️','🌱','🏷️',
+    '🛒','🧃','🧁','🍔','🍕','🍎','🥦','🥩','🍩','🍫','🍦','🍰','🍟','🍿','🥤','🍺','🍷','🍵','☕','🥚',
+    '🧀','🥖','🥨','🥗','🍜','🍣','🍤','🍱','🍛','🍚','🍙','🍘','🍥','🥮','🍢','🍡','🍧','🍨','🍰',
+    '🧂','🥫','🥡','🥢','🧊','🥄','🍴','🧸','🎲','🎯','🎳','🎮','🎰','🧩','🪀','🪁','🛹',
+    '🚲','🛴','🛵','🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚚','🚛','🚜','🛺','🚁','✈️','🛩️','🚀',
+    '🛸','🚢','⛴️','🛥️','🚤','🛶','⛵','🚂','🚆','🚇','🚊','🚉','🚝','🚞','��','🚍','🚐','🏍️','🦽','🦼','🛹',
+    '🛴','🛶','🛥️','🚤','⛵','🚢','✈️','🛩️','🚁','🚟','🚠','🚡','🛰️','🛳️','⚓','⛽','🚧','🚦','🚥','🚏','🗺️','🗿','🗽','🗼','🏰','🏯','🏟️','🎡','🎢','🎠','⛲',
+    '⛺','🌁','🌃','🏙️','🌄','🌅','🌆','🌇','🌉','🏞️','🏜️','🏝️','🏖️','🏗️','🏘️','🏚️','🏠','🏡','🏢','🏣',
+    '🏤','🏥','🏦','🏨','🏩','🏪','🏫','🏬','🏭','🏯','🏰','💒','🗼','🗽','⛪','🕌','🛕','🕍','⛩️','🕋','⛲',
+    '💡','🔦','🕯️','🛋️','🛏️','🛌','🪑','🚪','🚽','🚿','🛁','🪒','🧴','🧷','🧹','🧺','🧻','🪣','🧼',
+    '🪥','🧽','🧯','🚬','⚰️','⚱️','🗿','🪦'
+  ]));
+
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div className="relative top-20 mx-auto p-5 border w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-lg">
@@ -114,6 +130,40 @@ export function MultilingualCategoryModal({
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          {/* Category Icon Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Category Icon
+            </label>
+            <button
+              type="button"
+              className="mb-2 px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+              onClick={() => setShowEmojiGrid(v => !v)}
+            >
+              {showEmojiGrid ? 'Hide Emoji Picker' : 'Show Emoji Picker'}
+            </button>
+            {showEmojiGrid && (
+              <div className="flex flex-wrap gap-2 mb-2 max-h-40 overflow-y-auto border p-2 rounded bg-gray-50 dark:bg-gray-900">
+                {categoryEmojis.map((icon) => (
+                  <button
+                    type="button"
+                    key={icon}
+                    className={`text-2xl p-1 rounded border transition-colors ${formData.icon === icon ? 'border-blue-500 bg-blue-100 dark:bg-blue-900' : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'}`}
+                    onClick={() => setFormData((prev) => ({ ...prev, icon }))}
+                    aria-label={`Select icon ${icon}`}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
+            )}
+            {formData.icon && (
+              <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                Selected: <span className="text-xl">{formData.icon}</span>
+              </div>
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Name (English)

@@ -1,7 +1,8 @@
 'use client';
 
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { useRouter } from 'next/navigation';
 
 interface AdminHeaderProps {
   onMenuClick: () => void;
@@ -9,7 +10,8 @@ interface AdminHeaderProps {
 
 export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   const { t, isRTL } = useLanguage();
-  const { user } = useAuth();
+  const { user, logout } = useAdminAuth();
+  const router = useRouter();
 
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
@@ -70,6 +72,15 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
               </div>
             </div>
           </div>
+          {/* Logout button */}
+          {user && (
+            <button
+              onClick={() => { logout(); router.replace('/admin/login'); }}
+              className="ml-2 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+            >
+              {t('admin.logout') || 'Logout'}
+            </button>
+          )}
         </div>
       </div>
     </header>

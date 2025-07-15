@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { Product } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import Price from '@/components/ui/Price';
+import { useRouter } from 'next/navigation';
 
 interface ProductCardProps {
   product: Product;
@@ -19,17 +21,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onViewProduct,
 }) => {
   const { t, isRTL } = useLanguage();
-
-  const handleAddToCart = () => {
-    if (onAddToCart) {
-      onAddToCart(product, undefined); // No attributes selected from product card
-    }
-  };
+  const router = useRouter();
 
   const handleViewProduct = () => {
     if (onViewProduct) {
       onViewProduct(product);
     }
+    router.push(`/product/${product.id}`);
   };
 
   return (
@@ -97,17 +95,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         )}
 
         {/* Price */}
-        <p className="text-2xl font-bold text-purple-600 mb-4">
-          ${product.price}
-        </p>
+        <Price amount={product.price} locale={isRTL ? 'ar' : 'en'} className="text-2xl font-bold text-purple-600 mb-4" />
 
         {/* Add to Cart Button */}
         <Button
           fullWidth
-          onClick={handleAddToCart}
+          onClick={handleViewProduct}
           disabled={!product.inStock}
         >
-          {product.inStock ? t('product.addToCart') : t('product.outOfStock')}
+          {product.inStock ? t('product.viewDetails') : t('product.outOfStock')}
         </Button>
       </div>
     </div>
