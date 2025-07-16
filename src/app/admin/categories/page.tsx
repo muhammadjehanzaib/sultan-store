@@ -22,7 +22,7 @@ export default function AdminCategories() {
     async function fetchCategories() {
       setLoading(true);
       try {
-        const response = await fetch('/api/catrgories');
+        const response = await fetch('/api/categories');
         if (!response.ok) throw new Error('Failed to fetch categories');
         const data = await response.json();
         // Transform each category to have name: { en, ar }
@@ -54,7 +54,7 @@ export default function AdminCategories() {
     if (selectedCategory) {
       // Edit existing category via API
       try {
-        const response = await fetch(`/api/catrgories/${category.id}`, {
+        const response = await fetch(`/api/categories/${category.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -78,7 +78,7 @@ export default function AdminCategories() {
     } else {
       // Add new category via API
       try {
-        const response = await fetch('/api/catrgories', {
+        const response = await fetch('/api/categories', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -154,7 +154,7 @@ export default function AdminCategories() {
   const handleDeleteCategory = async (categoryId: string) => {
     if (!confirm('Are you sure you want to delete this category?')) return;
     try {
-      const response = await fetch(`/api/catrgories/${categoryId}`, {
+      const response = await fetch(`/api/categories/${categoryId}`, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete category');

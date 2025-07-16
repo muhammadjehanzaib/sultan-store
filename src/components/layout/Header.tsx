@@ -41,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
     async function fetchCategories() {
       setCategoriesLoading(true);
       try {
-        const response = await fetch('/api/catrgories');
+        const response = await fetch('/api/categories');
         if (!response.ok) throw new Error('Failed to fetch categories');
         const data = await response.json();
         const categories = data.categories.map((cat: any) => ({
