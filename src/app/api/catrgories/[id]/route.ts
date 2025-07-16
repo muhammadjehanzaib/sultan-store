@@ -4,7 +4,7 @@ import { PrismaClient } from "@/generated/prisma";
 
 const prisma = new PrismaClient();
 
-export async function PATCH(req: NextRequest, context: any) {
+export async function PUT(req: NextRequest, context: any) {
   try {
     const body = await req.json();
     const { name_en, name_ar, slug, icon } = body;
