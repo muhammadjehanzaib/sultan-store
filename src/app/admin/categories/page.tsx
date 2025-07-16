@@ -55,7 +55,7 @@ export default function AdminCategories() {
       // Edit existing category via API
       try {
         const response = await fetch(`/api/catrgories/${category.id}`, {
-          method: 'PUT',
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name_en: category.name.en,
