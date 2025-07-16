@@ -82,6 +82,7 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
+  icon?: string;
 }
 
 // Multilingual version for admin panel

@@ -17,7 +17,8 @@ export function CategoryModal({ isOpen, onClose, onSave, category }: CategoryMod
   const [formData, setFormData] = useState<Partial<Category>>({
     id: '',
     name: '',
-    slug: ''
+    slug: '',
+    icon: ''
   });
 
   useEffect(() => {
@@ -27,7 +28,8 @@ export function CategoryModal({ isOpen, onClose, onSave, category }: CategoryMod
       setFormData({
         id: '',
         name: '',
-        slug: ''
+        slug: '',
+        icon: ''
       });
     }
   }, [category]);
@@ -116,6 +118,23 @@ export function CategoryModal({ isOpen, onClose, onSave, category }: CategoryMod
             />
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {t('admin.categories.slugHelp')}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('admin.categories.icon')}
+            </label>
+            <input
+              type="text"
+              name="icon"
+              value={formData.icon}
+              onChange={handleInputChange}
+              placeholder={t('admin.categories.iconPlaceholder') || 'e.g. 🏷️'}
+              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {t('admin.categories.iconHelp') || 'Enter an emoji or icon for this category.'}
             </p>
           </div>
 

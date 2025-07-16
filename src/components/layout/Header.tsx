@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { categories } from '@/data/products';
+// import { categories } from '@/data/products';
 import { scrollToElement } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,12 +28,35 @@ export const Header: React.FC<HeaderProps> = ({
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState(false);
   const [isTabletProductsDropdownOpen, setIsTabletProductsDropdownOpen] = useState(false);
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
   const { user, isAuthenticated, logout } = useAuth();
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const productsDropdownRef = useRef<HTMLDivElement>(null);
   const tabletProductsDropdownRef = useRef<HTMLDivElement>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCategories() {
+      setCategoriesLoading(true);
+      try {
+        const response = await fetch('/api/catrgories');
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const data = await response.json();
+        const categories = data.categories.map((cat: any) => ({
+          ...cat,
+          name: { en: cat.name_en, ar: cat.name_ar }
+        }));
+        setCategories(categories);
+      } catch (error) {
+        // Optionally show an error toast or fallback
+      } finally {
+        setCategoriesLoading(false);
+      }
+    }
+    fetchCategories();
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -129,7 +152,11 @@ export const Header: React.FC<HeaderProps> = ({
                 {/* Dropdown Menu */}
                 {isProductsDropdownOpen && (
                   <div className={`absolute top-full mt-2 w-56 bg-white rounded-lg shadow-xl border py-2 z-[100] ${isRTL ? 'right-0' : 'left-0'}`}>
-                    {categories.map((category) => (
+                    {categoriesLoading ? (
+                      <div className="px-4 py-2 text-gray-400 text-sm">Loading...</div>
+                    ) : categories.length === 0 ? (
+                      <div className="px-4 py-2 text-gray-400 text-sm">No categories</div>
+                    ) : categories.map((category) => (
                       <button
                         key={category.id}
                         onClick={() => {
@@ -138,8 +165,8 @@ export const Header: React.FC<HeaderProps> = ({
                         }}
                         className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
                       >
-                        <span className="text-lg">{getCategoryIcon(category.id)}</span>
-                        <span>{t(`categories.${category.id}`)}</span>
+                        <span className="text-lg">{category.icon || getCategoryIcon(category.id)}</span>
+                        <span>{language === 'ar' ? category.name.ar : category.name.en}</span>
                       </button>
                     ))}
                   </div>
@@ -178,7 +205,11 @@ export const Header: React.FC<HeaderProps> = ({
                 {/* Dropdown Menu */}
                 {isTabletProductsDropdownOpen && (
                   <div className={`absolute top-full mt-2 w-56 bg-white rounded-lg shadow-xl border py-2 z-[100] ${isRTL ? 'right-0' : 'left-0'}`}>
-                    {categories.map((category) => (
+                    {categoriesLoading ? (
+                      <div className="px-4 py-2 text-gray-400 text-sm">Loading...</div>
+                    ) : categories.length === 0 ? (
+                      <div className="px-4 py-2 text-gray-400 text-sm">No categories</div>
+                    ) : categories.map((category) => (
                       <button
                         key={category.id}
                         onClick={() => {
@@ -187,8 +218,8 @@ export const Header: React.FC<HeaderProps> = ({
                         }}
                         className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
                       >
-                        <span className="text-lg">{getCategoryIcon(category.id)}</span>
-                        <span>{t(`categories.${category.id}`)}</span>
+                        <span className="text-lg">{category.icon || getCategoryIcon(category.id)}</span>
+                        <span>{language === 'ar' ? category.name.ar : category.name.en}</span>
                       </button>
                     ))}
                   </div>
@@ -393,7 +424,11 @@ export const Header: React.FC<HeaderProps> = ({
                   {t('nav.categories')}
                 </h3>
                 <div className="space-y-2">
-                  {categories.map((category) => (
+                  {categoriesLoading ? (
+                    <div className="px-4 py-2 text-gray-400 text-sm">Loading...</div>
+                  ) : categories.length === 0 ? (
+                    <div className="px-4 py-2 text-gray-400 text-sm">No categories</div>
+                  ) : categories.map((category) => (
                     <button
                       key={category.id}
                       onClick={() =>
@@ -403,8 +438,8 @@ export const Header: React.FC<HeaderProps> = ({
                       }
                       className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center gap-3"
                     >
-                      <span className="text-lg">{getCategoryIcon(category.id)}</span>
-                      <span className="font-medium">{t(`categories.${category.id}`)}</span>
+                      <span className="text-lg">{category.icon || getCategoryIcon(category.id)}</span>
+                      <span className="font-medium">{language === 'ar' ? category.name.ar : category.name.en}</span>
                     </button>
                   ))}
                 </div>
