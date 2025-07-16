@@ -1,4 +1,5 @@
 // import { PrismaClient } from "@prisma/client";
+export const runtime = "nodejs"; // ✅ Add this at the top
 import { PrismaClient } from '@prisma/client';
 import { NextResponse } from "next/server";
 
