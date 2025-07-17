@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { products, categories } from '@/data/products';
+import { categories } from '@/data/products';
 import { formatPrice } from '@/lib/utils';
 import Price from '@/components/ui/Price';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -18,10 +18,39 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { t, isRTL } = useLanguage();
+
+  // Fetch products from API
+  useEffect(() => {
+    fetch('/api/products')
+      .then(res => res.json())
+      .then((data: { products: any[] }) => {
+        if (!Array.isArray(data.products)) {
+          setProducts([]);
+          return;
+        }
+        const frontendProducts = data.products.map(apiProduct => ({
+          id: apiProduct.id,
+          name: apiProduct.name_en || '',
+          slug: apiProduct.slug,
+          price: apiProduct.price,
+          image: apiProduct.image,
+          category: apiProduct.category ? apiProduct.category.name_en : '',
+          description: apiProduct.description_en || '',
+          inStock: apiProduct.inStock,
+          rating: apiProduct.rating,
+          reviews: apiProduct.reviews,
+          attributes: apiProduct.attributes || [],
+          variants: apiProduct.variants || [],
+        }));
+        setProducts(frontendProducts);
+      })
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('recent-searches');
@@ -86,8 +115,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
     };
   }, [isOpen, onClose]);
 
-  const handleProductClick = (productId: number) => {
-    router.push(`/product/${productId}`);
+  const handleProductClick = (productSlug: string) => {
+    router.push(`/product/${productSlug}`);
     onClose();
     setSearchQuery('');
   };
@@ -219,7 +248,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
                 {filteredProducts.map((product) => (
                   <div
                     key={product.id}
-                    onClick={() => handleProductClick(product.id)}
+                    onClick={() => handleProductClick(product.slug)}
                     className="flex items-center space-x-3 md:space-x-4 p-3 md:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors duration-200"
                   >
                     <div className="flex-shrink-0">

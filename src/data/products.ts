@@ -11,6 +11,7 @@ export const products: Product[] = [
     inStock: true,
     rating: 4.5,
     reviews: 128,
+    slug: "wireless-headphones",
     attributes: [
       {
         id: 'color',
@@ -57,6 +58,7 @@ export const products: Product[] = [
     inStock: false,
     rating: 4.3,
     reviews: 89,
+    slug: "smart-watch",
      attributes: [
       {
         id: 'color',
@@ -79,7 +81,8 @@ export const products: Product[] = [
     description: "Programmable coffee maker with timer",
     inStock: true,
     rating: 4.7,
-    reviews: 203
+    reviews: 203,
+    slug: "coffee-maker"
   },
   {
     id: 4,
@@ -91,6 +94,7 @@ export const products: Product[] = [
     inStock: true,
     rating: 4.2,
     reviews: 156,
+    slug: "running-shoes",
     attributes: [
       {
         id: 'size',
@@ -126,7 +130,8 @@ export const products: Product[] = [
     description: "Portable Bluetooth speaker with rich sound",
     inStock: true,
     rating: 4.4,
-    reviews: 98
+    reviews: 98,
+    slug: "bluetooth-speaker"
   },
   {
     id: 6,
@@ -138,6 +143,7 @@ export const products: Product[] = [
     inStock: true,
     rating: 4.6,
     reviews: 67,
+    slug: "desk-lamp",
     attributes: [
       {
         id: 'size',
@@ -169,6 +175,7 @@ export const products: Product[] = [
     category: "Fashion",
     description: "A demo t-shirt with variants.",
     inStock: true,
+    slug: "demo-t-shirt",
     attributes: [
       {
         id: 'size',

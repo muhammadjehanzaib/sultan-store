@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Product, MultilingualProduct, LocalizedContent, ProductAttribute, ProductAttributeValue } from '@/types';
+import { Product, MultilingualProduct, LocalizedContent, ProductAttribute, ProductAttributeValue, Category } from '@/types';
 import { Button } from '@/components/ui/Button';
 import ProductAttributesSection from './ProductAttributesSection';
 import ProductVariantsSection from './ProductVariantsSection';
@@ -12,15 +12,18 @@ import Image from 'next/image';
 interface MultilingualProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (product: MultilingualProduct) => void;
+  onSave: (product: MultilingualProduct & { categoryId: string }) => void;
   product: MultilingualProduct | null;
+  categories: Category[];
 }
 
 type FormDataType = {
   name: LocalizedContent;
+  slug: string;
   price: number;
   image: string;
   category: LocalizedContent;
+  categoryId: string;
   description: LocalizedContent;
   inStock: boolean;
   rating: number;
@@ -34,14 +37,16 @@ type FormDataType = {
   };
 };
 
-export function MultilingualProductModal({ isOpen, onClose, onSave, product }: MultilingualProductModalProps) {
+export function MultilingualProductModal({ isOpen, onClose, onSave, product, categories }: MultilingualProductModalProps) {
   const { t, isRTL } = useLanguage();
   const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'ar'>('en');
   const [formData, setFormData] = useState<FormDataType>({
     name: { en: '', ar: '' },
+    slug: '',
     price: 0,
     image: '',
     category: { en: '', ar: '' },
+    categoryId: '',
     description: { en: '', ar: '' },
     inStock: true,
     rating: 0,
@@ -71,11 +76,15 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
 
   useEffect(() => {
     if (product) {
+      // Find categoryId by matching English name
+      const matchedCategory = categories.find(c => c.name === (typeof product.category === 'string' ? product.category : product.category.en));
       setFormData({
         name: convertToLocalizedContent(product.name),
+        slug: product.slug || '',
         price: product.price || 0,
         image: product.image || '',
         category: convertToLocalizedContent(product.category),
+        categoryId: matchedCategory?.id || '',
         description: convertToLocalizedContent(product.description),
         inStock: product.inStock !== false,
         rating: product.rating || 0,
@@ -92,9 +101,11 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
     } else {
       setFormData({
         name: { en: '', ar: '' },
+        slug: '',
         price: 0,
         image: '',
         category: { en: '', ar: '' },
+        categoryId: '',
         description: { en: '', ar: '' },
         inStock: true,
         rating: 0,
@@ -109,25 +120,25 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
       });
       setImagePreview('');
     }
-  }, [product]);
+  }, [product, categories]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate that both languages have content for required fields
-    if (!formData.name.en || !formData.name.ar || 
-        !formData.category.en || !formData.category.ar || 
-        !formData.price) {
-      alert('Please fill in all required fields for both languages');
+    if (!formData.name.en || !formData.name.ar || !formData.categoryId || !formData.price) {
+      alert('Please fill in all required fields for both languages and select a category');
       return;
     }
 
-    const productData: MultilingualProduct = {
+    const productData: MultilingualProduct & { categoryId: string } = {
       id: product?.id || Date.now(),
       name: formData.name,
+      slug: formData.slug,
       price: formData.price,
       image: formData.image,
       category: formData.category,
+      categoryId: formData.categoryId,
       description: formData.description,
       inStock: formData.inStock,
       rating: formData.rating,
@@ -145,13 +156,25 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
     language: 'en' | 'ar',
     value: string
   ) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: {
-        ...prev[field],
-        [language]: value
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        [field]: {
+          ...prev[field],
+          [language]: value
+        }
+      };
+      if (field === 'name' && language === 'en') {
+        // Generate a unique slug by adding timestamp
+        const baseSlug = value
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '');
+        const timestamp = Date.now().toString().slice(-6); // Last 6 digits
+        updated.slug = `${baseSlug}-${timestamp}`;
       }
-    }));
+      return updated;
+    });
   };
 
   const handleSimpleInputChange = (field: string, value: any) => {
@@ -215,16 +238,17 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
     fileInputRef.current?.click();
   };
 
-  if (!isOpen) return null;
+  // Category select handler
+  const handleCategoryChange = (categoryId: string) => {
+    const selected = categories.find(c => c.id === categoryId);
+    setFormData(prev => ({
+      ...prev,
+      categoryId,
+      category: selected ? { en: selected.name, ar: selected.name } : { en: '', ar: '' },
+    }));
+  };
 
-  const categories = [
-    { en: 'Electronics', ar: 'الإلكترونيات' },
-    { en: 'Fashion', ar: 'الأزياء' },
-    { en: 'Home & Kitchen', ar: 'المنزل والمطبخ' },
-    { en: 'Sports', ar: 'الرياضة' },
-    { en: 'Books', ar: 'الكتب' },
-    { en: 'Beauty', ar: 'الجمال' }
-  ];
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -303,26 +327,41 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product }: M
             </p>
           </div>
 
+          {/* Slug */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Slug
+            </label>
+            <input
+              type="text"
+              name="slug"
+              value={formData.slug}
+              onChange={e => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+              required
+              placeholder="e.g. wireless-headphones"
+              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              The slug is used in the product URL and should be unique.
+            </p>
+          </div>
+
           {/* Category */}
                 <div className="space-y-2 mb-4">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Category ({selectedLanguage === 'en' ? 'English' : 'Arabic'}) *
             </label>
             <select
-              value={formData.category[selectedLanguage]}
-              onChange={(e) => handleLocalizedInputChange('category', selectedLanguage, e.target.value)}
+              value={formData.categoryId}
+              onChange={e => handleCategoryChange(e.target.value)}
               required
-              className={`w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                selectedLanguage === 'ar' ? 'text-right' : 'text-left'
-              }`}
+              className={`w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${selectedLanguage === 'ar' ? 'text-right' : 'text-left'}`}
               dir={selectedLanguage === 'ar' ? 'rtl' : 'ltr'}
             >
-              <option value="">
-                {selectedLanguage === 'en' ? 'Select category' : 'اختر التصنيف'}
-              </option>
-              {categories.map((cat, index) => (
-                <option key={index} value={cat[selectedLanguage]}>
-                  {cat[selectedLanguage]}
+              <option value="">{selectedLanguage === 'en' ? 'Select category' : 'اختر الفئة'}</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>
+                  {selectedLanguage === 'ar' ? cat.name_ar : cat.name_en}
                 </option>
               ))}
             </select>

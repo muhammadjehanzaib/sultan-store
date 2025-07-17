@@ -24,6 +24,7 @@ export interface LocalizedContent {
 export interface Product {
   id: number;
   name: string;
+  slug: string;
   price: number;
   image: string;
   category: string;
@@ -39,6 +40,7 @@ export interface Product {
 export interface MultilingualProduct {
   id: number;
   name: LocalizedContent;
+  slug: string;
   price: number;
   image: string;
   category: LocalizedContent;
@@ -81,6 +83,8 @@ export interface Cart {
 export interface Category {
   id: string;
   name: string;
+  name_en: string;
+  name_ar: string;
   slug: string;
   icon?: string;
 }

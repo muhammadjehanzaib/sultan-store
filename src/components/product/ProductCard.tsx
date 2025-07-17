@@ -27,14 +27,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     if (onViewProduct) {
       onViewProduct(product);
     }
-    router.push(`/product/${product.id}`);
+    router.push(`/product/${product.slug}`);
   };
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
       {/* Product Image */}
       <Link 
-        href={`/product/${product.id}`}
+        href={`/product/${product.slug}`}
         className="block relative h-48 bg-gray-200 cursor-pointer overflow-hidden"
         onClick={handleViewProduct}
       >
@@ -57,7 +57,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="p-6">
         <div className="flex justify-between items-start mb-2">
           <Link 
-            href={`/product/${product.id}`}
+            href={`/product/${product.slug}`}
             className="text-lg font-semibold text-gray-900 cursor-pointer hover:text-purple-600 transition-colors"
             onClick={handleViewProduct}
           >

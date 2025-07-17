@@ -14,7 +14,8 @@ export const mockOrders: Order[] = [
           description: 'High-quality wireless headphones with noise cancellation',
           inStock: true,
           rating: 4.5,
-          reviews: 128
+          reviews: 128,
+          slug: "wireless-headphones"
         },
         quantity: 1,
         price: 99.99,
@@ -30,7 +31,8 @@ export const mockOrders: Order[] = [
           description: 'Feature-rich smartwatch with health tracking',
           inStock: true,
           rating: 4.3,
-          reviews: 89
+          reviews: 89,
+          slug: "smart-watch"
         },
         quantity: 1,
         price: 199.99,
@@ -87,7 +89,8 @@ export const mockOrders: Order[] = [
           description: 'Programmable coffee maker with timer',
           inStock: true,
           rating: 4.7,
-          reviews: 203
+          reviews: 203,
+          slug: "coffee-maker"
         },
         quantity: 1,
         price: 79.99,
@@ -144,7 +147,8 @@ export const mockOrders: Order[] = [
           description: 'Portable Bluetooth speaker with rich sound',
           inStock: true,
           rating: 4.4,
-          reviews: 98
+          reviews: 98,
+          slug: "bluetooth-speaker"
         },
         quantity: 2,
         price: 49.99,
@@ -201,7 +205,8 @@ export const mockOrders: Order[] = [
           description: 'Adjustable LED desk lamp with multiple brightness levels',
           inStock: true,
           rating: 4.6,
-          reviews: 67
+          reviews: 67,
+          slug: "desk-lamp"
         },
         quantity: 1,
         price: 34.99,
@@ -257,7 +262,8 @@ export const mockOrders: Order[] = [
           description: 'Lightweight running shoes with superior comfort',
           inStock: false,
           rating: 4.2,
-          reviews: 156
+          reviews: 156,
+          slug: "running-shoes"
         },
         quantity: 1,
         price: 129.99,

@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { ProductsTable } from '@/components/admin/ProductsTable';
 import { MultilingualProductModal } from '@/components/admin/MultilingualProductModal';
 import { Button } from '@/components/ui/Button';
 import { products } from '@/data/products';
-import { Product, MultilingualProduct } from '@/types';
+import { Product, MultilingualProduct, Category } from '@/types';
 import { convertToLegacyProduct, convertToMultilingualProduct } from '@/lib/multilingualUtils';
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 import Price from '@/components/ui/Price';
@@ -19,40 +19,120 @@ export default function AdminProducts() {
   const [productsData, setProductsData] = useState(products);
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const handleAddProduct = () => {
+    if (!Array.isArray(categories) || categories.length === 0) {
+      alert('Categories are still loading. Please wait.');
+      return;
+    }
     setSelectedProduct(null);
     setIsModalOpen(true);
   };
 
   const handleEditProduct = (product: Product) => {
+    if (!Array.isArray(categories) || categories.length === 0) {
+      alert('Categories are still loading. Please wait.');
+      return;
+    }
     setSelectedProduct(product);
     setIsModalOpen(true);
   };
 
-  const handleDeleteProduct = (productId: number) => {
+  // Fetch categories for use in product modal and mapping
+  useEffect(() => {
+    fetch('/api/categories')
+      .then(res => res.json())
+      .then((data: { categories: Category[] }) => setCategories(data.categories))
+      .catch(() => setCategories([]));
+  }, []);
+
+  // Helper: Map API product to frontend format
+  const apiToProduct = (apiProduct: any): Product => ({
+    id: apiProduct.id,
+    name: apiProduct.name_en || '',
+    slug: apiProduct.slug,
+    price: apiProduct.price,
+    image: apiProduct.image,
+    category: apiProduct.category ? apiProduct.category.name_en : '',
+    description: apiProduct.description_en || '',
+    inStock: apiProduct.inStock,
+    rating: apiProduct.rating,
+    reviews: apiProduct.reviews,
+    attributes: apiProduct.attributes || [],
+    variants: apiProduct.variants || [],
+  });
+
+  // Helper: Map frontend product to API format
+  const productToApi = (product: MultilingualProduct) => {
+    // Find categoryId by matching the English name
+    const categoryId = categories.find(
+      c => c.name === product.category.en
+    )?.id;
+    return {
+      name_en: product.name.en,
+      name_ar: product.name.ar,
+      slug: product.slug,
+      image: product.image,
+      price: product.price,
+      categoryId,
+      description_en: product.description?.en || '',
+      description_ar: product.description?.ar || '',
+      inStock: product.inStock,
+      rating: product.rating,
+      reviews: product.reviews,
+      variants: product.variants || [],
+      attributes: product.attributes || [],
+    };
+  };
+
+  // Fetch products from API
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/products')
+      .then(res => res.json())
+      .then((data: { products: any[] }) => {
+        setProductsData(data.products.map(apiToProduct));
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const handleDeleteProduct = async (productId: number) => {
     if (confirm(t('admin.products.deleteConfirm'))) {
-    setProductsData(prev => prev.filter(p => p.id !== productId));
+      // Optimistically update UI
+      setProductsData(prev => prev.filter(p => p.id !== productId));
       setSelectedProducts(prev => prev.filter(id => id !== productId));
+      // Call API
+      await fetch(`/api/products/${productId}`, { method: 'DELETE' });
     }
   };
 
-  const handleSaveProduct = (multilingualProduct: MultilingualProduct) => {
-    // Convert multilingual product back to legacy format for frontend compatibility
-    const legacyProduct = convertToLegacyProduct(multilingualProduct, 'en');
-    
-    if (selectedProduct) {
-      // Edit existing product
-      setProductsData(prev => 
-        prev.map(p => p.id === legacyProduct.id ? legacyProduct : p)
-      );
+  const handleSaveProduct = async (multilingualProduct: MultilingualProduct) => {
+    const isEdit = !!selectedProduct;
+    const apiPayload = productToApi(multilingualProduct);
+    let response, data: any;
+    if (isEdit) {
+      response = await fetch(`/api/products/${selectedProduct!.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(apiPayload),
+      });
+      data = await response.json();
+      if (response.ok) {
+        setProductsData(prev => prev.map(p => p.id === selectedProduct!.id ? apiToProduct(data.product) : p));
+      }
     } else {
-      // Add new product
-      const newProduct = {
-        ...legacyProduct,
-        id: Math.max(...productsData.map(p => p.id)) + 1
-      };
-      setProductsData(prev => [...prev, newProduct]);
+      response = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(apiPayload),
+      });
+      data = await response.json();
+      if (response.ok) {
+        setProductsData(prev => [apiToProduct(data.product), ...prev]);
+      }
     }
     setIsModalOpen(false);
   };
@@ -110,6 +190,10 @@ export default function AdminProducts() {
   const inStockProducts = productsData.filter(p => p.inStock).length;
   const outOfStockProducts = productsData.filter(p => !p.inStock).length;
   const totalValue = productsData.reduce((sum, p) => sum + p.price, 0);
+
+  if (loading) {
+    return <div className="p-8 text-center">Loading products...</div>;
+  }
 
   return (
     <AdminAuthGuard requiredRole={["admin", "manager"]}>
@@ -235,12 +319,16 @@ export default function AdminProducts() {
             onSelectAll={handleSelectAll}
           />
 
-          <MultilingualProductModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onSave={handleSaveProduct}
-            product={selectedProduct ? convertToMultilingualProduct(selectedProduct) : null}
-          />
+          {/* Only render the modal if categories are loaded */}
+          {Array.isArray(categories) && categories.length > 0 && (
+            <MultilingualProductModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              onSave={handleSaveProduct}
+              product={selectedProduct ? convertToMultilingualProduct(selectedProduct) : null}
+              categories={categories}
+            />
+          )}
         </div>
       </AdminLayout>
     </AdminAuthGuard>
