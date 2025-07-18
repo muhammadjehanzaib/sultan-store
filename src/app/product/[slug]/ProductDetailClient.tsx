@@ -17,6 +17,7 @@ import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUt
 
 interface ProductDetailClientProps {
   product: Product;
+  allProducts: Product[];
 }
 
 // Helper type guard for category
@@ -24,7 +25,7 @@ function isCategoryObject(category: unknown): category is { name_en: string } {
   return typeof category === 'object' && category !== null && 'name_en' in category && typeof (category as any).name_en === 'string';
 }
 
-const ProductDetailClient = memo(function ProductDetailClient({ product }: ProductDetailClientProps) {
+const ProductDetailClient = memo(function ProductDetailClient({ product, allProducts }: ProductDetailClientProps) {
   const router = useRouter();
   const { dispatch } = useCart();
   const { t, isRTL, language } = useLanguage();
@@ -299,9 +300,16 @@ const ProductDetailClient = memo(function ProductDetailClient({ product }: Produ
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <h2 className="text-xl font-bold mb-4">{t('product.relatedProducts') || 'Related Products'}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {mockProducts.filter(p => p.category === product.category && p.id !== product.id).slice(0,4).map(related => (
-            <ProductCard key={related.id} product={related} />
-          ))}
+          {allProducts
+            .filter(p =>
+              getLocalizedString(ensureLocalizedContent(p.category), language) ===
+              getLocalizedString(ensureLocalizedContent(product.category), language) &&
+              p.id !== product.id
+            )
+            .slice(0, 4)
+            .map(related => (
+              <ProductCard key={related.id} product={related} />
+            ))}
         </div>
       </div>
       {/* --- End Related Products Section --- */}
