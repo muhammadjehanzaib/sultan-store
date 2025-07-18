@@ -80,6 +80,7 @@ export async function POST(req: Request) {
             image: variant.image,
             inStock: variant.inStock,
             stockQuantity: variant.stockQuantity,
+            attributeValues: variant.attributeValues || null,
           })) || []
         }
       },

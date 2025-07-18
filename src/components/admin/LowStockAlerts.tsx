@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { InventoryItem, Product } from '@/types';
+import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LowStockAlertsProps {
   lowStockItems: InventoryItem[];
@@ -9,10 +11,11 @@ interface LowStockAlertsProps {
 
 const LowStockAlerts: React.FC<LowStockAlertsProps> = ({ lowStockItems, products, onAdjustStock }) => {
   const [dismissed, setDismissed] = useState<string[]>([]);
+  const { language } = useLanguage();
 
   const getProductName = (productId: number) => {
     const product = products.find(p => p.id === productId);
-    return product ? product.name : 'Unknown';
+    return product ? getLocalizedString(ensureLocalizedContent(product.name), language) : 'Unknown';
   };
 
   return (

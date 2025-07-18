@@ -2,6 +2,8 @@ import React from 'react';
 import { InventoryItem, Product } from '@/types';
 import { useState } from 'react';
 import Price from '@/components/ui/Price';
+import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface InventoryTableProps {
   inventory: InventoryItem[];
@@ -18,10 +20,11 @@ interface InventoryTableProps {
 const InventoryTable: React.FC<InventoryTableProps> = ({ inventory, products, onAdjustStock, onViewHistory, onBulkAdjust, onToggleVariantActive, onAdjustVariantStock, onViewVariantHistory }) => {
   const [selected, setSelected] = React.useState<number[]>([]);
   const [expanded, setExpanded] = useState<number[]>([]); // Track expanded product IDs
+  const { language } = useLanguage();
 
   const getProductName = (productId: number) => {
     const product = products.find(p => p.id === productId);
-    return product ? product.name : 'Unknown';
+    return product ? getLocalizedString(ensureLocalizedContent(product.name), language) : 'Unknown';
   };
 
   const getProduct = (productId: number) => products.find(p => p.id === productId);

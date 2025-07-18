@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProductAttribute, ProductAttributeValue, LocalizedContent } from '@/types';
 
 interface ProductAttributesSectionProps {
@@ -93,6 +93,11 @@ const AttributeModal: React.FC<AttributeModalProps> = ({ attribute, onSave, onCl
   const [attr, setAttr] = useState<ProductAttribute>({ ...attribute });
   const [valueInput, setValueInput] = useState('');
   const [colorInput, setColorInput] = useState('#000000');
+  
+  // Reset form when attribute changes
+  useEffect(() => {
+    setAttr({ ...attribute });
+  }, [attribute]);
 
   const handleAddValue = () => {
     if (!valueInput) return;

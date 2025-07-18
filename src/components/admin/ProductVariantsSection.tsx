@@ -17,29 +17,66 @@ function getCombinations(arr: any[][]): any[][] {
 
 const ProductVariantsSection: React.FC<ProductVariantsSectionProps> = ({ attributes, variants, setVariants, selectedLanguage }) => {
   const [localVariants, setLocalVariants] = useState<ProductVariant[]>([]);
+  const [initialized, setInitialized] = useState(false);
 
+  // Initialize with existing variants only once
   useEffect(() => {
-    // Generate all combinations of attribute values
-    const attrValues = attributes.map(attr => attr.values.map(v => ({ attrId: attr.id, valueId: v.id, label: v.label || v.value, attrType: attr.type })));
-    const combos = getCombinations(attrValues);
-    const generatedVariants: ProductVariant[] = combos.map((combo, idx) => {
-      const attributeValues: { [attributeId: string]: string } = {};
-      combo.forEach((v: any) => { attributeValues[v.attrId] = v.valueId; });
-      // Try to find existing variant for this combo
-      const existing = variants.find(v => JSON.stringify(v.attributeValues) === JSON.stringify(attributeValues));
-      return existing || {
-        id: `${idx}-${Date.now()}`,
-        attributeValues,
-        price: undefined,
-        image: '',
-        sku: '',
-        inStock: true,
-        stockQuantity: 0,
-      };
-    });
-    setLocalVariants(generatedVariants);
-    setVariants(generatedVariants);
-    // eslint-disable-next-line
+    if (!initialized && variants.length > 0 && attributes.length === 0) {
+      setLocalVariants(variants);
+      setInitialized(true);
+    }
+  }, [variants, initialized, attributes]);
+
+  // Main effect to handle attribute changes and variant generation
+  useEffect(() => {
+    // Always regenerate variants when attributes change
+    if (attributes.length > 0) {
+      const attrValues = attributes.map(attr => attr.values.map(v => ({ attrId: attr.id, valueId: v.id, label: v.label || v.value, attrType: attr.type })));
+      
+      // Check if we have valid attribute values
+      const hasValidValues = attrValues.every(values => values.length > 0);
+      
+      if (!hasValidValues) {
+        // If any attribute has no values, clear variants
+        setLocalVariants([]);
+        setVariants([]);
+        return;
+      }
+      
+      const combos = getCombinations(attrValues);
+      const generatedVariants: ProductVariant[] = combos.map((combo, idx) => {
+        const attributeValues: { [attributeId: string]: string } = {};
+        combo.forEach((v: any) => { attributeValues[v.attrId] = v.valueId; });
+        
+        // Try to find existing variant with matching attributes
+        const existing = localVariants.find(v => 
+          v.attributeValues && 
+          JSON.stringify(v.attributeValues) === JSON.stringify(attributeValues)
+        );
+        
+        return {
+          id: existing?.id || `variant-${idx}-${Date.now()}`,
+          attributeValues,
+          price: existing?.price || undefined,
+          image: existing?.image || '',
+          sku: existing?.sku || '',
+          inStock: existing?.inStock !== undefined ? existing.inStock : true,
+          stockQuantity: existing?.stockQuantity || 0,
+        };
+      });
+      
+      setLocalVariants(generatedVariants);
+      setVariants(generatedVariants);
+    }
+    // If no attributes but we have existing variants, use them
+    else if (variants.length > 0) {
+      setLocalVariants(variants);
+    }
+    // Clear variants if no attributes
+    else {
+      setLocalVariants([]);
+      setVariants([]);
+    }
   }, [JSON.stringify(attributes)]);
 
   const handleVariantChange = (idx: number, field: string, value: any) => {
@@ -49,7 +86,7 @@ const ProductVariantsSection: React.FC<ProductVariantsSectionProps> = ({ attribu
     setVariants(updated);
   };
 
-  if (localVariants.length === 0) return <div className="text-gray-500 text-sm">No variants generated. Add attributes and values.</div>;
+  if (localVariants.length === 0) return <div className="text-gray-500 text-sm">No variants available.</div>;
 
   return (
     <div className="overflow-x-auto">
@@ -71,7 +108,13 @@ const ProductVariantsSection: React.FC<ProductVariantsSectionProps> = ({ attribu
             <tr key={variant.id} className="bg-white dark:bg-gray-800 border-b">
               {attributes.map(attr => (
                 <td key={attr.id} className="px-2 py-1">
-                  {attr.values.find(v => v.id === variant.attributeValues[attr.id])?.label || ''}
+                  {(() => {
+                    if (!variant.attributeValues) return 'N/A';
+                    const valueId = variant.attributeValues[attr.id];
+                    if (!valueId) return 'N/A';
+                    const value = attr.values.find(v => v.id === valueId);
+                    return value ? (value.label || value.value) : 'N/A';
+                  })()}
                 </td>
               ))}
               <td className="px-2 py-1">

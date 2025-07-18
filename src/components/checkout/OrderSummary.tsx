@@ -5,6 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { CartItem } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import Price from '@/components/ui/Price';
+import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
 
 interface OrderSummaryProps {
   items: CartItem[];
@@ -12,7 +13,7 @@ interface OrderSummaryProps {
 }
 
 export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
 
   const subtotal = total;
   const shipping = 0; // Free shipping
@@ -48,7 +49,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
               <div className="relative">
                 <img
                   src={item.product.image}
-                  alt={item.product.name}
+                  alt={getLocalizedString(ensureLocalizedContent(item.product.name), language)}
                   className="w-12 h-12 object-cover rounded-lg border border-gray-200"
                 />
                 <span className="absolute -top-2 -right-2 bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -56,7 +57,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-sm text-gray-800 truncate">{item.product.name}</h4>
+                <h4 className="font-medium text-sm text-gray-800 truncate">{getLocalizedString(ensureLocalizedContent(item.product.name), language)}</h4>
                 
                 {/* Display selected attributes (size, color, etc.) */}
                 {attributesText && (

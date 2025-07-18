@@ -23,12 +23,12 @@ export interface LocalizedContent {
 
 export interface Product {
   id: number;
-  name: string;
+  name: string | LocalizedContent;
   slug: string;
   price: number;
   image: string;
-  category: string;
-  description?: string;
+  category: string | LocalizedContent;
+  description?: string | LocalizedContent;
   inStock?: boolean;
   rating?: number;
   reviews?: number;

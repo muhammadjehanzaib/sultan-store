@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { products, categories } from '@/data/products';
 import { searchUtils } from '@/lib/utils';
 import { Product } from '@/types';
+import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
 
 interface FilterState {
   category: string;
@@ -28,7 +29,7 @@ function SearchPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { dispatch } = useCart();
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -77,9 +78,9 @@ function SearchPageContent() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(product => {
-        const name = product.name.toLowerCase();
-        const category = product.category.toLowerCase();
-        const description = (product.description || '').toLowerCase();
+        const name = getLocalizedString(ensureLocalizedContent(product.name), language).toLowerCase();
+        const category = getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase();
+        const description = getLocalizedString(ensureLocalizedContent(product.description || ''), language).toLowerCase();
         
         // Exact matches get highest priority
         const exactNameMatch = name.includes(query);
@@ -99,7 +100,7 @@ function SearchPageContent() {
     // Category filter
     if (filters.category) {
       filtered = filtered.filter(product => 
-        product.category.toLowerCase() === filters.category.toLowerCase()
+        getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase() === filters.category.toLowerCase()
       );
     }
 
@@ -152,9 +153,9 @@ function SearchPageContent() {
   // Helper function to calculate relevance score
   const calculateRelevanceScore = (product: Product, query: string): number => {
     let score = 0;
-    const name = product.name.toLowerCase();
-    const category = product.category.toLowerCase();
-    const description = (product.description || '').toLowerCase();
+    const name = getLocalizedString(ensureLocalizedContent(product.name), language).toLowerCase();
+    const category = getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase();
+    const description = getLocalizedString(ensureLocalizedContent(product.description || ''), language).toLowerCase();
     
     // Exact name match gets highest score
     if (name === query) score += 100;

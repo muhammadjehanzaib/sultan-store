@@ -12,9 +12,10 @@ import { mockInventory } from '@/data/mockCustomers';
 import { products } from '@/data/products';
 import { InventoryItem, StockHistory, Product, ProductVariant } from '@/types';
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
+import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
 
 export default function AdminInventory() {
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [inventoryData, setInventoryData] = useState(mockInventory);
@@ -257,7 +258,7 @@ export default function AdminInventory() {
             stockHistory={selectedHistoryProduct ? selectedHistoryProduct.stockHistory : []}
             productName={(() => {
               const p = products.find(prod => prod.id === selectedHistoryProduct?.productId);
-              return p ? p.name : '';
+              return p ? getLocalizedString(ensureLocalizedContent(p.name), language) : '';
             })()}
           />
 

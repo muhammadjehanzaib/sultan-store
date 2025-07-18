@@ -32,7 +32,17 @@ export function MultilingualCategoryModal({
 
   useEffect(() => {
     if (category) {
-      setFormData(category);
+      setFormData({
+        ...category,
+        name: {
+          en: category.name?.en || (category as any).name_en || '',
+          ar: category.name?.ar || (category as any).name_ar || ''
+        },
+        description: {
+          en: category.description?.en || (category as any).description_en || '',
+          ar: category.description?.ar || (category as any).description_ar || ''
+        }
+      });
     } else {
       setFormData({
         id: '',

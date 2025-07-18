@@ -24,7 +24,22 @@ export function getLocalizedString(content: string | LocalizedContent, language:
 /**
  * Converts legacy product data to multilingual format
  */
-export function convertToMultilingualProduct(product: Product): MultilingualProduct {
+export function convertToMultilingualProduct(product: Product | any): MultilingualProduct {
+  // Handle products with separate language fields (from API)
+  if (product.name_en && product.name_ar) {
+    return {
+      ...product,
+      name: { en: product.name_en, ar: product.name_ar },
+      category: product.category_en && product.category_ar 
+        ? { en: product.category_en, ar: product.category_ar }
+        : ensureLocalizedContent(product.category),
+      description: product.description_en && product.description_ar
+        ? { en: product.description_en, ar: product.description_ar }
+        : ensureLocalizedContent(product.description || ''),
+    };
+  }
+  
+  // Handle legacy products with single language fields
   return {
     ...product,
     name: ensureLocalizedContent(product.name),

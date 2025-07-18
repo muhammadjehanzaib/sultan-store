@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { InventoryItem, Product } from '@/types';
+import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface StockAdjustmentModalProps {
   isOpen: boolean;
@@ -14,6 +16,7 @@ interface StockAdjustmentModalProps {
 const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({ isOpen, onClose, inventoryItem, products, onAdjustStock, bulkMode = false, bulkCount = 0 }) => {
   const [adjustment, setAdjustment] = useState(0);
   const [reason, setReason] = useState('');
+  const { language } = useLanguage();
 
   useEffect(() => {
     setAdjustment(0);
@@ -34,7 +37,7 @@ const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({ isOpen, onC
           <>
             <div className="mb-2">
               <div className="text-sm text-gray-700 dark:text-gray-300 mb-1">Product</div>
-              <div className="font-medium">{product ? product.name : 'Unknown'}</div>
+              <div className="font-medium">{product ? getLocalizedString(ensureLocalizedContent(product.name), language) : 'Unknown'}</div>
             </div>
             <div className="mb-2">
               <div className="text-sm text-gray-700 dark:text-gray-300 mb-1">Current Stock</div>

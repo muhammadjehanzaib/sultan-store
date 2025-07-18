@@ -6,13 +6,14 @@ import { ProductGrid } from '@/components/product/ProductGrid';
 import { Product } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCart } from '@/contexts/CartContext';
+import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
 
 interface CategoryPageClientProps {
   slug: string;
 }
 
 export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
   const { dispatch } = useCart();
   const [sortBy, setSortBy] = useState<'price-low' | 'price-high' | 'name' | 'rating'>('name');
 
@@ -36,8 +37,9 @@ export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
 
   // Filter products by category
   const categoryProducts = products.filter(product => {
-    const categoryName = typeof category.name === 'string' ? category.name : category.name.en;
-    return product.category.toLowerCase() === categoryName.toLowerCase();
+    const productCategory = getLocalizedString(ensureLocalizedContent(product.category), language);
+    const categoryName = getLocalizedString(ensureLocalizedContent(category.name), language);
+    return productCategory.toLowerCase() === categoryName.toLowerCase();
   });
 
   // Sort products
@@ -47,8 +49,11 @@ export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
         return a.price - b.price;
       case 'price-high':
         return b.price - a.price;
-      case 'name':
-        return a.name.localeCompare(b.name);
+      case 'name': {
+        const aName = getLocalizedString(ensureLocalizedContent(a.name), language);
+        const bName = getLocalizedString(ensureLocalizedContent(b.name), language);
+        return aName.localeCompare(bName);
+      }
       case 'rating':
         return (b.rating || 0) - (a.rating || 0);
       default:

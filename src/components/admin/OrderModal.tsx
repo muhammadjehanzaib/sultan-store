@@ -3,6 +3,7 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Order } from '@/types';
 import { Button } from '@/components/ui/Button';
+import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -12,7 +13,7 @@ interface OrderModalProps {
 }
 
 export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModalProps) {
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
 
   if (!isOpen || !order) return null;
 
@@ -150,14 +151,14 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
                     <div className={`flex items-center space-x-3 ${isRTL ? 'space-x-reverse' : ''}`}>
                       <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
                         {item.product.image ? (
-                          <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover rounded-lg" />
+                          <img src={item.product.image} alt={getLocalizedString(ensureLocalizedContent(item.product.name), language)} className="w-full h-full object-cover rounded-lg" />
                         ) : (
                           <span className="text-gray-400">📦</span>
                         )}
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {item.product.name}
+                          {getLocalizedString(ensureLocalizedContent(item.product.name), language)}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           {t('cart.quantity')}: {item.quantity}

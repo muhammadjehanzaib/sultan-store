@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
 import { formatPrice } from '@/lib/utils';
 import Price from '@/components/ui/Price';
+import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
 
 export const CartSidebar: React.FC = () => {
   const { state, dispatch } = useCart();
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
   const router = useRouter();
 
   const updateQuantity = (productId: number, variantId: string | undefined, quantity: number) => {
@@ -78,14 +79,14 @@ export const CartSidebar: React.FC = () => {
                       <div className="relative">
                         <img
                           src={item.product.image}
-                          alt={item.product.name}
+                          alt={getLocalizedString(ensureLocalizedContent(item.product.name), language)}
                           className="w-16 h-16 object-cover rounded-lg border border-gray-200"
                         />
                       </div>
                       
                       {/* Product Details */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-800 text-sm truncate">{item.product.name}</h3>
+                        <h3 className="font-semibold text-gray-800 text-sm truncate">{getLocalizedString(ensureLocalizedContent(item.product.name), language)}</h3>
                         
                         {/* Selected Attributes */}
                         {item.selectedAttributes && Object.keys(item.selectedAttributes).length > 0 && (

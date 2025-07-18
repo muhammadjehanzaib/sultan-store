@@ -8,7 +8,7 @@ import { MultilingualProductModal } from '@/components/admin/MultilingualProduct
 import { Button } from '@/components/ui/Button';
 import { products } from '@/data/products';
 import { Product, MultilingualProduct, Category } from '@/types';
-import { convertToLegacyProduct, convertToMultilingualProduct } from '@/lib/multilingualUtils';
+import { convertToMultilingualProduct } from '@/lib/multilingualUtils';
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 import Price from '@/components/ui/Price';
 
@@ -49,20 +49,31 @@ export default function AdminProducts() {
   }, []);
 
   // Helper: Map API product to frontend format
-  const apiToProduct = (apiProduct: any): Product => ({
-    id: apiProduct.id,
-    name: apiProduct.name_en || '',
-    slug: apiProduct.slug,
-    price: apiProduct.price,
-    image: apiProduct.image,
-    category: apiProduct.category ? apiProduct.category.name_en : '',
-    description: apiProduct.description_en || '',
-    inStock: apiProduct.inStock,
-    rating: apiProduct.rating,
-    reviews: apiProduct.reviews,
-    attributes: apiProduct.attributes || [],
-    variants: apiProduct.variants || [],
-  });
+  const apiToProduct = (apiProduct: any): Product => {
+    // Store original multilingual data for later use
+    const product = {
+      id: apiProduct.id,
+      name: apiProduct.name_en || '',
+      slug: apiProduct.slug,
+      price: apiProduct.price,
+      image: apiProduct.image,
+      category: apiProduct.category ? apiProduct.category.name_en : '',
+      description: apiProduct.description_en || '',
+      inStock: apiProduct.inStock,
+      rating: apiProduct.rating,
+      reviews: apiProduct.reviews,
+      attributes: apiProduct.attributes || [],
+      variants: apiProduct.variants || [],
+      // Keep original multilingual data
+      name_en: apiProduct.name_en,
+      name_ar: apiProduct.name_ar,
+      description_en: apiProduct.description_en,
+      description_ar: apiProduct.description_ar,
+      category_en: apiProduct.category ? apiProduct.category.name_en : '',
+      category_ar: apiProduct.category ? apiProduct.category.name_ar : '',
+    };
+    return product as Product;
+  };
 
   // Helper: Map frontend product to API format
   const productToApi = (product: MultilingualProduct) => {

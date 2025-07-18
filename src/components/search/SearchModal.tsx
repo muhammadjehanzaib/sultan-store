@@ -7,6 +7,7 @@ import { formatPrice } from '@/lib/utils';
 import Price from '@/components/ui/Price';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Product } from '@/types';
+import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -22,7 +23,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
 
   // Fetch products from API
   useEffect(() => {
@@ -78,9 +79,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
     setIsLoading(true);
     const timer = setTimeout(() => {
       const filtered = products.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()))
+        getLocalizedString(ensureLocalizedContent(product.name), language).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getLocalizedString(ensureLocalizedContent(product.description || ''), language).toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredProducts(filtered.slice(0, 8));
       setIsLoading(false);
@@ -254,13 +255,17 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
                     <div className="flex-shrink-0">
                       <img
                         src={product.image}
-                        alt={product.name}
+                        alt={getLocalizedString(ensureLocalizedContent(product.name), language)}
                         className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-lg border border-gray-200"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 truncate text-sm md:text-base">{product.name}</h3>
-                      <p className="text-xs md:text-sm text-gray-500 mb-1">{product.category}</p>
+                      <h3 className="font-semibold text-gray-900 truncate text-sm md:text-base">
+                        {getLocalizedString(ensureLocalizedContent(product.name), language)}
+                      </h3>
+                      <p className="text-xs md:text-sm text-gray-500 mb-1">
+                        {getLocalizedString(ensureLocalizedContent(product.category), language)}
+                      </p>
                       <p className="text-base md:text-lg font-bold text-purple-600">
                         <Price amount={product.price} locale={isRTL ? 'ar' : 'en'} className="text-base md:text-lg font-bold text-purple-600" />
                       </p>

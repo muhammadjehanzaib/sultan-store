@@ -87,7 +87,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
             <input
               type="text"
               name="name"
-              value={formData.name}
+              value={typeof formData.name === 'string' ? formData.name : formData.name?.en || ''}
               onChange={handleInputChange}
               required
               className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -117,7 +117,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
               </label>
               <select
                 name="category"
-                value={formData.category}
+                value={typeof formData.category === 'string' ? formData.category : formData.category?.en || ''}
                 onChange={handleInputChange}
                 required
                 className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -151,7 +151,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
             </label>
             <textarea
               name="description"
-              value={formData.description}
+              value={typeof formData.description === 'string' ? formData.description : formData.description?.en || ''}
               onChange={handleInputChange}
               rows={3}
               className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"

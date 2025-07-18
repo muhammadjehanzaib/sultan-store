@@ -77,20 +77,43 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
   useEffect(() => {
     if (product) {
       // Find categoryId by matching English name
-      const matchedCategory = categories.find(c => c.name === (typeof product.category === 'string' ? product.category : product.category.en));
+      const matchedCategory = categories.find(c => 
+        c.name === (typeof product.category === 'string' ? product.category : product.category.en) ||
+        c.name_en === (typeof product.category === 'string' ? product.category : product.category.en)
+      );
+      
       setFormData({
-        name: convertToLocalizedContent(product.name),
+        name: {
+          en: product.name?.en || (product as any).name_en || (typeof product.name === 'string' ? product.name : ''),
+          ar: product.name?.ar || (product as any).name_ar || ''
+        },
         slug: product.slug || '',
         price: product.price || 0,
         image: product.image || '',
-        category: convertToLocalizedContent(product.category),
+        category: {
+          en: typeof product.category === 'object' ? 
+            (product.category.en || (product.category as any).name_en || '') : 
+            ((product as any).category_en || product.category || ''),
+          ar: typeof product.category === 'object' ? 
+            (product.category.ar || (product.category as any).name_ar || '') : 
+            ((product as any).category_ar || product.category || '')
+        },
         categoryId: matchedCategory?.id || '',
-        description: convertToLocalizedContent(product.description),
+        description: {
+          en: product.description?.en || (product as any).description_en || (typeof product.description === 'string' ? product.description : ''),
+          ar: product.description?.ar || (product as any).description_ar || ''
+        },
         inStock: product.inStock !== false,
         rating: product.rating || 0,
         reviews: product.reviews || 0,
-        attributes: product.attributes || [],
-        variants: product.variants || [],
+        attributes: (product.attributes || []).map(attr => ({
+          ...attr,
+          values: (attr.values || []).map(val => ({
+            ...val,
+            priceModifier: typeof val.priceModifier === 'number' ? val.priceModifier : (typeof (val as any).price === 'number' ? (val as any).price : 0)
+          }))
+        })),
+        variants: Array.isArray((product as any).variants) && (product as any).variants.length > 0 ? (product as any).variants : [],
         seo: {
           title: (product.seo && product.seo.title) ? product.seo.title : { en: '', ar: '' },
           metaDescription: (product.seo && product.seo.metaDescription) ? product.seo.metaDescription : { en: '', ar: '' },
@@ -244,7 +267,10 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
     setFormData(prev => ({
       ...prev,
       categoryId,
-      category: selected ? { en: selected.name, ar: selected.name } : { en: '', ar: '' },
+      category: selected ? { 
+        en: selected.name_en || selected.name, 
+        ar: selected.name_ar || selected.name 
+      } : { en: '', ar: '' },
     }));
   };
 

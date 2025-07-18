@@ -13,6 +13,7 @@ import { products as mockProducts } from '@/data/products';
 import { mockReviews } from '@/data/mockCustomers';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Fragment } from 'react';
+import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
 
 interface ProductDetailClientProps {
   product: Product;
@@ -26,7 +27,7 @@ function isCategoryObject(category: unknown): category is { name_en: string } {
 const ProductDetailClient = memo(function ProductDetailClient({ product }: ProductDetailClientProps) {
   const router = useRouter();
   const { dispatch } = useCart();
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
   const [quantity, setQuantity] = useState(1);
   const [selectedAttributes, setSelectedAttributes] = useState<{ [attributeId: string]: string }>({});
 
@@ -46,6 +47,22 @@ const ProductDetailClient = memo(function ProductDetailClient({ product }: Produ
   const updateQuantity = (newQuantity: number) => {
     setQuantity(Math.max(1, newQuantity));
   };
+
+  const name = getLocalizedString(ensureLocalizedContent(product.name), language);
+  const description = getLocalizedString(ensureLocalizedContent(product.description || ''), language);
+  let category: string;
+  if (isCategoryObject(product.category)) {
+    // Use getLocalizedString/ensureLocalizedContent for category object fields
+    category = getLocalizedString(
+      ensureLocalizedContent({
+        en: product.category.name_en,
+        ar: (product.category as any).name_ar || product.category.name_en
+      }),
+      language
+    );
+  } else {
+    category = getLocalizedString(ensureLocalizedContent(product.category), language);
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,8 +91,8 @@ const ProductDetailClient = memo(function ProductDetailClient({ product }: Produ
         <Breadcrumb
           items={[
             { label: t('nav.home'), href: '/' },
-            { label: isCategoryObject(product.category) ? product.category.name_en : (product.category || ''), href: '/' },
-            { label: product.name, isCurrentPage: true }
+            { label: category, href: '/' },
+            { label: name, isCurrentPage: true }
           ]}
         />
       </div>
@@ -88,7 +105,7 @@ const ProductDetailClient = memo(function ProductDetailClient({ product }: Produ
             <div className="aspect-square bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-lg">
               <img
                 src={product.image}
-                alt={product.name}
+                alt={name}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
               />
             </div>
@@ -99,12 +116,12 @@ const ProductDetailClient = memo(function ProductDetailClient({ product }: Produ
             {/* Category Badge */}
             <div>
               <span className="inline-block px-3 py-1 text-sm font-medium text-purple-700 bg-purple-100 rounded-full">
-                {isCategoryObject(product.category) ? product.category.name_en : (product.category || '')}
+                {category}
               </span>
             </div>
 
             {/* Product Name */}
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.name}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{name}</h1>
 
             {/* Rating */}
             {typeof product.rating === 'number' && (
@@ -139,7 +156,7 @@ const ProductDetailClient = memo(function ProductDetailClient({ product }: Produ
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">{t('product.description')}</h3>
               <p className="text-gray-700 leading-relaxed">
-                {product.description || t('site.description')}
+                {description || t('site.description')}
               </p>
               
               {/* Product Attributes */}

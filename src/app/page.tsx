@@ -22,12 +22,14 @@ export default function Home() {
         // Convert API format to frontend format
         const frontendProducts = data.products.map(apiProduct => ({
           id: apiProduct.id,
-          name: apiProduct.name_en || '',
+          name: { en: apiProduct.name_en || '', ar: apiProduct.name_ar || '' },
           slug: apiProduct.slug,
           price: apiProduct.price,
           image: apiProduct.image,
-          category: apiProduct.category ? apiProduct.category.name_en : '',
-          description: apiProduct.description_en || '',
+          category: apiProduct.category
+            ? { en: apiProduct.category.name_en || '', ar: apiProduct.category.name_ar || '' }
+            : { en: '', ar: '' },
+          description: { en: apiProduct.description_en || '', ar: apiProduct.description_ar || '' },
           inStock: apiProduct.inStock,
           rating: apiProduct.rating,
           reviews: apiProduct.reviews,

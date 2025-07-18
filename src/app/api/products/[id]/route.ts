@@ -81,6 +81,7 @@ export async function PATCH(req: NextRequest, context: any) {
             image: variant.image,
             inStock: variant.inStock,
             stockQuantity: variant.stockQuantity,
+            attributeValues: variant.attributeValues || null,
           })) || []
         }
       },
