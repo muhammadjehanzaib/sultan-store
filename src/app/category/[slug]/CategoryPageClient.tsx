@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
-import { products, categories } from '@/data/products';
+import React, { useState, useEffect } from 'react';
 import { ProductGrid } from '@/components/product/ProductGrid';
 import { Product } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -10,14 +9,35 @@ import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUt
 
 interface CategoryPageClientProps {
   slug: string;
+  products: Product[];
 }
 
-export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
+export default function CategoryPageClient({ slug, products }: CategoryPageClientProps) {
   const { t, isRTL, language } = useLanguage();
   const { dispatch } = useCart();
   const [sortBy, setSortBy] = useState<'price-low' | 'price-high' | 'name' | 'rating'>('name');
+  const [categories, setCategories] = useState<any[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
-  // Find the category
+  // Fetch categories from API
+  useEffect(() => {
+    async function fetchCategories() {
+      setCategoriesLoading(true);
+      try {
+        const response = await fetch('/api/categories');
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const data = await response.json();
+        setCategories(data.categories);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    }
+    fetchCategories();
+  }, []);
+
+  // Find the category by slug
   const category = categories.find(cat => cat.slug === slug);
   
   if (!category) {
@@ -25,21 +45,24 @@ export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className={`text-center ${isRTL ? 'rtl' : 'ltr'}`}>
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            {t('category.notFound')}
+            {categoriesLoading ? 'Loading...' : t('category.notFound')}
           </h1>
           <p className="text-gray-600">
-            {t('category.notFoundDescription')}
+            {categoriesLoading ? 'Loading categories...' : t('category.notFoundDescription')}
           </p>
         </div>
       </div>
     );
   }
 
-  // Filter products by category
+// Filter products by category using category id
   const categoryProducts = products.filter(product => {
-    const productCategory = getLocalizedString(ensureLocalizedContent(product.category), language);
-    const categoryName = getLocalizedString(ensureLocalizedContent(category.name), language);
-    return productCategory.toLowerCase() === categoryName.toLowerCase();
+    // Handle both API response structure (with category object) and direct categoryId
+    if (product.category && typeof product.category === 'object' && 'slug' in product.category) {
+      return product.category.slug === slug;
+    }
+    // Fallback to categoryId matching
+    return product.categoryId === category?.id;
   });
 
   // Sort products
@@ -50,8 +73,22 @@ export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
       case 'price-high':
         return b.price - a.price;
       case 'name': {
-        const aName = getLocalizedString(ensureLocalizedContent(a.name), language);
-        const bName = getLocalizedString(ensureLocalizedContent(b.name), language);
+        // Handle both API structure (name_en/name_ar) and legacy structure (name)
+        let aName = '';
+        let bName = '';
+        
+        if (a.name_en && a.name_ar) {
+          aName = language === 'ar' ? a.name_ar : a.name_en;
+        } else {
+          aName = getLocalizedString(ensureLocalizedContent(a.name), language);
+        }
+        
+        if (b.name_en && b.name_ar) {
+          bName = language === 'ar' ? b.name_ar : b.name_en;
+        } else {
+          bName = getLocalizedString(ensureLocalizedContent(b.name), language);
+        }
+        
         return aName.localeCompare(bName);
       }
       case 'rating':
@@ -76,7 +113,7 @@ export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className={`${isRTL ? 'rtl' : 'ltr'}`}>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {typeof category.name === 'string' ? category.name : category.name.en}
+              {language === 'ar' ? category.name_ar : category.name_en}
             </h1>
             <p className="text-gray-600 mb-4">
               {t('category.productsCount').replace('{{count}}', categoryProducts.length.toString())}

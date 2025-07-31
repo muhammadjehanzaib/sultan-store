@@ -17,7 +17,7 @@ export default function AdminProducts() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [productsData, setProductsData] = useState(products);
-  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -79,9 +79,10 @@ export default function AdminProducts() {
   const productToApi = (product: MultilingualProduct) => {
     // Find categoryId by matching the English name
     const categoryId = categories.find(
-      c => c.name === product.category.en
+      c => c.name_en === product.category.en || c.name === product.category.en
     )?.id;
-    return {
+    
+    const apiData = {
       name_en: product.name.en,
       name_ar: product.name.ar,
       slug: product.slug,
@@ -96,6 +97,8 @@ export default function AdminProducts() {
       variants: product.variants || [],
       attributes: product.attributes || [],
     };
+    
+    return apiData;
   };
 
   // Fetch products from API
@@ -110,7 +113,7 @@ export default function AdminProducts() {
       .catch(() => setLoading(false));
   }, []);
 
-  const handleDeleteProduct = async (productId: number) => {
+  const handleDeleteProduct = async (productId: string) => {
     if (confirm(t('admin.products.deleteConfirm'))) {
       // Optimistically update UI
       setProductsData(prev => prev.filter(p => p.id !== productId));
@@ -123,29 +126,49 @@ export default function AdminProducts() {
   const handleSaveProduct = async (multilingualProduct: MultilingualProduct) => {
     const isEdit = !!selectedProduct;
     const apiPayload = productToApi(multilingualProduct);
-    let response, data: any;
-    if (isEdit) {
-      response = await fetch(`/api/products/${selectedProduct!.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(apiPayload),
-      });
-      data = await response.json();
-      if (response.ok) {
-        setProductsData(prev => prev.map(p => p.id === selectedProduct!.id ? apiToProduct(data.product) : p));
-      }
-    } else {
-      response = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(apiPayload),
-      });
-      data = await response.json();
-      if (response.ok) {
-        setProductsData(prev => [apiToProduct(data.product), ...prev]);
-      }
+    
+    // Validate payload before sending
+    if (!apiPayload.categoryId) {
+      alert('Please select a category');
+      return;
     }
-    setIsModalOpen(false);
+    
+    let response, data: any;
+    try {
+      if (isEdit) {
+        response = await fetch(`/api/products/${selectedProduct!.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(apiPayload),
+        });
+        data = await response.json();
+        if (response.ok) {
+          setProductsData(prev => prev.map(p => p.id === selectedProduct!.id ? apiToProduct(data.product) : p));
+        } else {
+          console.error('Update failed:', data);
+          alert(`Failed to update product: ${data.error || 'Unknown error'}`);
+          return;
+        }
+      } else {
+        response = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(apiPayload),
+        });
+        data = await response.json();
+        if (response.ok) {
+          setProductsData(prev => [apiToProduct(data.product), ...prev]);
+        } else {
+          console.error('Create failed:', data);
+          alert(`Failed to create product: ${data.error || 'Unknown error'}`);
+          return;
+        }
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Network error:', error);
+      alert('Network error occurred. Please try again.');
+    }
   };
 
   const handleBulkDelete = () => {
@@ -188,8 +211,8 @@ export default function AdminProducts() {
     }
   };
 
-  const handleSelectProduct = (productId: number) => {
-    setSelectedProducts(prev => 
+    const handleSelectProduct = (productId: string) => {
+    setSelectedProducts(prev =>
       prev.includes(productId)
         ? prev.filter(id => id !== productId)
         : [...prev, productId]
@@ -333,6 +356,7 @@ export default function AdminProducts() {
           {/* Only render the modal if categories are loaded */}
           {Array.isArray(categories) && categories.length > 0 && (
             <MultilingualProductModal
+              key={selectedProduct ? selectedProduct.id : 'new'}
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
               onSave={handleSaveProduct}

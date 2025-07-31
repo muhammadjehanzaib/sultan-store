@@ -1,9 +1,12 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Order } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
+import { getProviderDisplayName, getTrackingUrl, TrackingProvider } from '@/lib/trackingUtils';
+import { RiyalSymbol } from '@/components/ui/RiyalSymbol';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -12,19 +15,50 @@ interface OrderModalProps {
   onUpdateStatus: (orderId: string, status: Order['status']) => void;
 }
 
+interface OrderNote {
+  id: string;
+  text: string;
+  author: string;
+  createdAt: Date;
+  type: 'internal' | 'customer';
+}
+
 export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModalProps) {
   const { t, isRTL, language } = useLanguage();
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [trackingProvider, setTrackingProvider] = useState<TrackingProvider>('custom');
+  const [newNote, setNewNote] = useState('');
+  const [noteType, setNoteType] = useState<'internal' | 'customer'>('internal');
+  const [notes, setNotes] = useState<OrderNote[]>([
+    {
+      id: '1',
+      text: 'Order confirmed and payment received',
+      author: 'Admin',
+      createdAt: new Date(),
+      type: 'internal'
+    }
+  ]);
+
+  // Update tracking number when order changes
+  useEffect(() => {
+    if (order) {
+      setTrackingNumber(order.trackingNumber || '');
+      setTrackingProvider(order.trackingProvider || 'custom');
+    }
+  }, [order]);
 
   if (!isOpen || !order) return null;
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return '-';
     return new Intl.DateTimeFormat(isRTL ? 'ar-EG' : 'en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    }).format(date);
+    }).format(d);
   };
 
   const getStatusColor = (status: Order['status']) => {
@@ -44,9 +78,41 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
     }
   };
 
+  const handleAddNote = () => {
+    if (newNote.trim()) {
+      const note: OrderNote = {
+        id: Date.now().toString(),
+        text: newNote.trim(),
+        author: 'Admin',
+        createdAt: new Date(),
+        type: noteType
+      };
+      setNotes([...notes, note]);
+      setNewNote('');
+    }
+  };
+
+  const handleUpdateTrackingNumber = () => {
+    // Here you would typically call an API to update the tracking number
+    console.log('Updating tracking number:', trackingNumber, 'Provider:', trackingProvider);
+  };
+
+  const handleStatusChange = (newStatus: Order['status']) => {
+    onUpdateStatus(order.id, newStatus);
+  };
+
+  const handleTrackingClick = () => {
+    if (order.trackingNumber && order.trackingProvider) {
+      const trackingUrl = getTrackingUrl(order.trackingNumber, order.trackingProvider);
+      if (trackingUrl !== '#') {
+        window.open(trackingUrl, '_blank');
+      }
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-10 mx-auto p-5 border w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+      <div className="relative top-10 mx-auto p-5 border w-full max-w-6xl bg-white dark:bg-gray-800 rounded-lg shadow-lg">
         <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
             {t('admin.orders.orderDetails')} - {order.id}
@@ -63,17 +129,15 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
         </div>
 
         <div className="mt-6 space-y-6">
-          {/* Order Status */}
+          {/* Order Status and Actions */}
           <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <div>
+            <div className={`flex items-center space-x-4 ${isRTL ? 'space-x-reverse' : ''}`}>
               <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(order.status)}`}>
                 {t(`admin.orders.${order.status}`)}
               </span>
-            </div>
-            <div>
               <select
                 value={order.status}
-                onChange={(e) => onUpdateStatus(order.id, e.target.value as Order['status'])}
+                onChange={(e) => handleStatusChange(e.target.value as Order['status'])}
                 className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="pending">{t('admin.orders.pending')}</option>
@@ -83,9 +147,134 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
                 <option value="cancelled">{t('admin.orders.cancelled')}</option>
               </select>
             </div>
+            <div className={`flex space-x-2 ${isRTL ? 'space-x-reverse' : ''}`}>
+              <Button
+                onClick={handleUpdateTrackingNumber}
+                variant="outline"
+                size="sm"
+                className="text-blue-600 hover:text-blue-700"
+              >
+                {t('admin.orders.addTrackingNumber')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-green-600 hover:text-green-700"
+              >
+                {t('admin.orders.sendNotification')}
+              </Button>
+            </div>
           </div>
 
-          {/* Order Info */}
+          {/* Tracking Number */}
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+              {t('admin.orders.trackingNumber')}
+            </h4>
+            
+            {order.trackingNumber ? (
+              <div className="space-y-3">
+                {/* Display existing tracking number */}
+                <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {order.trackingNumber}
+                      </span>
+                      {order.trackingProvider && (
+                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
+                          {getProviderDisplayName(order.trackingProvider)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {order.status === 'shipped' ? 'Auto-generated when order was shipped' : 'Manually added'}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleTrackingClick}
+                    variant="outline"
+                    size="sm"
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    {t('admin.orders.trackPackage')}
+                  </Button>
+                </div>
+                
+                {/* Update tracking number */}
+                <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    {t('admin.orders.updateTrackingNumber')}
+                  </p>
+                  <div className={`flex space-x-2 ${isRTL ? 'space-x-reverse' : ''}`}>
+                    <select
+                      value={trackingProvider}
+                      onChange={(e) => setTrackingProvider(e.target.value as TrackingProvider)}
+                      className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="custom">Custom</option>
+                      <option value="fedex">FedEx</option>
+                      <option value="ups">UPS</option>
+                      <option value="usps">USPS</option>
+                      <option value="dhl">DHL</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={trackingNumber}
+                      onChange={(e) => setTrackingNumber(e.target.value)}
+                      placeholder="Enter new tracking number..."
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    />
+                    <Button
+                      onClick={handleUpdateTrackingNumber}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {t('common.update')}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {order.status === 'shipped' 
+                    ? 'Tracking number will be auto-generated when order is marked as shipped'
+                    : 'Add tracking number when order is ready to ship'
+                  }
+                </p>
+                <div className={`flex space-x-2 ${isRTL ? 'space-x-reverse' : ''}`}>
+                  <select
+                    value={trackingProvider}
+                    onChange={(e) => setTrackingProvider(e.target.value as TrackingProvider)}
+                    className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="custom">Custom</option>
+                    <option value="fedex">FedEx</option>
+                    <option value="ups">UPS</option>
+                    <option value="usps">USPS</option>
+                    <option value="dhl">DHL</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={trackingNumber}
+                    onChange={(e) => setTrackingNumber(e.target.value)}
+                    placeholder="Enter tracking number..."
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  />
+                  <Button
+                    onClick={handleUpdateTrackingNumber}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {t('common.save')}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Order Info Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
@@ -105,10 +294,10 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
               </h4>
               <div className="space-y-2 text-sm">
                 <p><strong>{t('admin.orders.date')}:</strong> {formatDate(order.createdAt)}</p>
-                <p><strong>{t('admin.orders.total')}:</strong> ${order.total.toFixed(2)}</p>
+                <p><strong>{t('admin.orders.total')}:</strong> <RiyalSymbol />{order.total.toFixed(2)}</p>
                 <p><strong>{t('admin.orders.paymentMethod')}:</strong> {order.paymentMethod.name}</p>
                 {order.trackingNumber && (
-                  <p><strong>Tracking:</strong> {order.trackingNumber}</p>
+                  <p><strong>{t('admin.orders.trackingNumber')}:</strong> {order.trackingNumber}</p>
                 )}
               </div>
             </div>
@@ -118,23 +307,27 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-                {t('admin.orders.billingAddress')}
+                {t('admin.orders.shippingAddress')}
               </h4>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                <p>{order.billingAddress.address}</p>
-                <p>{order.billingAddress.city}, {order.billingAddress.state} {order.billingAddress.zipCode}</p>
-                <p>{order.billingAddress.country}</p>
+              <div className="space-y-1 text-sm">
+                <p>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
+                <p>{order.shippingAddress.address}</p>
+                <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}</p>
+                <p>{order.shippingAddress.country}</p>
+                <p>{order.shippingAddress.phone}</p>
               </div>
             </div>
 
             <div>
               <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-                {t('admin.orders.shippingAddress')}
+                {t('admin.orders.billingAddress')}
               </h4>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                <p>{order.shippingAddress.address}</p>
-                <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}</p>
-                <p>{order.shippingAddress.country}</p>
+              <div className="space-y-1 text-sm">
+                <p>{order.billingAddress.firstName} {order.billingAddress.lastName}</p>
+                <p>{order.billingAddress.address}</p>
+                <p>{order.billingAddress.city}, {order.billingAddress.state} {order.billingAddress.zipCode}</p>
+                <p>{order.billingAddress.country}</p>
+                <p>{order.billingAddress.phone}</p>
               </div>
             </div>
           </div>
@@ -163,10 +356,33 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           {t('cart.quantity')}: {item.quantity}
                         </p>
+                        
+                        {/* Selected Attributes (from real order item) */}
+                        {item.selectedAttributes && (
+                          <div className="mt-2 bg-blue-50 dark:bg-blue-900/20 rounded p-2">
+                            <div className="space-y-1">
+                              {Object.entries(item.selectedAttributes).map(([attrId, valueId]) => {
+                                // Find the attribute and value details
+                                const attribute = item.product.attributes?.find((attr: any) => attr.id === attrId);
+                                const value = attribute?.values?.find((val: any) => val.id === valueId);
+                                return (
+                                  <div key={attrId} className="flex items-center space-x-2">
+                                    <span className="text-xs text-blue-600 dark:text-blue-400">
+                                      {attribute?.name || attrId}:
+                                    </span>
+                                    <span className="text-xs text-blue-700 dark:text-blue-300">
+                                      {value?.label || value?.value || String(valueId) || 'N/A'}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      ${item.total.toFixed(2)}
+                      <RiyalSymbol />{item.total.toFixed(2)}
                     </div>
                   </div>
                 ))}
@@ -182,19 +398,82 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
             <div className="space-y-2 text-sm">
               <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('admin.orders.subtotal')}</span>
-                <span>${order.subtotal.toFixed(2)}</span>
+                <span><RiyalSymbol />{order.subtotal.toFixed(2)}</span>
               </div>
               <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('admin.orders.tax')}</span>
-                <span>${order.tax.toFixed(2)}</span>
+                <span><RiyalSymbol />{order.tax.toFixed(2)}</span>
               </div>
               <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('admin.orders.shipping')}</span>
-                <span>${order.shipping.toFixed(2)}</span>
+                <span><RiyalSymbol />{order.shipping.toFixed(2)}</span>
               </div>
               <div className={`flex justify-between font-medium text-base pt-2 border-t border-gray-200 dark:border-gray-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('admin.orders.grandTotal')}</span>
-                <span>${order.total.toFixed(2)}</span>
+                <span><RiyalSymbol />{order.total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Order Notes */}
+          <div>
+            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+              {t('admin.orders.orderNotes')}
+            </h4>
+            <div className="space-y-4">
+              {/* Add Note */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <div className={`flex space-x-2 mb-3 ${isRTL ? 'space-x-reverse' : ''}`}>
+                  <select
+                    value={noteType}
+                    onChange={(e) => setNoteType(e.target.value as 'internal' | 'customer')}
+                    className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="internal">Internal Note</option>
+                    <option value="customer">Customer Note</option>
+                  </select>
+                </div>
+                <div className={`flex space-x-2 ${isRTL ? 'space-x-reverse' : ''}`}>
+                  <input
+                    type="text"
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    placeholder="Add a note..."
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  />
+                  <Button
+                    onClick={handleAddNote}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {t('admin.orders.addNote')}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Notes List */}
+              <div className="space-y-2">
+                {notes.map((note) => (
+                  <div key={note.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+                    <div className={`flex justify-between items-start ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-900 dark:text-white">{note.text}</p>
+                        <div className={`flex items-center space-x-2 mt-1 ${isRTL ? 'space-x-reverse' : ''}`}>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">{note.author}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">•</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(note.createdAt)}</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            note.type === 'internal' 
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
+                              : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          }`}>
+                            {note.type === 'internal' ? 'Internal' : 'Customer'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

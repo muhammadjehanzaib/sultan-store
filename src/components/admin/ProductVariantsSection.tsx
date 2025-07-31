@@ -19,17 +19,19 @@ const ProductVariantsSection: React.FC<ProductVariantsSectionProps> = ({ attribu
   const [localVariants, setLocalVariants] = useState<ProductVariant[]>([]);
   const [initialized, setInitialized] = useState(false);
 
-  // Initialize with existing variants only once
+  // Initialize with existing variants when component mounts or variants prop changes
   useEffect(() => {
-    if (!initialized && variants.length > 0 && attributes.length === 0) {
+    console.log('ProductVariantsSection: Received variants:', variants, 'initialized:', initialized);
+    if (!initialized && variants.length > 0) {
+      console.log('ProductVariantsSection: Initializing with variants');
       setLocalVariants(variants);
       setInitialized(true);
     }
-  }, [variants, initialized, attributes]);
+  }, [variants, initialized]);
 
   // Main effect to handle attribute changes and variant generation
   useEffect(() => {
-    // Always regenerate variants when attributes change
+    // If we have attributes, generate variants based on attribute combinations
     if (attributes.length > 0) {
       const attrValues = attributes.map(attr => attr.values.map(v => ({ attrId: attr.id, valueId: v.id, label: v.label || v.value, attrType: attr.type })));
       
@@ -37,9 +39,13 @@ const ProductVariantsSection: React.FC<ProductVariantsSectionProps> = ({ attribu
       const hasValidValues = attrValues.every(values => values.length > 0);
       
       if (!hasValidValues) {
-        // If any attribute has no values, clear variants
-        setLocalVariants([]);
-        setVariants([]);
+        // If any attribute has no values, keep existing variants if any
+        if (variants.length > 0) {
+          setLocalVariants(variants);
+        } else {
+          setLocalVariants([]);
+          setVariants([]);
+        }
         return;
       }
       
@@ -49,7 +55,10 @@ const ProductVariantsSection: React.FC<ProductVariantsSectionProps> = ({ attribu
         combo.forEach((v: any) => { attributeValues[v.attrId] = v.valueId; });
         
         // Try to find existing variant with matching attributes
-        const existing = localVariants.find(v => 
+        const existing = localVariants.length > 0 ? localVariants.find(v => 
+          v.attributeValues && 
+          JSON.stringify(v.attributeValues) === JSON.stringify(attributeValues)
+        ) : variants.find(v => 
           v.attributeValues && 
           JSON.stringify(v.attributeValues) === JSON.stringify(attributeValues)
         );
@@ -72,12 +81,12 @@ const ProductVariantsSection: React.FC<ProductVariantsSectionProps> = ({ attribu
     else if (variants.length > 0) {
       setLocalVariants(variants);
     }
-    // Clear variants if no attributes
+    // Clear variants if no attributes and no existing variants
     else {
       setLocalVariants([]);
       setVariants([]);
     }
-  }, [JSON.stringify(attributes)]);
+  }, [JSON.stringify(attributes), !initialized]);
 
   const handleVariantChange = (idx: number, field: string, value: any) => {
     const updated = [...localVariants];

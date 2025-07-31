@@ -11,9 +11,9 @@ import Price from '@/components/ui/Price';
 interface ProductsTableProps {
   products: Product[];
   onEdit: (product: Product) => void;
-  onDelete: (productId: number) => void;
-  selectedProducts?: number[];
-  onSelectProduct?: (productId: number) => void;
+  onDelete: (productId: string) => void;
+  selectedProducts?: string[];
+  onSelectProduct?: (productId: string) => void;
   onSelectAll?: () => void;
 }
 
@@ -76,7 +76,7 @@ export function ProductsTable({
     }
   };
 
-  const handleDelete = (productId: number) => {
+  const handleDelete = (productId: string) => {
     if (confirm(t('admin.products.deleteConfirm'))) {
       onDelete(productId);
     }

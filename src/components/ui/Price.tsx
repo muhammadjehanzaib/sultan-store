@@ -2,7 +2,7 @@ import React from "react";
 import Image from "next/image";
 
 interface PriceProps {
-  amount: number;
+  amount: number | null | undefined;
   locale?: "en" | "ar";
   className?: string;
 }
@@ -12,6 +12,15 @@ interface PriceProps {
  * Supports both English (LTR) and Arabic (RTL) layouts.
  */
 const Price: React.FC<PriceProps> = ({ amount, locale = "en", className }) => {
+  // Handle null/undefined amounts
+  if (amount == null || isNaN(amount)) {
+    return (
+      <span className={`inline-flex items-center gap-1 text-gray-400 ${className || ""}`}>
+        <span>-</span>
+      </span>
+    );
+  }
+
   // Format the amount according to locale
   const formatted = amount.toLocaleString(locale === "ar" ? "ar-SA" : "en-US", {
     minimumFractionDigits: 2,
@@ -24,7 +33,6 @@ const Price: React.FC<PriceProps> = ({ amount, locale = "en", className }) => {
   // Layout: symbol before (en) or after (ar)
   const isArabic = locale === "ar";
 
-  console.log('Price component:', { amount, formatted });
 
   return (
     <span

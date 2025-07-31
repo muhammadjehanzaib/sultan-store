@@ -3,18 +3,32 @@ import { Product, MultilingualProduct, LocalizedContent } from '@/types';
 /**
  * Converts a string or LocalizedContent to LocalizedContent
  * If input is a string, uses it for both languages
+ * Also handles category objects with name_en/name_ar properties
  */
-export function ensureLocalizedContent(value: string | LocalizedContent): LocalizedContent {
+export function ensureLocalizedContent(value: string | LocalizedContent | { name_en?: string; name_ar?: string; slug?: string } | null | undefined): LocalizedContent {
+  if (!value) {
+    return { en: '', ar: '' };
+  }
   if (typeof value === 'string') {
     return { en: value, ar: value };
   }
-  return value;
+  // Handle category object with name_en/name_ar properties
+  if (typeof value === 'object' && ('name_en' in value || 'name_ar' in value)) {
+    return {
+      en: value.name_en || value.name_ar || '',
+      ar: value.name_ar || value.name_en || ''
+    };
+  }
+  return value as LocalizedContent;
 }
 
 /**
  * Gets the localized string based on current language
  */
-export function getLocalizedString(content: string | LocalizedContent, language: 'en' | 'ar'): string {
+export function getLocalizedString(content: string | LocalizedContent | null | undefined, language: 'en' | 'ar'): string {
+  if (!content) {
+    return '';
+  }
   if (typeof content === 'string') {
     return content;
   }
@@ -36,6 +50,9 @@ export function convertToMultilingualProduct(product: Product | any): Multilingu
       description: product.description_en && product.description_ar
         ? { en: product.description_en, ar: product.description_ar }
         : ensureLocalizedContent(product.description || ''),
+      // Ensure variants are preserved
+      variants: product.variants || [],
+      attributes: product.attributes || [],
     };
   }
   
@@ -45,6 +62,9 @@ export function convertToMultilingualProduct(product: Product | any): Multilingu
     name: ensureLocalizedContent(product.name),
     category: ensureLocalizedContent(product.category),
     description: ensureLocalizedContent(product.description || ''),
+    // Ensure variants are preserved
+    variants: product.variants || [],
+    attributes: product.attributes || [],
   };
 }
 

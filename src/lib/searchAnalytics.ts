@@ -7,7 +7,7 @@ export interface SearchEvent {
   query: string;
   timestamp: number;
   resultsCount: number;
-  selectedProduct?: number;
+  selectedProduct?: string;
   sessionId: string;
 }
 
@@ -112,7 +112,7 @@ export class SearchAnalytics {
   /**
    * Track when a user clicks on a product from search results
    */
-  trackProductClick(query: string, productId: number): void {
+  trackProductClick(query: string, productId: string): void {
     const lastSearch = this.searchHistory
       .filter(s => s.query === query.toLowerCase().trim())
       .pop();

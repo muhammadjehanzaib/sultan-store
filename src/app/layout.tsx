@@ -5,6 +5,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ClientLayout } from '@/components/layout/ClientLayout';
+import SessionProvider from '@/components/providers/SessionProvider';
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -38,13 +39,15 @@ function RootContent({ children }: { children: React.ReactNode }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <CartProvider>
-            <ClientLayout>
-              {children}
-            </ClientLayout>
-          </CartProvider>
-        </AuthProvider>
+        <SessionProvider>
+          <AuthProvider>
+            <CartProvider>
+              <ClientLayout>
+                {children}
+              </ClientLayout>
+            </CartProvider>
+          </AuthProvider>
+        </SessionProvider>
       </body>
     </html>
   );

@@ -2,7 +2,7 @@ import { Customer, Review, InventoryItem, StockHistory } from '@/types';
 import { mockOrders } from './mockOrders';
 
 // Generate customers from orders data
-export const mockCustomers: Customer[] = [
+export const mockCustomers = [
   {
     id: 'cust-001',
     firstName: 'John',
@@ -14,11 +14,11 @@ export const mockCustomers: Customer[] = [
     lastLoginAt: new Date('2024-01-15'),
     totalOrders: 2,
     totalSpent: 426.35,
-    status: 'active',
+    status: 'active' as const,
     addresses: [
       {
         id: 'addr-001',
-        type: 'billing',
+        type: 'billing' as const,
         firstName: 'John',
         lastName: 'Doe',
         address: '123 Main St',
@@ -30,7 +30,7 @@ export const mockCustomers: Customer[] = [
         isDefault: true
       }
     ],
-    orders: mockOrders.filter(order => order.billingAddress.email === 'john@example.com')
+    orders: (mockOrders as any[]).filter(order => order.billingAddress.email === 'john@example.com')
   },
   {
     id: 'cust-002',
@@ -43,11 +43,11 @@ export const mockCustomers: Customer[] = [
     lastLoginAt: new Date('2024-01-14'),
     totalOrders: 1,
     totalSpent: 92.38,
-    status: 'active',
+    status: 'active' as const,
     addresses: [
       {
         id: 'addr-002',
-        type: 'billing',
+        type: 'billing' as const,
         firstName: 'Jane',
         lastName: 'Smith',
         address: '456 Oak Ave',
@@ -59,7 +59,7 @@ export const mockCustomers: Customer[] = [
         isDefault: true
       }
     ],
-    orders: mockOrders.filter(order => order.billingAddress.email === 'jane@example.com')
+    orders: (mockOrders as any[]).filter(order => order.billingAddress.email === 'jane@example.com')
   },
   {
     id: 'cust-003',
@@ -72,11 +72,11 @@ export const mockCustomers: Customer[] = [
     lastLoginAt: new Date('2024-01-13'),
     totalOrders: 1,
     totalSpent: 115.97,
-    status: 'active',
+    status: 'active' as const,
     addresses: [
       {
         id: 'addr-003',
-        type: 'billing',
+        type: 'billing' as const,
         firstName: 'Ahmed',
         lastName: 'Hassan',
         address: '789 Nile St',
@@ -88,7 +88,7 @@ export const mockCustomers: Customer[] = [
         isDefault: true
       }
     ],
-    orders: mockOrders.filter(order => order.billingAddress.email === 'ahmed@example.com')
+    orders: (mockOrders as any[]).filter(order => order.billingAddress.email === 'ahmed@example.com')
   },
   {
     id: 'cust-004',
@@ -101,11 +101,11 @@ export const mockCustomers: Customer[] = [
     lastLoginAt: new Date('2024-01-16'),
     totalOrders: 1,
     totalSpent: 42.78,
-    status: 'active',
+    status: 'active' as const,
     addresses: [
       {
         id: 'addr-004',
-        type: 'billing',
+        type: 'billing' as const,
         firstName: 'Maria',
         lastName: 'Garcia',
         address: '321 Barcelona St',
@@ -117,7 +117,7 @@ export const mockCustomers: Customer[] = [
         isDefault: true
       }
     ],
-    orders: mockOrders.filter(order => order.billingAddress.email === 'maria@example.com')
+    orders: (mockOrders as any[]).filter(order => order.billingAddress.email === 'maria@example.com')
   },
   {
     id: 'cust-005',
@@ -130,11 +130,11 @@ export const mockCustomers: Customer[] = [
     lastLoginAt: new Date('2024-01-12'),
     totalOrders: 1,
     totalSpent: 149.38,
-    status: 'blocked',
+    status: 'blocked' as const,
     addresses: [
       {
         id: 'addr-005',
-        type: 'billing',
+        type: 'billing' as const,
         firstName: 'Ali',
         lastName: 'Abdullah',
         address: '555 Riyadh Rd',
@@ -146,7 +146,7 @@ export const mockCustomers: Customer[] = [
         isDefault: true
       }
     ],
-    orders: mockOrders.filter(order => order.billingAddress.email === 'ali@example.com')
+    orders: (mockOrders as any[]).filter(order => order.billingAddress.email === 'ali@example.com')
   }
 ];
 
@@ -154,7 +154,7 @@ export const mockCustomers: Customer[] = [
 export const mockReviews: Review[] = [
   {
     id: 'rev-001',
-    productId: 1,
+    productId: 'prod_001',
     customerId: 'cust-001',
     customerName: 'John Doe',
     rating: 5,
@@ -175,7 +175,7 @@ export const mockReviews: Review[] = [
   },
   {
     id: 'rev-002',
-    productId: 2,
+    productId: 'prod_002',
     customerId: 'cust-002',
     customerName: 'Jane Smith',
     rating: 4,
@@ -189,7 +189,7 @@ export const mockReviews: Review[] = [
   },
   {
     id: 'rev-003',
-    productId: 3,
+    productId: 'prod_003',
     customerId: 'cust-003',
     customerName: 'Ahmed Hassan',
     rating: 5,
@@ -203,7 +203,7 @@ export const mockReviews: Review[] = [
   },
   {
     id: 'rev-004',
-    productId: 4,
+    productId: 'prod_004',
     customerId: 'cust-004',
     customerName: 'Maria Garcia',
     rating: 3,
@@ -217,7 +217,7 @@ export const mockReviews: Review[] = [
   },
   {
     id: 'rev-005',
-    productId: 5,
+    productId: 'prod_005',
     customerId: 'cust-005',
     customerName: 'Ali Abdullah',
     rating: 2,
@@ -231,7 +231,7 @@ export const mockReviews: Review[] = [
   },
   {
     id: 'rev-006',
-    productId: 6,
+    productId: 'prod_006',
     customerId: 'cust-001',
     customerName: 'John Doe',
     rating: 4,
@@ -248,7 +248,7 @@ export const mockReviews: Review[] = [
 // Mock inventory data
 export const mockInventory: InventoryItem[] = [
   {
-    productId: 1,
+    productId: 'prod_001',
     currentStock: 45,
     minimumStock: 10,
     maximumStock: 100,
@@ -257,7 +257,7 @@ export const mockInventory: InventoryItem[] = [
     stockHistory: [
       {
         id: 'hist-001',
-        productId: 1,
+        productId: 'prod_001',
         type: 'in',
         quantity: 50,
         reason: 'Initial stock',
@@ -267,7 +267,7 @@ export const mockInventory: InventoryItem[] = [
       },
       {
         id: 'hist-002',
-        productId: 1,
+        productId: 'prod_001',
         type: 'out',
         quantity: 3,
         reason: 'Sales',
@@ -277,7 +277,7 @@ export const mockInventory: InventoryItem[] = [
       },
       {
         id: 'hist-003',
-        productId: 1,
+        productId: 'prod_001',
         type: 'adjustment',
         quantity: -2,
         reason: 'Damaged goods',
@@ -288,7 +288,7 @@ export const mockInventory: InventoryItem[] = [
     ]
   },
   {
-    productId: 2,
+    productId: 'prod_002',
     currentStock: 28,
     minimumStock: 5,
     maximumStock: 50,
@@ -297,7 +297,7 @@ export const mockInventory: InventoryItem[] = [
     stockHistory: [
       {
         id: 'hist-004',
-        productId: 2,
+        productId: 'prod_002',
         type: 'in',
         quantity: 30,
         reason: 'Restock',
@@ -307,7 +307,7 @@ export const mockInventory: InventoryItem[] = [
       },
       {
         id: 'hist-005',
-        productId: 2,
+        productId: 'prod_002',
         type: 'out',
         quantity: 2,
         reason: 'Sales',
@@ -318,7 +318,7 @@ export const mockInventory: InventoryItem[] = [
     ]
   },
   {
-    productId: 3,
+    productId: 'prod_003',
     currentStock: 15,
     minimumStock: 8,
     maximumStock: 40,
@@ -327,7 +327,7 @@ export const mockInventory: InventoryItem[] = [
     stockHistory: [
       {
         id: 'hist-006',
-        productId: 3,
+        productId: 'prod_003',
         type: 'in',
         quantity: 20,
         reason: 'New shipment',
@@ -337,7 +337,7 @@ export const mockInventory: InventoryItem[] = [
       },
       {
         id: 'hist-007',
-        productId: 3,
+        productId: 'prod_003',
         type: 'out',
         quantity: 5,
         reason: 'Sales',
@@ -348,7 +348,7 @@ export const mockInventory: InventoryItem[] = [
     ]
   },
   {
-    productId: 4,
+    productId: 'prod_004',
     currentStock: 0,
     minimumStock: 10,
     maximumStock: 60,
@@ -357,7 +357,7 @@ export const mockInventory: InventoryItem[] = [
     stockHistory: [
       {
         id: 'hist-008',
-        productId: 4,
+        productId: 'prod_004',
         type: 'in',
         quantity: 25,
         reason: 'Initial stock',
@@ -367,7 +367,7 @@ export const mockInventory: InventoryItem[] = [
       },
       {
         id: 'hist-009',
-        productId: 4,
+        productId: 'prod_004',
         type: 'out',
         quantity: 25,
         reason: 'Sales',
@@ -378,7 +378,7 @@ export const mockInventory: InventoryItem[] = [
     ]
   },
   {
-    productId: 5,
+    productId: 'prod_004',
     currentStock: 8,
     minimumStock: 15,
     maximumStock: 80,
@@ -387,7 +387,7 @@ export const mockInventory: InventoryItem[] = [
     stockHistory: [
       {
         id: 'hist-010',
-        productId: 5,
+        productId: 'prod_004',
         type: 'in',
         quantity: 40,
         reason: 'Restock',
@@ -397,7 +397,7 @@ export const mockInventory: InventoryItem[] = [
       },
       {
         id: 'hist-011',
-        productId: 5,
+        productId: 'prod_004',
         type: 'out',
         quantity: 32,
         reason: 'Sales',
@@ -408,7 +408,7 @@ export const mockInventory: InventoryItem[] = [
     ]
   },
   {
-    productId: 6,
+    productId: 'prod_006',
     currentStock: 22,
     minimumStock: 12,
     maximumStock: 50,
@@ -417,7 +417,7 @@ export const mockInventory: InventoryItem[] = [
     stockHistory: [
       {
         id: 'hist-012',
-        productId: 6,
+        productId: 'prod_006',
         type: 'in',
         quantity: 30,
         reason: 'New shipment',
@@ -427,7 +427,7 @@ export const mockInventory: InventoryItem[] = [
       },
       {
         id: 'hist-013',
-        productId: 6,
+        productId: 'prod_006',
         type: 'out',
         quantity: 8,
         reason: 'Sales',
@@ -438,7 +438,7 @@ export const mockInventory: InventoryItem[] = [
     ]
   },
   {
-    productId: 7,
+    productId: 'prod_007',
     currentStock: 15,
     minimumStock: 2,
     maximumStock: 30,
@@ -447,7 +447,7 @@ export const mockInventory: InventoryItem[] = [
     stockHistory: [
       {
         id: 'hist-100',
-        productId: 7,
+        productId: 'prod_007',
         type: 'in',
         quantity: 15,
         reason: 'Initial stock',

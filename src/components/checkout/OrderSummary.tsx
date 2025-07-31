@@ -21,15 +21,20 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
   const grandTotal = subtotal + shipping + tax;
 
   // Helper function to format selected attributes
-  const formatSelectedAttributes = (selectedAttributes: { [key: string]: string } | undefined) => {
+  const formatSelectedAttributes = (selectedAttributes: { [key: string]: string } | undefined, product: any) => {
     if (!selectedAttributes || Object.keys(selectedAttributes).length === 0) {
       return null;
     }
     
-    return Object.entries(selectedAttributes).map(([key, value]) => {
-      // Capitalize the key for display
-      const displayKey = key.charAt(0).toUpperCase() + key.slice(1);
-      return `${displayKey}: ${value}`;
+    return Object.entries(selectedAttributes).map(([attrId, valueId]) => {
+      // Find the attribute and value details from the product
+      const attribute = product.attributes?.find((attr: any) => attr.id === attrId);
+      const value = attribute?.values?.find((val: any) => val.id === valueId);
+      
+      const attributeName = attribute?.name || attrId;
+      const valueLabel = value?.label || value?.value || valueId;
+      
+      return `${attributeName}: ${valueLabel}`;
     }).join(', ');
   };
 
@@ -42,7 +47,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
         {items.map((item, index) => {
           // Create a unique key for each cart item
           const uniqueKey = item.variantId || `${item.product.id}-${index}-${JSON.stringify(item.selectedAttributes || {})}`;
-          const attributesText = formatSelectedAttributes(item.selectedAttributes);
+          const attributesText = formatSelectedAttributes(item.selectedAttributes, item.product);
           
           return (
             <div key={uniqueKey} className={`flex items-start ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>

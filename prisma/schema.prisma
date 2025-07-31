@@ -3,9 +3,58 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Inventory {
+  id             String   @id @default(cuid())
+  productId      String   @unique
+  stock          Int      @default(0)
+  stockThreshold Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model StockHistory {
+  id        String   @id @default(cuid())
+  change    Int
+  reason    String?
+  createdAt DateTime @default(now())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  customerEmail   String
+  customerName    String
+  status          String      @default("pending") // pending, processing, shipped, delivered, cancelled
+  subtotal        Float
+  tax             Float       @default(0)
+  shipping        Float       @default(0)
+  total           Float
+  billingAddress  Json
+  shippingAddress Json
+  paymentMethod   String
+  trackingNumber  String?
+  trackingProvider String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id                String   @id @default(cuid())
+  orderId           String
+  productId         String
+  quantity          Int
+  price             Float
+  total             Float
+  selectedAttributes Json?
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product           Product  @relation(fields: [productId], references: [id])
 }
 
 model Category {
@@ -32,9 +81,12 @@ model Product {
   reviews        Int?               @default(0)
   categoryId     String
   createdAt      DateTime           @default(now())
+  inventory      Inventory?
   category       Category           @relation(fields: [categoryId], references: [id])
   attributes     ProductAttribute[]
   variants       ProductVariant[]
+  stockHistory   StockHistory[]
+  orderItems     OrderItem[]
 }
 
 model ProductVariant {
@@ -45,7 +97,7 @@ model ProductVariant {
   image           String?
   inStock         Boolean  @default(true)
   stockQuantity   Int      @default(0)
-  attributeValues Json?    // Maps attribute ID to selected value ID
+  attributeValues Json?
   createdAt       DateTime @default(now())
   product         Product  @relation(fields: [productId], references: [id])
 }
@@ -69,4 +121,58 @@ model AttributeValue {
   inStock       Boolean          @default(true)
   imageUrl      String?
   attribute     ProductAttribute @relation(fields: [attributeId], references: [id])
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  firstName     String?
+  lastName      String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  phone         String?
+  isGuest       Boolean   @default(false)
+  role          String    @default("viewer")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }

@@ -8,7 +8,7 @@ interface StockAdjustmentModalProps {
   onClose: () => void;
   inventoryItem: InventoryItem | null;
   products: Product[];
-  onAdjustStock: (productId: number, adjustment: number, reason: string) => void;
+  onAdjustStock: (productId: string, adjustment: number, reason: string) => void;
   bulkMode?: boolean;
   bulkCount?: number;
 }
@@ -71,7 +71,7 @@ const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({ isOpen, onC
             type="button"
             className="px-4 py-2 bg-blue-600 text-white rounded"
             onClick={() => {
-              onAdjustStock(bulkMode ? 0 : (inventoryItem?.productId || 0), adjustment, reason);
+              onAdjustStock(bulkMode ? '' : (inventoryItem?.productId || ''), adjustment, reason);
             }}
             disabled={adjustment === 0 || !reason}
           >

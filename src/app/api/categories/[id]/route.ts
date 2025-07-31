@@ -4,11 +4,11 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function PUT(req: NextRequest, context: any) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const body = await req.json();
     const { name_en, name_ar, slug, icon } = body;
-    const { id } = context.params;
+    const { id } = await params;
 
     if (!id || !name_en || !name_ar || !slug) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -26,9 +26,9 @@ export async function PUT(req: NextRequest, context: any) {
   }
 }
 
-export async function DELETE(req: NextRequest, context: any) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = context.params;
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ error: 'Missing category ID' }, { status: 400 });

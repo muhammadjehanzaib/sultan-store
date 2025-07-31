@@ -79,7 +79,12 @@ function SearchPageContent() {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(product => {
         const name = getLocalizedString(ensureLocalizedContent(product.name), language).toLowerCase();
-        const category = getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase();
+        let category = '';
+        if (typeof product.category === 'object' && 'name_en' in product.category) {
+          category = (language === 'ar' ? (product.category as any).name_ar : product.category.name_en).toLowerCase();
+        } else {
+          category = getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase();
+        }
         const description = getLocalizedString(ensureLocalizedContent(product.description || ''), language).toLowerCase();
         
         // Exact matches get highest priority
@@ -99,9 +104,15 @@ function SearchPageContent() {
 
     // Category filter
     if (filters.category) {
-      filtered = filtered.filter(product => 
-        getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase() === filters.category.toLowerCase()
-      );
+      filtered = filtered.filter(product => {
+        let categoryName = '';
+        if (typeof product.category === 'object' && 'name_en' in product.category) {
+          categoryName = (language === 'ar' ? (product.category as any).name_ar : product.category.name_en).toLowerCase();
+        } else {
+          categoryName = getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase();
+        }
+        return categoryName === filters.category.toLowerCase();
+      });
     }
 
     // Price range filter
@@ -133,7 +144,10 @@ function SearchPageContent() {
         case 'rating':
           return (b.rating || 0) - (a.rating || 0);
         case 'newest':
-          return b.id - a.id; // Assuming higher ID = newer
+          // Convert IDs to numbers for comparison, fallback to string comparison
+          const aId = typeof a.id === 'number' ? a.id : parseInt(String(a.id));
+          const bId = typeof b.id === 'number' ? b.id : parseInt(String(b.id));
+          return isNaN(bId) || isNaN(aId) ? String(b.id).localeCompare(String(a.id)) : bId - aId;
         case 'relevance':
         default:
           // Enhanced relevance scoring when there's a search query
@@ -154,7 +168,12 @@ function SearchPageContent() {
   const calculateRelevanceScore = (product: Product, query: string): number => {
     let score = 0;
     const name = getLocalizedString(ensureLocalizedContent(product.name), language).toLowerCase();
-    const category = getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase();
+    let category = '';
+    if (typeof product.category === 'object' && 'name_en' in product.category) {
+      category = (language === 'ar' ? (product.category as any).name_ar : product.category.name_en).toLowerCase();
+    } else {
+      category = getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase();
+    }
     const description = getLocalizedString(ensureLocalizedContent(product.description || ''), language).toLowerCase();
     
     // Exact name match gets highest score

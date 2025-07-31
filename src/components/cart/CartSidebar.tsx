@@ -14,11 +14,11 @@ export const CartSidebar: React.FC = () => {
   const { t, isRTL, language } = useLanguage();
   const router = useRouter();
 
-  const updateQuantity = (productId: number, variantId: string | undefined, quantity: number) => {
+  const updateQuantity = (productId: string, variantId: string | undefined, quantity: number) => {
     dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, variantId, quantity } });
   };
 
-  const removeItem = (productId: number, variantId: string | undefined) => {
+  const removeItem = (productId: string, variantId: string | undefined) => {
     dispatch({ type: 'REMOVE_ITEM', payload: { productId, variantId } });
   };
 
@@ -72,8 +72,8 @@ export const CartSidebar: React.FC = () => {
           ) : (
             <>
               <div className="space-y-3">
-                {state.items.map((item) => (
-                  <div key={item.variantId || `${item.product.id}-default`} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                {state.items.map((item, index) => (
+                  <div key={`${item.product.id}-${item.variantId || 'default'}-${index}`} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                     <div className={`flex items-start ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
                       {/* Product Image */}
                       <div className="relative">

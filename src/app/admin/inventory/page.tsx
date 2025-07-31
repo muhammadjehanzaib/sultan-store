@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import InventoryTable from '@/components/admin/InventoryTable';
@@ -8,8 +8,6 @@ import StockAdjustmentModal from '@/components/admin/StockAdjustmentModal';
 import LowStockAlerts from '@/components/admin/LowStockAlerts';
 import StockHistoryModal from '@/components/admin/StockHistoryModal';
 import { Button } from '@/components/ui/Button';
-import { mockInventory } from '@/data/mockCustomers';
-import { products } from '@/data/products';
 import { InventoryItem, StockHistory, Product, ProductVariant } from '@/types';
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
@@ -18,21 +16,73 @@ export default function AdminInventory() {
   const { t, isRTL, language } = useLanguage();
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [inventoryData, setInventoryData] = useState(mockInventory);
+  const [inventoryData, setInventoryData] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   const [selectedHistoryProduct, setSelectedHistoryProduct] = useState<InventoryItem | null>(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  const [bulkSelectedIds, setBulkSelectedIds] = useState<number[]>([]);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([]);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   // New state for products (with variants)
-  const [productList, setProductList] = useState<Product[]>(products);
+  const [productList, setProductList] = useState<Product[]>([]);
   // State for variant modals
-  const [selectedVariant, setSelectedVariant] = useState<{ productId: number; variant: ProductVariant } | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<{ productId: string; variant: ProductVariant } | null>(null);
   const [isVariantModalOpen, setIsVariantModalOpen] = useState(false);
   const [variantHistory, setVariantHistory] = useState<StockHistory[]>([]);
   const [isVariantHistoryOpen, setIsVariantHistoryOpen] = useState(false);
 
-  const handleAdjustStock = (productId: number) => {
+  // Fetch inventory data from API
+  const fetchInventoryData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/inventory');
+      if (!response.ok) {
+        throw new Error('Failed to fetch inventory data');
+      }
+      const data = await response.json();
+      
+      // Transform API data to match InventoryItem interface
+      const inventoryItems: InventoryItem[] = data.inventory.map((item: any) => ({
+        productId: item.id,
+        currentStock: item.stock,
+        minimumStock: Math.floor(item.stockThreshold * 0.5), // Set min to 50% of threshold
+        maximumStock: item.stockThreshold * 3, // Set max to 3x threshold
+        reorderPoint: item.stockThreshold,
+        lastRestocked: new Date(item.updatedAt),
+        stockHistory: [] // Will be populated when viewing history
+      }));
+      
+      setInventoryData(inventoryItems);
+      
+      // Use the full products data from API response (includes attributes)
+      const products: Product[] = data.products.map((product: any) => ({
+        id: product.id,
+        name: { en: product.name_en, ar: product.name_ar },
+        slug: product.slug,
+        price: product.price,
+        image: product.image,
+        category: product.category,
+        variants: product.variants || [],
+        attributes: product.attributes || [], // Include attributes
+        inStock: product.inventory?.stock > 0 || false
+      }));
+      
+      setProductList(products);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchInventoryData();
+  }, []);
+
+  const handleAdjustStock = (productId: string) => {
     const inventoryItem = inventoryData.find(item => item.productId === productId);
     if (inventoryItem) {
       setSelectedProduct(inventoryItem);
@@ -40,78 +90,108 @@ export default function AdminInventory() {
     }
   };
 
-  const handleBulkAdjust = (selectedProductIds: number[]) => {
+  const handleBulkAdjust = (selectedProductIds: string[]) => {
     setBulkSelectedIds(selectedProductIds);
     setIsBulkModalOpen(true);
   };
 
-  const handleStockAdjustment = (productId: number, adjustment: number, reason: string) => {
-    setInventoryData(prev => 
-      prev.map(item => {
-        if (item.productId === productId) {
-          const newStock = Math.max(0, item.currentStock + adjustment);
-          const newHistory: StockHistory = {
-            id: `hist-${Date.now()}`,
-            productId,
-            type: adjustment > 0 ? 'in' : adjustment < 0 ? 'out' : 'adjustment',
-            quantity: Math.abs(adjustment),
-            reason,
-            adminId: 'admin-001',
-            adminName: 'Admin User',
-            createdAt: new Date()
-          };
-          
-          return {
-            ...item,
-            currentStock: newStock,
-            lastRestocked: adjustment > 0 ? new Date() : item.lastRestocked,
-            stockHistory: [...item.stockHistory, newHistory]
-          };
-        }
-        return item;
-      })
-    );
-    setIsModalOpen(false);
+  const handleStockAdjustment = async (productId: string, adjustment: number, reason: string) => {
+    try {
+      const response = await fetch('/api/inventory', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId,
+          stockChange: adjustment,
+          reason
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update inventory');
+      }
+      
+      // Refresh inventory data
+      await fetchInventoryData();
+      setIsModalOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update inventory');
+    }
   };
 
-  const handleBulkStockUpdate = (updates: Array<{ productId: number; newStock: number; reason: string }>) => {
-    setInventoryData(prev => 
-      prev.map(item => {
-        const update = updates.find(u => u.productId === item.productId);
-        if (update) {
-          const adjustment = update.newStock - item.currentStock;
-          const newHistory: StockHistory = {
-            id: `hist-${Date.now()}-${item.productId}`,
-            productId: item.productId,
-            type: 'adjustment',
-            quantity: Math.abs(adjustment),
-            reason: update.reason,
-            adminId: 'admin-001',
-            adminName: 'Admin User',
-            createdAt: new Date()
-          };
-          
-          return {
-            ...item,
-            currentStock: update.newStock,
-            stockHistory: [...item.stockHistory, newHistory]
-          };
-        }
-        return item;
-      })
-    );
+  const handleBulkStockUpdate = async (updates: Array<{ productId: string; newStock: number; reason: string }>) => {
+    try {
+      const bulkUpdates = updates.map(update => {
+        const currentItem = inventoryData.find(item => item.productId === update.productId);
+        return {
+          productId: update.productId,
+          stockChange: update.newStock - (currentItem?.currentStock || 0),
+          reason: update.reason
+        };
+      });
+      
+      const response = await fetch('/api/inventory/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ updates: bulkUpdates })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update inventory');
+      }
+      
+      // Refresh inventory data
+      await fetchInventoryData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update inventory');
+    }
   };
 
-  const handleViewHistory = (productId: number) => {
-    const inventoryItem = inventoryData.find(item => item.productId === productId);
-    if (inventoryItem) {
+  const handleViewHistory = async (productId: string) => {
+    try {
+      const response = await fetch(`/api/inventory/${productId}/history`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch stock history');
+      }
+      
+      const historyData = await response.json();
+      
+      // Transform API history to match our StockHistory interface
+      const stockHistory: StockHistory[] = historyData.history.map((entry: any) => ({
+        id: entry.id,
+        productId: productId,
+        type: entry.type === 'increase' ? 'in' : entry.type === 'decrease' ? 'out' : 'adjustment',
+        quantity: Math.abs(entry.change),
+        reason: entry.reason,
+        adminId: 'admin-001',
+        adminName: 'Admin User',
+        createdAt: new Date(entry.createdAt)
+      }));
+      
+      // Create a temporary inventory item for the modal
+      const inventoryItem: InventoryItem = {
+        productId: productId,
+        currentStock: historyData.currentStock,
+        minimumStock: 0,
+        maximumStock: 0,
+        reorderPoint: historyData.stockThreshold,
+        lastRestocked: new Date(),
+        stockHistory
+      };
+      
       setSelectedHistoryProduct(inventoryItem);
       setIsHistoryModalOpen(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch stock history');
     }
   };
 
   // Handler: Toggle variant activation
-  const handleToggleVariantActive = (productId: number, variantId: string) => {
+  const handleToggleVariantActive = (productId: string, variantId: string) => {
     setProductList(prev => prev.map(product => {
       if (product.id === productId && product.variants) {
         return {
@@ -126,7 +206,7 @@ export default function AdminInventory() {
   };
 
   // Handler: Open modal to adjust variant stock
-  const handleAdjustVariantStock = (productId: number, variantId: string) => {
+  const handleAdjustVariantStock = (productId: string, variantId: string) => {
     const product = productList.find(p => p.id === productId);
     const variant = product?.variants?.find(v => v.id === variantId);
     if (product && variant) {
@@ -136,7 +216,7 @@ export default function AdminInventory() {
   };
 
   // Handler: Save variant stock adjustment
-  const handleSaveVariantStock = (productId: number, variantId: string, adjustment: number, reason: string) => {
+  const handleSaveVariantStock = (productId: string, variantId: string, adjustment: number, reason: string) => {
     setProductList(prev => prev.map(product => {
       if (product.id === productId && product.variants) {
         return {
@@ -156,7 +236,7 @@ export default function AdminInventory() {
   };
 
   // Handler: View variant stock history (mock for now)
-  const handleViewVariantHistory = (productId: number, variantId: string) => {
+  const handleViewVariantHistory = (productId: string, variantId: string) => {
     // For demo, just show empty or mock data
     setVariantHistory([]); // Replace with real data if available
     setIsVariantHistoryOpen(true);
@@ -198,26 +278,62 @@ export default function AdminInventory() {
             </div>
           </div>
 
-          {/* Low Stock Alerts */}
-          {lowStockItems.length > 0 && (
-            <LowStockAlerts
-              lowStockItems={lowStockItems}
-              products={productList}
-              onAdjustStock={handleAdjustStock}
-            />
+          {/* Loading State */}
+          {loading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+              <span className="ml-3 text-gray-600">Loading inventory data...</span>
+            </div>
           )}
 
-          {/* Inventory Table */}
-          <InventoryTable
-            inventory={filteredInventory}
-            products={productList}
-            onAdjustStock={handleAdjustStock}
-            onViewHistory={handleViewHistory}
-            onBulkAdjust={handleBulkAdjust}
-            onToggleVariantActive={handleToggleVariantActive}
-            onAdjustVariantStock={handleAdjustVariantStock}
-            onViewVariantHistory={handleViewVariantHistory}
-          />
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <div className="text-red-800">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Error loading inventory</h3>
+                  <div className="mt-1 text-sm text-red-700">{error}</div>
+                  <button 
+                    onClick={fetchInventoryData}
+                    className="mt-2 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Content */}
+          {!loading && !error && (
+            <>
+              {/* Low Stock Alerts */}
+              {lowStockItems.length > 0 && (
+                <LowStockAlerts
+                  lowStockItems={lowStockItems}
+                  products={productList}
+                  onAdjustStock={handleAdjustStock}
+                />
+              )}
+
+              {/* Inventory Table */}
+              <InventoryTable
+                inventory={filteredInventory}
+                products={productList}
+                onAdjustStock={handleAdjustStock}
+                onViewHistory={handleViewHistory}
+                onBulkAdjust={handleBulkAdjust}
+                onToggleVariantActive={handleToggleVariantActive}
+                onAdjustVariantStock={handleAdjustVariantStock}
+                onViewVariantHistory={handleViewVariantHistory}
+              />
+            </>
+          )}
 
           {/* Bulk Stock Adjustment Modal */}
           {isBulkModalOpen && (
@@ -225,7 +341,7 @@ export default function AdminInventory() {
               isOpen={isBulkModalOpen}
               onClose={() => setIsBulkModalOpen(false)}
               inventoryItem={null}
-              products={products.filter(p => bulkSelectedIds.includes(p.id))}
+              products={productList.filter(p => bulkSelectedIds.includes(p.id))}
               onAdjustStock={(_productId, adjustment, reason) => {
                 handleBulkStockUpdate(bulkSelectedIds.map(id => {
                   const item = inventoryData.find(i => i.productId === id);
@@ -248,7 +364,7 @@ export default function AdminInventory() {
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             inventoryItem={selectedProduct}
-            products={products}
+            products={productList}
             onAdjustStock={handleStockAdjustment}
           />
 
@@ -257,7 +373,7 @@ export default function AdminInventory() {
             onClose={() => setIsHistoryModalOpen(false)}
             stockHistory={selectedHistoryProduct ? selectedHistoryProduct.stockHistory : []}
             productName={(() => {
-              const p = products.find(prod => prod.id === selectedHistoryProduct?.productId);
+              const p = productList.find(prod => prod.id === selectedHistoryProduct?.productId);
               return p ? getLocalizedString(ensureLocalizedContent(p.name), language) : '';
             })()}
           />

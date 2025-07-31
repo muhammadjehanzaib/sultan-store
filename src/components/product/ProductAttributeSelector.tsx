@@ -16,6 +16,23 @@ export function ProductAttributeSelector({
 }: ProductAttributeSelectorProps) {
   if (!attributes || attributes.length === 0) return null;
 
+  // Helper function to format attribute values for display
+  const formatValueForDisplay = (value: string, label: string | undefined, attributeType: string) => {
+    // Use label if available
+    if (label) {
+      return label;
+    }
+    
+    // Format size values that start with 'u' followed by numbers
+    if (attributeType === 'size' && /^u\d+$/.test(value)) {
+      const size = value.substring(1); // Remove 'u' prefix
+      return `Size ${size}`;
+    }
+    
+    // Return the original value as fallback
+    return value;
+  };
+
   return (
     <div className="space-y-4">
       {attributes.map(attribute => (
@@ -79,9 +96,9 @@ export function ProductAttributeSelector({
                       : 'cursor-pointer'
                     }
                   `}
-                >
-                  {value.label || value.value}
-                  {value.priceModifier && value.priceModifier !== 0 && (
+                  >
+                  {formatValueForDisplay(value.value, value.label, attribute.type)}
+                  {value.priceModifier != null && value.priceModifier !== 0 && (
                     <span className="ml-1 text-xs">
                       ({value.priceModifier > 0 ? '+' : ''}${value.priceModifier})
                     </span>
@@ -93,8 +110,10 @@ export function ProductAttributeSelector({
           
           {selectedValues[attribute.id] && (
             <p className="text-sm text-gray-600">
-              Selected: {attribute.values.find(v => v.id === selectedValues[attribute.id])?.label || 
-                        attribute.values.find(v => v.id === selectedValues[attribute.id])?.value}
+              Selected: {(() => {
+                const selectedValue = attribute.values.find(v => v.id === selectedValues[attribute.id]);
+                return selectedValue ? formatValueForDisplay(selectedValue.value, selectedValue.label, attribute.type) : '';
+              })()}
             </p>
           )}
         </div>

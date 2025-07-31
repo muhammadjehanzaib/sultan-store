@@ -6,14 +6,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 interface LowStockAlertsProps {
   lowStockItems: InventoryItem[];
   products: Product[];
-  onAdjustStock: (productId: number) => void;
+  onAdjustStock: (productId: string) => void;
 }
 
 const LowStockAlerts: React.FC<LowStockAlertsProps> = ({ lowStockItems, products, onAdjustStock }) => {
   const [dismissed, setDismissed] = useState<string[]>([]);
   const { language } = useLanguage();
 
-  const getProductName = (productId: number) => {
+  const getProductName = (productId: string) => {
     const product = products.find(p => p.id === productId);
     return product ? getLocalizedString(ensureLocalizedContent(product.name), language) : 'Unknown';
   };

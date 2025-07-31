@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
-export async function PATCH(req: NextRequest, context: any) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await context.params;
+    const { id } = await params;
     const body = await req.json();
     const { name_en, name_ar, slug, image, price, categoryId, description_en, description_ar, inStock, rating, reviews, variants, attributes } = body;
     if (!id) {
@@ -102,9 +102,9 @@ export async function PATCH(req: NextRequest, context: any) {
   }
 }
 
-export async function DELETE(req: NextRequest, context: any) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await context.params;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: 'Missing product ID' }, { status: 400 });
     }

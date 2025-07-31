@@ -51,12 +51,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
-    try {
-      await login(loginForm);
+    const result = await login(loginForm);
+    if (result.success) {
+      // Only call onSuccess if login was successful
       onSuccess();
-    } catch (error) {
-      // Error is handled by the context
     }
+    // If login failed, error is already set in context and will be displayed
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {

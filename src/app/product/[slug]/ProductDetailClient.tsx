@@ -32,6 +32,7 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
   const [quantity, setQuantity] = useState(1);
   const [selectedAttributes, setSelectedAttributes] = useState<{ [attributeId: string]: string }>({});
 
+
   const handleAddToCart = () => {
     for (let i = 0; i < quantity; i++) {
       dispatch({ 
@@ -301,11 +302,25 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
         <h2 className="text-xl font-bold mb-4">{t('product.relatedProducts') || 'Related Products'}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {allProducts
-            .filter(p =>
-              getLocalizedString(ensureLocalizedContent(p.category), language) ===
-              getLocalizedString(ensureLocalizedContent(product.category), language) &&
-              p.id !== product.id
-            )
+            .filter(p => {
+              // Handle complex category objects
+              let pCategoryName = '';
+              let productCategoryName = '';
+              
+              if (typeof p.category === 'object' && 'name_en' in p.category) {
+                pCategoryName = language === 'ar' ? (p.category as any).name_ar : p.category.name_en;
+              } else {
+                pCategoryName = getLocalizedString(ensureLocalizedContent(p.category), language);
+              }
+              
+              if (typeof product.category === 'object' && 'name_en' in product.category) {
+                productCategoryName = language === 'ar' ? (product.category as any).name_ar : product.category.name_en;
+              } else {
+                productCategoryName = getLocalizedString(ensureLocalizedContent(product.category), language);
+              }
+              
+              return pCategoryName === productCategoryName && p.id !== product.id;
+            })
             .slice(0, 4)
             .map(related => (
               <ProductCard key={related.id} product={related} />

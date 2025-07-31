@@ -14,7 +14,7 @@ export default function AdminCustomers() {
   const { t, isRTL } = useLanguage();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [customersData, setCustomersData] = useState(mockCustomers);
+  const [customersData, setCustomersData] = useState<Customer[]>(mockCustomers as Customer[]);
 
   const handleViewCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);

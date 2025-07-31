@@ -2,7 +2,7 @@ import { Product } from '@/types';
 
 export const products: Product[] = [
   {
-    id: 1,
+    id: '1',
     name: "Wireless Headphones",
     price: 99.99,
     image: "/images/products/headphones.jpg",
@@ -49,7 +49,7 @@ export const products: Product[] = [
     ]
   },
   {
-    id: 2,
+    id: '2',
     name: "Smart Watch",
     price: 199.99,
     image: "/images/products/smartwatch.jpg",
@@ -73,7 +73,7 @@ export const products: Product[] = [
     ]
   },
   {
-    id: 3,
+    id: '3',
     name: "Coffee Maker",
     price: 79.99,
     image: "/images/products/coffee-maker.jpg",
@@ -85,7 +85,7 @@ export const products: Product[] = [
     slug: "coffee-maker"
   },
   {
-    id: 4,
+    id: '4',
     name: "Running Shoes",
     price: 129.99,
     image: "/images/products/running-shoes.jpg",
@@ -122,7 +122,7 @@ export const products: Product[] = [
     ]
   },
   {
-    id: 5,
+    id: '5',
     name: "Bluetooth Speaker",
     price: 49.99,
     image: "/images/products/bluetooth-speaker.jpg",
@@ -134,7 +134,7 @@ export const products: Product[] = [
     slug: "bluetooth-speaker"
   },
   {
-    id: 6,
+    id: '6',
     name: "Desk Lamp",
     price: 34.99,
     image: "/images/products/desk-lamp.jpg",
@@ -168,7 +168,7 @@ export const products: Product[] = [
   },
   // Add demo product with variants
   {
-    id: 7,
+    id: '7',
     name: "Demo T-Shirt",
     price: 25,
     image: "/images/products/tshirt.jpg",

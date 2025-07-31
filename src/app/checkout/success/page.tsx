@@ -1,17 +1,24 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSearchParams } from 'next/navigation';
 
 export default function CheckoutSuccessPage() {
   const { dispatch } = useCart();
   const { t } = useLanguage();
+  const searchParams = useSearchParams();
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     // Clear the cart after successful payment
     dispatch({ type: 'CLEAR_CART' });
-  }, [dispatch]);
+    
+    // Get order ID from URL
+    const orderIdParam = searchParams.get('orderId');
+    setOrderId(orderIdParam);
+  }, [dispatch, searchParams]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -27,10 +34,17 @@ export default function CheckoutSuccessPage() {
         <p className="text-gray-600 mb-6">
           {t('checkout.success.message')}
         </p>
+
+        {orderId && (
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <p className="text-sm text-gray-600 mb-1">Order ID:</p>
+            <p className="font-mono text-lg font-semibold text-gray-800">{orderId}</p>
+          </div>
+        )}
         
         <div className="space-y-3">
           <a
-            href="/orders"
+            href="/profile"
             className="block w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             {t('checkout.success.viewOrders')}

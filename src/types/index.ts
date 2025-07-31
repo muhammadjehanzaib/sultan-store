@@ -22,13 +22,18 @@ export interface LocalizedContent {
 }
 
 export interface Product {
-  id: number;
+  id: string;
   name: string | LocalizedContent;
+  name_en?: string;
+  name_ar?: string;
   slug: string;
   price: number;
   image: string;
-  category: string | LocalizedContent;
+  category: string | LocalizedContent | { name_en: string; name_ar: string; slug: string };
+  categoryId?: string;
   description?: string | LocalizedContent;
+  description_en?: string;
+  description_ar?: string;
   inStock?: boolean;
   rating?: number;
   reviews?: number;
@@ -38,7 +43,7 @@ export interface Product {
 
 // Multilingual version for admin panel
 export interface MultilingualProduct {
-  id: number;
+  id: string;
   name: LocalizedContent;
   slug: string;
   price: number;
@@ -195,6 +200,7 @@ export interface OrderItem {
   quantity: number;
   price: number;
   total: number;
+  selectedAttributes?: { [attributeId: string]: string };
 }
 
 export interface Order {
@@ -211,6 +217,7 @@ export interface Order {
   createdAt: Date;
   updatedAt: Date;
   trackingNumber?: string;
+  trackingProvider?: 'fedex' | 'ups' | 'usps' | 'dhl' | 'custom';
 }
 
 // Customer Management Types
@@ -233,7 +240,7 @@ export interface Customer {
 // Review Management Types
 export interface Review {
   id: string;
-  productId: number;
+  productId: string;
   customerId: string;
   customerName: string;
   rating: number;
@@ -257,7 +264,7 @@ export interface ReviewResponse {
 
 // Inventory Management Types
 export interface InventoryItem {
-  productId: number;
+  productId: string;
   currentStock: number;
   minimumStock: number;
   maximumStock: number;
@@ -268,7 +275,7 @@ export interface InventoryItem {
 
 export interface StockHistory {
   id: string;
-  productId: number;
+  productId: string;
   type: 'in' | 'out' | 'adjustment';
   quantity: number;
   reason: string;

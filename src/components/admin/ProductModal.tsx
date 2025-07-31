@@ -50,6 +50,25 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
     }
   };
 
+  // Helper function to safely extract category value
+  const getCategoryValue = (category?: string | LocalizedContent | { name_en: string; name_ar: string; slug: string }) => {
+    if (!category) {
+      return '';
+    }
+    if (typeof category === 'string') {
+      return category;
+    }
+    // Check if it has 'en' property (LocalizedContent)
+    if ('en' in category) {
+      return category.en || '';
+    }
+    // Check if it has 'name_en' property
+    if ('name_en' in category) {
+      return category.name_en || '';
+    }
+    return '';
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
@@ -117,7 +136,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
               </label>
               <select
                 name="category"
-                value={typeof formData.category === 'string' ? formData.category : formData.category?.en || ''}
+                value={getCategoryValue(formData.category)}
                 onChange={handleInputChange}
                 required
                 className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"

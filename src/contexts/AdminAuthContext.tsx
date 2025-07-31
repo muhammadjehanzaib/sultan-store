@@ -1,61 +1,43 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '@/types';
-import { mockAdminUsers } from '@/data/mockCustomers';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 interface AdminAuthContextType {
-  user: User | null;
+  user: any;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
+  isLoading: boolean;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
 export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { data: session, status } = useSession();
 
-  // Load user from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem('adminUser');
-    if (stored) {
-      setUser(JSON.parse(stored));
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  // Save user to localStorage
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('adminUser', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('adminUser');
-    }
-  }, [user]);
+  const user = session?.user;
+  const isAuthenticated = !!user;
+  const isLoading = status === 'loading';
 
   const login = async (email: string, password: string) => {
-    const found = mockAdminUsers.find(u => u.email === email && u.password === password);
-    if (found) {
-      // Remove password before storing
-      const { password, ...userWithoutPassword } = found;
-      setUser(userWithoutPassword as User);
-      setIsAuthenticated(true);
-      return { success: true };
-    } else {
-      return { success: false, message: 'Invalid credentials' };
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    });
+    if (result?.error) {
+      return { success: false, message: result.error };
     }
+    return { success: true };
   };
 
   const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('adminUser');
+    signOut();
   };
 
   return (
-    <AdminAuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AdminAuthContext.Provider value={{ user, isAuthenticated, login, logout, isLoading }}>
       {children}
     </AdminAuthContext.Provider>
   );

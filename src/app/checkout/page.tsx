@@ -76,14 +76,41 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     setIsProcessing(true);
     try {
-      // Process payment and create order
-      // This would typically involve API calls to your backend
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
-      
-      // Redirect to success page
-      window.location.href = '/checkout/success';
+      // Prepare order data
+      const orderData = {
+        customerEmail: user?.email || billingAddress?.email || '',
+        customerName: `${billingAddress?.firstName || ''} ${billingAddress?.lastName || ''}`.trim(),
+        items: state.items,
+        subtotal: state.total,
+        tax: 0, // TODO: Calculate tax based on location
+        shipping: 0, // TODO: Calculate shipping based on address
+        total: state.total,
+        billingAddress,
+        shippingAddress,
+        paymentMethod: selectedPaymentMethod?.type || 'card'
+      };
+
+      // Call checkout API
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Clear cart and redirect to success page
+        // TODO: Add cart clearing functionality
+        window.location.href = `/checkout/success?orderId=${result.order.id}`;
+      } else {
+        throw new Error(result.error || 'Order failed');
+      }
     } catch (error) {
-      console.error('Payment failed:', error);
+      console.error('Order failed:', error);
+      alert('Order failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
       setIsProcessing(false);
     }
   };
