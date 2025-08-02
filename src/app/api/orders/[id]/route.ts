@@ -5,11 +5,12 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const order = await prisma.order.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         items: {
           include: {
@@ -36,9 +37,10 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { status, trackingNumber, trackingProvider } = body;
 
@@ -48,7 +50,7 @@ export async function PATCH(
     if (trackingProvider) updateData.trackingProvider = trackingProvider;
 
     const order = await prisma.order.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         items: {

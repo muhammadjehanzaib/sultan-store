@@ -58,172 +58,112 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        {/* Background overlay */}
-        <div
-          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-          onClick={handleClose}
-        />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4 sm:px-0">
+      {/* Modal panel */}
+      <div
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-lg overflow-hidden transform transition-all"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
+        {/* Header */}
+        <div className="px-6 pt-5 pb-4">
+          <div className="flex justify-between items-start">
+            <h3 id="modal-title" className="text-lg font-semibold text-gray-900 dark:text-white">
+              Delete User
+            </h3>
+            <button
+              onClick={handleClose}
+              disabled={isDeleting}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
-        {/* Modal panel */}
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div className="sm:flex sm:items-start">
-              <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                <svg
-                  className="h-6 w-6 text-red-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                  />
-                </svg>
+          {error && (
+            <div className="mt-3 p-3 bg-red-100 border border-red-300 rounded-md">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
+          {/* Confirmation message */}
+          <div className="mt-4 text-sm text-gray-600 dark:text-gray-300">
+            Are you sure you want to delete this user? This action cannot be undone.
+          </div>
+
+          {/* User Info */}
+          <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+            <div className="flex items-center">
+              <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-800 dark:text-gray-100 font-semibold">
+                {user.name ? user.name.split(' ').map(n => n[0]).join('') : '??'}
               </div>
-              <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                <div className="flex justify-between items-start">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">
-                    Delete User
-                  </h3>
-                  <button
-                    onClick={handleClose}
-                    disabled={isDeleting}
-                    className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                  >
-                    <svg
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-
-                {error && (
-                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-sm text-red-700">{error}</p>
-                  </div>
-                )}
-
-                <div className="mt-3">
-                  <p className="text-sm text-gray-500">
-                    Are you sure you want to delete this user? This action cannot be undone.
-                  </p>
-                  
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                        <span className="text-sm font-medium text-gray-700">
-                          {user.name?.split(' ').map(n => n[0]).join('') || '??'}
-                        </span>
-                      </div>
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
-                        <p className="text-xs text-gray-400 capitalize">{user.role}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <div className="flex">
-                      <div className="flex-shrink-0">
-                        <svg
-                          className="h-5 w-5 text-yellow-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                          />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h3 className="text-sm font-medium text-yellow-800">
-                          Warning
-                        </h3>
-                        <div className="mt-2 text-sm text-yellow-700">
-                          <p>
-                            Deleting this user will also remove:
-                          </p>
-                          <ul className="list-disc list-inside mt-1 space-y-1">
-                            <li>All user sessions and login history</li>
-                            <li>Any associated user data and preferences</li>
-                            <li>User's access to all systems and resources</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-300">{user.email}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-400 capitalize">{user.role}</p>
               </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm ${
-                isDeleting
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-red-600 hover:bg-red-700'
-              }`}
-            >
-              {isDeleting ? (
-                <>
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Deleting...
-                </>
-              ) : (
-                'Delete User'
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={isDeleting}
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
+          {/* Warning */}
+          <div className="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-800 rounded-md">
+            <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-2">Warning</h4>
+            <ul className="list-disc list-inside text-sm text-yellow-800 dark:text-yellow-200 space-y-1">
+              <li>All user sessions and login history</li>
+              <li>Any associated user data and preferences</li>
+              <li>User's access to all systems and resources</li>
+            </ul>
           </div>
+        </div>
+
+        {/* Footer buttons */}
+        <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 flex flex-row-reverse gap-3">
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition ${
+              isDeleting
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-red-600 hover:bg-red-700'
+            }`}
+          >
+            {isDeleting ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z"
+                  />
+                </svg>
+                Deleting...
+              </>
+            ) : (
+              'Delete User'
+            )}
+          </button>
+          <button
+            onClick={handleClose}
+            disabled={isDeleting}
+            className="inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </div>

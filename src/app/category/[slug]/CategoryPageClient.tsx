@@ -55,13 +55,11 @@ export default function CategoryPageClient({ slug, products }: CategoryPageClien
     );
   }
 
-// Filter products by category using category id
+  // Filter products by category
   const categoryProducts = products.filter(product => {
-    // Handle both API response structure (with category object) and direct categoryId
     if (product.category && typeof product.category === 'object' && 'slug' in product.category) {
       return product.category.slug === slug;
     }
-    // Fallback to categoryId matching
     return product.categoryId === category?.id;
   });
 
@@ -73,23 +71,12 @@ export default function CategoryPageClient({ slug, products }: CategoryPageClien
       case 'price-high':
         return b.price - a.price;
       case 'name': {
-        // Handle both API structure (name_en/name_ar) and legacy structure (name)
-        let aName = '';
-        let bName = '';
-        
-        if (a.name_en && a.name_ar) {
-          aName = language === 'ar' ? a.name_ar : a.name_en;
-        } else {
-          aName = getLocalizedString(ensureLocalizedContent(a.name), language);
-        }
-        
-        if (b.name_en && b.name_ar) {
-          bName = language === 'ar' ? b.name_ar : b.name_en;
-        } else {
-          bName = getLocalizedString(ensureLocalizedContent(b.name), language);
-        }
-        
-        return aName.localeCompare(bName);
+        const getName = (p: Product) =>
+          p.name_en && p.name_ar
+            ? language === 'ar' ? p.name_ar : p.name_en
+            : getLocalizedString(ensureLocalizedContent(p.name), language);
+
+        return getName(a).localeCompare(getName(b));
       }
       case 'rating':
         return (b.rating || 0) - (a.rating || 0);
@@ -98,12 +85,25 @@ export default function CategoryPageClient({ slug, products }: CategoryPageClien
     }
   });
 
+  // ✅ Normalize names/descriptions for ProductGrid
+  const normalizedProducts = sortedProducts.map(product => ({
+    ...product,
+    name: {
+      en: product.name_en || '',
+      ar: product.name_ar || '',
+    },
+    description: {
+      en: product.description_en || '',
+      ar: product.description_ar || '',
+    },
+  }));
+
   const handleAddToCart = (product: Product, selectedAttributes?: { [attributeId: string]: string }) => {
     dispatch({ type: 'ADD_ITEM', payload: { product, selectedAttributes } });
   };
 
   const handleViewProduct = (product: Product) => {
-    // Navigation is handled by the Link component in ProductCard
+    // No-op: handled via Link
   };
 
   return (
@@ -118,7 +118,7 @@ export default function CategoryPageClient({ slug, products }: CategoryPageClien
             <p className="text-gray-600 mb-4">
               {t('category.productsCount').replace('{{count}}', categoryProducts.length.toString())}
             </p>
-            
+
             {/* Sort Controls */}
             <div className="flex items-center space-x-4">
               <label className="text-sm font-medium text-gray-700">
@@ -141,7 +141,7 @@ export default function CategoryPageClient({ slug, products }: CategoryPageClien
 
       {/* Products Grid */}
       <ProductGrid
-        products={sortedProducts}
+        products={normalizedProducts}
         title=""
         subtitle=""
         onAddToCart={handleAddToCart}

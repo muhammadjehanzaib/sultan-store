@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 import UserList from '@/components/admin/UserList';
 import AddUserModal from '@/components/admin/AddUserModal';
 import EditUserModal from '@/components/admin/EditUserModal';
@@ -83,7 +85,11 @@ export default function UsersPage() {
     fetchUsers(pagination.currentPage, pagination.limit, roleFilter, searchQuery);
   }, [pagination.currentPage, pagination.limit, roleFilter, searchQuery]);
 
-  const handleAddUser = () => {
+  const handleAddUser = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setShowAddModal(true);
   };
 
@@ -137,136 +143,145 @@ export default function UsersPage() {
   const canDeleteUsers = currentUser?.role === 'admin';
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-              <p className="mt-2 text-gray-600">
-                Manage users and their roles in the system
-              </p>
-            </div>
-            {canAddUsers && (
-              <button
+    <>
+      <AdminAuthGuard requiredRole={["admin", "manager"]}>
+        <AdminLayout>
+
+        <div className="space-y-6">
+          {/* Header */}
+          <div>
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  User Management
+                </h1>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Manage users and their roles in the system
+                </p>
+              </div>
+              {canAddUsers && (
+                <button
+                type="button"
                 onClick={handleAddUser}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-              >
-                Add New User
-              </button>
-            )}
+                >
+                  Add New User
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* Filters */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search */}
+              <div>
+                <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Search Users
+                </label>
+                <input
+                  type="text"
+                  id="search"
+                  placeholder="Search by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  />
+              </div>
+
+              {/* Role Filter */}
+              <div>
+                <label htmlFor="role-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Filter by Role
+                </label>
+                <select
+                  id="role-filter"
+                  value={roleFilter}
+                  onChange={(e) => handleRoleFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  >
+                  <option value="">All Roles</option>
+                  <option value="admin">Admin</option>
+                  <option value="manager">Manager</option>
+                  <option value="support">Support</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+              </div>
+
+              {/* Results per page */}
+              <div>
+                <label htmlFor="limit" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Results per page
+                </label>
+                <select
+                  id="limit"
+                  value={pagination.limit}
+                  onChange={(e) => handleLimitChange(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* User List */}
+          <UserList
+            users={users}
+            loading={loading}
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onEditUser={canEditUsers ? handleEditUser : undefined}
+            onDeleteUser={canDeleteUsers ? handleDeleteUser : undefined}
+            currentUserId={currentUser?.id}
+            />
+
         </div>
-
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div>
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
-                Search Users
-              </label>
-              <input
-                type="text"
-                id="search"
-                placeholder="Search by name or email..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            {/* Role Filter */}
-            <div>
-              <label htmlFor="role-filter" className="block text-sm font-medium text-gray-700 mb-2">
-                Filter by Role
-              </label>
-              <select
-                id="role-filter"
-                value={roleFilter}
-                onChange={(e) => handleRoleFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">All Roles</option>
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
-                <option value="support">Support</option>
-                <option value="viewer">Viewer</option>
-              </select>
-            </div>
-
-            {/* Results per page */}
-            <div>
-              <label htmlFor="limit" className="block text-sm font-medium text-gray-700 mb-2">
-                Results per page
-              </label>
-              <select
-                id="limit"
-                value={pagination.limit}
-                onChange={(e) => handleLimitChange(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            <p className="text-sm">{error}</p>
-          </div>
-        )}
-
-        {/* User List */}
-        <UserList
-          users={users}
-          loading={loading}
-          pagination={pagination}
-          onPageChange={handlePageChange}
-          onEditUser={canEditUsers ? handleEditUser : undefined}
-          onDeleteUser={canDeleteUsers ? handleDeleteUser : undefined}
-          currentUserId={currentUser?.id}
+      </AdminLayout>
+      </AdminAuthGuard>
+      
+      {/* Render modals outside of the main layout to avoid z-index issues */}
+      {showAddModal && (
+        <AddUserModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onUserAdded={handleUserAdded}
         />
+      )}
 
-        {/* Modals */}
-        {showAddModal && (
-          <AddUserModal
-            isOpen={showAddModal}
-            onClose={() => setShowAddModal(false)}
-            onUserAdded={handleUserAdded}
-          />
-        )}
+      {showEditModal && selectedUser && (
+        <EditUserModal
+          isOpen={showEditModal}
+          user={selectedUser}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedUser(null);
+          }}
+          onUserUpdated={handleUserUpdated}
+        />
+      )}
 
-        {showEditModal && selectedUser && (
-          <EditUserModal
-            isOpen={showEditModal}
-            user={selectedUser}
-            onClose={() => {
-              setShowEditModal(false);
-              setSelectedUser(null);
-            }}
-            onUserUpdated={handleUserUpdated}
-          />
-        )}
-
-        {showDeleteModal && selectedUser && (
-          <DeleteUserModal
-            isOpen={showDeleteModal}
-            user={selectedUser}
-            onClose={() => {
-              setShowDeleteModal(false);
-              setSelectedUser(null);
-            }}
-            onUserDeleted={handleUserDeleted}
-          />
-        )}
-      </div>
-    </div>
+      {showDeleteModal && selectedUser && (
+        <DeleteUserModal
+          isOpen={showDeleteModal}
+          user={selectedUser}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setSelectedUser(null);
+          }}
+          onUserDeleted={handleUserDeleted}
+        />
+      )}
+    </>
   );
 }

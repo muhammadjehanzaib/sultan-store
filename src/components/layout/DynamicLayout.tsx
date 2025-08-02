@@ -17,9 +17,9 @@ export const DynamicLayout: React.FC<DynamicLayoutProps> = ({ children }) => {
     
     // Update document title based on language
     if (language === 'ar') {
-      document.title = 'متجر السلطان - متجرك الإلكتروني';
+      document.title = 'السلامة السعودية - متجرك الإلكتروني';
     } else {
-      document.title = 'SultanStore - Your Online Store';
+      document.title = 'Saudi Safety - Your Online Store';
     }
   }, [language, isRTL]);
 

@@ -5,10 +5,11 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,
-  { params }: { params: { email: string } }
+  { params }: { params: Promise<{ email: string }> }
 ) {
   try {
-    const email = decodeURIComponent(params.email);
+    const { email: rawEmail } = await params;
+    const email = decodeURIComponent(rawEmail);
     
     const orders = await prisma.order.findMany({
       where: { customerEmail: email },

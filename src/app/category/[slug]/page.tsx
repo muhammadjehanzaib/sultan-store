@@ -22,6 +22,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/products`);
     const data = await response.json();
     const products = data.products || [];
+    console.log("Fetching products -> category page",products);
     return <CategoryPageClient slug={slug} products={products} />;
   } catch (error) {
     console.error('Error fetching products:', error);

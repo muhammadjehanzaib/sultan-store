@@ -18,14 +18,14 @@ export default function AdminAuthGuard({ children, requiredRole }: { children: R
         return;
       }
       
-      // Check if user has admin privileges
-      if (user && !adminRoles.includes(user.role)) {
-        // Redirect non-admin users to the main site
+      // Check if user has required privileges
+      if (user && !allowedRoles.includes(user.role)) {
+        // Redirect unauthorized users to the main site
         router.replace("/");
         return;
       }
     }
-  }, [isAuthenticated, isLoading, user, router]);
+  }, [isAuthenticated, isLoading, user, router, allowedRoles]);
 
   // Show loading while checking authentication
   if (isLoading) {

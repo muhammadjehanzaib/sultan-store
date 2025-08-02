@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     
     // Check if user is authenticated and has admin privileges
     if (!session?.user || !['admin', 'manager', 'support'].includes(session.user.role)) {
@@ -63,10 +64,10 @@ export async function GET(request: Request) {
     return NextResponse.json({
       users,
       pagination: {
-        page,
+        currentPage: page,
         limit,
         total: totalCount,
-        totalPages: Math.ceil(totalCount / limit)
+        pages: Math.ceil(totalCount / limit)
       }
     });
 
@@ -78,7 +79,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     
     // Check if user is authenticated and has admin privileges
     if (!session?.user || !['admin', 'manager'].includes(session.user.role)) {

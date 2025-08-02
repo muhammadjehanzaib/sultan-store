@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sultan Store - Your Online Store",
+  title: "SaudiSafety - Your Online Store",
   description: "Discover amazing products at great prices. Shop electronics, fashion, home goods and more.",
 };
 

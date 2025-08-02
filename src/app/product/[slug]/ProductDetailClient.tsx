@@ -147,7 +147,7 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
             {/* Price */}
             <div className="space-y-2">
               <div className="text-3xl font-bold text-purple-600">
-                <Price amount={product.price} locale={isRTL ? 'ar' : 'en'} className="text-3xl font-bold text-purple-600" />
+                <Price amount={product.price} locale={isRTL ? 'ar' : 'en'} taxLabelType="excluded" className="text-3xl font-bold text-purple-600" />
               </div>
               <p className="text-sm text-green-600 font-medium">
                 ✓ Free shipping on orders over <Price amount={50} locale={isRTL ? 'ar' : 'en'} />
@@ -215,7 +215,7 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
                     size="lg"
                     className="flex-1"
                   >
-                    {t('product.addToCart')} {quantity > 1 ? `${quantity} ` : ''}- <Price amount={product.price * quantity} locale={isRTL ? 'ar' : 'en'} />
+                    {t('product.addToCart')} {quantity > 1 ? `${quantity} ` : ''}- <Price amount={product.price * quantity} locale={isRTL ? 'ar' : 'en'} taxLabelType='excluded' />
                   </Button>
                   <button className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     ❤️

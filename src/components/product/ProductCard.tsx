@@ -29,6 +29,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       onViewProduct(product);
     }
     router.push(`/product/${product.slug}`);
+    console.log("products data", product)
   };
 
   return (
@@ -104,7 +105,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         )}
 
         {/* Price */}
-        <Price amount={product.price} locale={isRTL ? 'ar' : 'en'} className="text-2xl font-bold text-purple-600 mb-4" />
+        <Price amount={product.price} locale={isRTL ? 'ar' : 'en'} taxLabelType="excluded" className="text-2xl font-bold text-purple-600 mb-4" />
 
         {/* Add to Cart Button */}
         <Button

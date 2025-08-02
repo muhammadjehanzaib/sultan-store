@@ -17,7 +17,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
 
   const subtotal = total;
   const shipping = 0; // Free shipping
-  const tax = total * 0.1; // 10% tax
+  const tax = total * 0.15; // 15% tax
   const grandTotal = subtotal + shipping + tax;
 
   // Helper function to format selected attributes
@@ -71,7 +71,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
                   </p>
                 )}
                 
-                <Price amount={item.product.price * item.quantity} locale={isRTL ? 'ar' : 'en'} className="text-purple-600 font-semibold text-sm mt-1" />
+                <Price amount={item.product.price * item.quantity} taxLabelType="excluded" locale={isRTL ? 'ar' : 'en'} className="text-purple-600 font-semibold text-sm mt-1 pl-2" />
               </div>
             </div>
           );
@@ -85,7 +85,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
         <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
           <span className="text-gray-600">{t('cart.subtotal')}</span>
           <span className="font-medium text-purple-600">
-            <Price amount={subtotal} locale={isRTL ? 'ar' : 'en'} className="font-medium text-purple-600" />
+            <Price amount={subtotal} locale={isRTL ? 'ar' : 'en'} taxLabelType="excluded" className="font-medium text-purple-600" />
           </span>
         </div>
         
@@ -95,7 +95,9 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
         </div>
         
         <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
-          <span className="text-gray-600">{t('cart.tax')}</span>
+          <span className="text-gray-600">{t('cart.tax')} 
+            
+          </span>
           <span className="font-medium text-gray-600">
             <Price amount={tax} locale={isRTL ? 'ar' : 'en'} className="font-medium text-gray-600" />
           </span>
@@ -106,7 +108,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
         <div className={`flex justify-between text-lg font-semibold text-purple-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <span>{t('cart.total')}</span>
           <span className="text-purple-600">
-            <Price amount={grandTotal} locale={isRTL ? 'ar' : 'en'} className="font-semibold text-lg text-purple-600" />
+            <Price amount={grandTotal} locale={isRTL ? 'ar' : 'en'} taxLabelType="included" className="font-semibold text-lg text-purple-600" />
           </span>
         </div>
       </div>

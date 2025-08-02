@@ -41,7 +41,7 @@ export const CartSidebar: React.FC = () => {
       />
       
       {/* Cart Sidebar */}
-      <div className={`fixed ${isRTL ? 'left-0' : 'right-0'} top-0 h-full w-96 bg-gradient-to-b from-gray-50 to-white shadow-2xl z-50 flex flex-col`}>
+      <div className={`fixed ${isRTL ? 'left-0' : 'right-0'} top-0 h-full w-105 bg-gradient-to-b from-gray-50 to-white shadow-2xl z-50 flex flex-col`}>
         {/* Header */}
         <div className={`flex items-center justify-between p-6 bg-white border-b border-gray-200 shadow-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
           <h2 className="text-xl font-bold text-gray-800">{t('cart.title')}</h2>
@@ -116,7 +116,7 @@ export const CartSidebar: React.FC = () => {
                           </div>
                         )}
                         
-                        <Price amount={item.product.price} locale={isRTL ? 'ar' : 'en'} className="text-purple-600 font-bold text-lg mt-1" />
+                        <Price amount={item.product.price} locale={isRTL ? 'ar' : 'en'} taxLabelType="excluded" className="text-purple-600 font-bold text-lg mt-1" />
                         
                         {/* Quantity Controls */}
                         <div className={`flex items-center mt-3 ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
@@ -171,7 +171,7 @@ export const CartSidebar: React.FC = () => {
               <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('cart.subtotal')} ({state.itemCount === 1 ? t('cart.itemCountSingular').replace('{{count}}', state.itemCount.toString()) : t('cart.itemCount').replace('{{count}}', state.itemCount.toString())})</span>
                 <span>
-                  <Price amount={state.total} locale={isRTL ? 'ar' : 'en'} className="font-medium" />
+                  <Price amount={state.total} locale={isRTL ? 'ar' : 'en'} taxLabelType="excluded" className="font-medium" />
                 </span>
               </div>
               <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
@@ -181,7 +181,7 @@ export const CartSidebar: React.FC = () => {
               <div className={`flex justify-between font-semibold text-lg border-t pt-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('cart.total')}</span>
                 <span>
-                  <Price amount={state.total} locale={isRTL ? 'ar' : 'en'} className="font-medium" />
+                  <Price amount={state.total} locale={isRTL ? 'ar' : 'en'} taxLabelType="excluded" className="font-medium" />
                 </span>
               </div>
             </div>
