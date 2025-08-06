@@ -7,10 +7,11 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { products, categories } from '@/data/products';
+// import { products, categories } from '@/data/products';
 import { searchUtils } from '@/lib/utils';
 import { Product } from '@/types';
 import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
+import Price from '@/components/ui/Price';
 
 interface FilterState {
   category: string;
@@ -32,17 +33,66 @@ function SearchPageContent() {
   const { t, isRTL, language } = useLanguage();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState('relevance');
   const [showFilters, setShowFilters] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [filters, setFilters] = useState<FilterState>({
     category: '',
     priceRange: [0, 1000],
     inStock: null,
     rating: null
   });
+
+  // Fetch products and categories from API
+  useEffect(() => {
+    setIsLoading(true);
+    fetch('/api/products?includeRelations=true')
+      .then(res => res.json())
+      .then((data: any) => {
+        console.log('Search page API response:', data);
+        const apiProducts = Array.isArray(data) ? data : [];
+        
+        // Convert API format to frontend format
+        const frontendProducts = apiProducts.map((apiProduct: any) => ({
+          id: apiProduct.id,
+          name: { en: apiProduct.name_en || '', ar: apiProduct.name_ar || '' },
+          slug: apiProduct.slug,
+          price: apiProduct.price,
+          image: apiProduct.image,
+          category: apiProduct.category
+            ? { en: apiProduct.category.name_en || '', ar: apiProduct.category.name_ar || '' }
+            : { en: '', ar: '' },
+          description: { en: apiProduct.description_en || '', ar: apiProduct.description_ar || '' },
+          inStock: apiProduct.inStock,
+          rating: apiProduct.rating,
+          reviews: apiProduct.reviews,
+          attributes: apiProduct.attributes || [],
+          variants: apiProduct.variants || [],
+        }));
+        
+        setProducts(frontendProducts);
+        console.log('Frontend products:', frontendProducts);
+        
+        // Extract unique categories
+        const uniqueCategories = apiProducts
+          .map((product: any) => product.category)
+          .filter((category: any) => category && category.id)
+          .filter((value: any, index: number, self: any[]) => 
+            index === self.findIndex((t: any) => t.id === value.id)
+          );
+        setCategories(uniqueCategories);
+        
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error('Error fetching products and categories:', error);
+        setIsLoading(false);
+      });
+  }, []);
 
   // Get initial search query from URL params
   useEffect(() => {
@@ -53,13 +103,47 @@ function SearchPageContent() {
 
   // Generate search suggestions
   useEffect(() => {
-    if (searchQuery.trim() && searchQuery.length > 1) {
-      const newSuggestions = searchUtils.generateSuggestions(searchQuery, products);
-      setSuggestions(newSuggestions);
+    console.log('Generating suggestions for:', searchQuery, 'Products count:', products.length);
+    if (searchQuery.trim() && searchQuery.length > 1 && products.length > 0) {
+      const suggestions = new Set<string>();
+      const queryLower = searchQuery.toLowerCase();
+      console.log('Query for suggestions:', queryLower);
+      
+      products.forEach(product => {
+        // Get localized strings
+        const name = getLocalizedString(ensureLocalizedContent(product.name), language).toLowerCase();
+        const category = getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase();
+        const description = getLocalizedString(ensureLocalizedContent(product.description || ''), language).toLowerCase();
+        
+        // Add product name if it matches
+        if (name.includes(queryLower)) {
+          suggestions.add(getLocalizedString(ensureLocalizedContent(product.name), language));
+        }
+        
+        // Add category if it matches
+        if (category.includes(queryLower)) {
+          suggestions.add(getLocalizedString(ensureLocalizedContent(product.category), language));
+        }
+        
+        // Add description words if they match
+        if (description) {
+          const words = description.split(' ');
+          words.forEach((word: string) => {
+            if (word.length > 3 && word.includes(queryLower)) {
+              suggestions.add(word);
+            }
+          });
+        }
+      });
+      
+      const suggestionArray = Array.from(suggestions).slice(0, 5);
+      console.log('Setting suggestions:', suggestionArray);
+      setSuggestions(suggestionArray);
     } else {
+      console.log('Clearing suggestions');
       setSuggestions([]);
     }
-  }, [searchQuery]);
+  }, [searchQuery, products, language]);
 
   // Sort options
   const sortOptions: SortOption[] = [
@@ -75,6 +159,8 @@ function SearchPageContent() {
     let filtered = products;
 
     // Enhanced text search with fuzzy matching
+    console.log('Initial products count:', products.length);
+    console.log('Search query:', searchQuery);
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(product => {
@@ -98,7 +184,12 @@ function SearchPageContent() {
           name.includes(word) || category.includes(word) || description.includes(word)
         );
         
-        return exactNameMatch || exactCategoryMatch || exactDescMatch || wordMatches;
+        const match = exactNameMatch || exactCategoryMatch || exactDescMatch || wordMatches;
+        console.log(`Product "${name}" matching "${query}": ${match}`, {
+          name, category, description,
+          exactNameMatch, exactCategoryMatch, exactDescMatch, wordMatches
+        });
+        return match;
       });
     }
 
@@ -162,7 +253,7 @@ function SearchPageContent() {
     });
 
     return sorted;
-  }, [searchQuery, filters, sortBy]);
+  }, [searchQuery, filters, sortBy, products, language]);
 
   // Helper function to calculate relevance score
   const calculateRelevanceScore = (product: Product, query: string): number => {
@@ -209,7 +300,7 @@ function SearchPageContent() {
   };
 
   const handleViewProduct = (product: Product) => {
-    router.push(`/product/${product.id}`);
+    router.push(`/product/${product.slug}`);
   };
 
   const debouncedSearch = searchUtils.debounce((query: string) => {
@@ -220,7 +311,8 @@ function SearchPageContent() {
     }
   }, 500);
 
-  const handleSearch = (query: string) => {
+const handleSearch = (query: string) => {
+    console.log('Search query:', query);
     setSearchQuery(query);
     setShowSuggestions(false);
     if (query.trim()) {
@@ -286,12 +378,12 @@ function SearchPageContent() {
                   onFocus={() => setShowSuggestions(searchQuery.length > 1 && suggestions.length > 0)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                   placeholder={t('search.placeholder')}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full pl-10 text-gray-700 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
                 
                 {/* Search Suggestions */}
                 {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+                  <div className="absolute top-full text-gray-700 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
                     {suggestions.map((suggestion, index) => (
                       <button
                         key={index}
@@ -314,7 +406,7 @@ function SearchPageContent() {
             <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex text-gray-700 items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <span className="mr-2">🔧</span>
                 {t('search.filters')}
@@ -323,7 +415,7 @@ function SearchPageContent() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
                 {sortOptions.map(option => (
                   <option key={option.key} value={option.value}>
@@ -336,23 +428,21 @@ function SearchPageContent() {
 
           {/* Results Summary */}
           <div className="mt-4">
-            <p className="text-gray-600">
-              {isLoading ? (
-                <span className="flex items-center">
-                  <LoadingSpinner size="sm" className="mr-2" />
-                  {t('common.loading')}
-                </span>
-              ) : (
-                <>
-                  {filteredAndSortedProducts.length} {t('search.resultsFound')}
-                  {searchQuery && (
-                    <span className="ml-2">
-                      {t('search.for')} <strong>"{searchQuery}"</strong>
-                    </span>
-                  )}
-                </>
-              )}
-            </p>
+            {isLoading ? (
+              <div className="flex items-center text-gray-600">
+                <LoadingSpinner size="sm" className="mr-2" />
+                <span>{t('common.loading')}</span>
+              </div>
+            ) : (
+              <p className="text-gray-600">
+                {filteredAndSortedProducts.length} {t('search.resultsFound')}
+                {searchQuery && (
+                  <span className="ml-2">
+                    {t('search.for')} <strong>"{searchQuery}"</strong>
+                  </span>
+                )}
+              </p>
+            )}
           </div>
         </div>
 
@@ -390,13 +480,13 @@ function SearchPageContent() {
                         <input
                           type="radio"
                           name="category"
-                          value={typeof category.name === 'string' ? category.name : category.name.en}
-                          checked={filters.category === (typeof category.name === 'string' ? category.name : category.name.en)}
+                          value={category.name_en}
+                          checked={filters.category === category.name_en}
                           onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
                           className="text-purple-600 focus:ring-purple-500"
                         />
                         <span className="ml-2 text-sm text-gray-600">
-                          {typeof category.name === 'string' ? category.name : category.name.en}
+                          {language === 'ar' ? category.name_ar : category.name_en}
                         </span>
                     </label>
                   ))}
@@ -413,18 +503,18 @@ function SearchPageContent() {
                       value={filters.priceRange[0]}
                       onChange={(e) => updatePriceRange(Number(e.target.value), filters.priceRange[1])}
                       placeholder="Min"
-                      className="px-3 py-2 border border-gray-300 rounded text-sm"
+                      className="px-3 py-2 border text-gray-500 border-gray-300 rounded text-sm"
                     />
                     <input
                       type="number"
                       value={filters.priceRange[1]}
                       onChange={(e) => updatePriceRange(filters.priceRange[0], Number(e.target.value))}
                       placeholder="Max"
-                      className="px-3 py-2 border border-gray-300 rounded text-sm"
+                      className="px-3 py-2 border text-gray-500 border border-gray-300 rounded text-sm"
                     />
                   </div>
                   <div className="text-xs text-gray-500">
-                    ${filters.priceRange[0]} - ${filters.priceRange[1]}
+                    <Price amount={filters.priceRange[0]}/>  -  <Price amount={filters.priceRange[1]}></Price>
                   </div>
                 </div>
               </div>

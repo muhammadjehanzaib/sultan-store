@@ -154,17 +154,17 @@ const InventoryTable: React.FC<InventoryTableProps> = ({ inventory, products, on
                                           SKU: {variant.sku}
                                         </div>
                                       )}
-                                      {variant.attributeValues && typeof variant.attributeValues === 'object' && (
+                                      {variant.attributeValues && Array.isArray(variant.attributeValues) && variant.attributeValues.length > 0 && (
                                         <div className="flex flex-wrap gap-1">
-                                          {Object.entries(variant.attributeValues as Record<string, string>).map(([attrId, valueId]) => {
-                                            // Get attribute and value info from the product
-                                            const attribute = product?.attributes?.find(attr => attr.id === attrId);
-                                            const attributeValue = attribute?.values?.find(val => val.id === valueId);
+                                          {variant.attributeValues.map((variantAttrValue: any) => {
+                                            // Handle new VariantAttributeValue structure
+                                            const attributeValue = variantAttrValue.attributeValue;
+                                            const attribute = variantAttrValue.attributeValue?.attribute;
                                             
                                             return (
-                                              <span key={attrId} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                <span className="font-semibold">{attribute?.name || attrId}:</span>
-                                                <span className="ml-1">{attributeValue?.label || attributeValue?.value || valueId}</span>
+                                              <span key={variantAttrValue.id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                <span className="font-semibold">{attribute?.name || 'Attr'}:</span>
+                                                <span className="ml-1">{attributeValue?.label || attributeValue?.value || 'N/A'}</span>
                                                 {attributeValue?.hexColor && (
                                                   <div 
                                                     className="ml-1 w-3 h-3 rounded-full border border-gray-300" 
@@ -176,7 +176,7 @@ const InventoryTable: React.FC<InventoryTableProps> = ({ inventory, products, on
                                           })}
                                         </div>
                                       )}
-                                      {(!variant.attributeValues || Object.keys(variant.attributeValues as any).length === 0) && (
+                                      {(!Array.isArray(variant.attributeValues) || variant.attributeValues.length === 0) && (
                                         <span className="text-gray-500 italic text-xs">No variants</span>
                                       )}
                                     </div>

@@ -191,18 +191,28 @@ export default function AdminInventory() {
   };
 
   // Handler: Toggle variant activation
-  const handleToggleVariantActive = (productId: string, variantId: string) => {
-    setProductList(prev => prev.map(product => {
-      if (product.id === productId && product.variants) {
-        return {
-          ...product,
-          variants: product.variants.map(variant =>
-            variant.id === variantId ? { ...variant, inStock: !variant.inStock } : variant
-          )
-        };
+  const handleToggleVariantActive = async (productId: string, variantId: string) => {
+    try {
+      const response = await fetch('/api/inventory/variants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          variantId,
+          action: 'toggleStatus'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle variant status');
       }
-      return product;
-    }));
+
+      // Refresh inventory data to get updated variant status
+      await fetchInventoryData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to toggle variant status');
+    }
   };
 
   // Handler: Open modal to adjust variant stock
@@ -216,23 +226,31 @@ export default function AdminInventory() {
   };
 
   // Handler: Save variant stock adjustment
-  const handleSaveVariantStock = (productId: string, variantId: string, adjustment: number, reason: string) => {
-    setProductList(prev => prev.map(product => {
-      if (product.id === productId && product.variants) {
-        return {
-          ...product,
-          variants: product.variants.map(variant => {
-            if (variant.id === variantId) {
-              const newStock = Math.max(0, (variant.stockQuantity ?? 0) + adjustment);
-              return { ...variant, stockQuantity: newStock };
-            }
-            return variant;
-          })
-        };
+  const handleSaveVariantStock = async (productId: string, variantId: string, adjustment: number, reason: string) => {
+    try {
+      const response = await fetch('/api/inventory/variants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          variantId,
+          action: 'adjustStock',
+          stockChange: adjustment,
+          reason
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to adjust variant stock');
       }
-      return product;
-    }));
-    setIsVariantModalOpen(false);
+
+      // Refresh inventory data to get updated variant stock
+      await fetchInventoryData();
+      setIsVariantModalOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to adjust variant stock');
+    }
   };
 
   // Handler: View variant stock history (mock for now)
@@ -385,7 +403,7 @@ export default function AdminInventory() {
                 <h2 className="text-lg font-bold mb-2">Adjust Variant Stock</h2>
                 <div className="mb-2">
                   {Object.entries(selectedVariant.variant.attributeValues).map(([attr, val]) => (
-                    <span key={attr} className="mr-2"><b>{attr}:</b> {val}</span>
+                    <span key={attr} className="mr-2"><b>{attr}:</b> {typeof val === 'object' ? JSON.stringify(val) : val}</span>
                   ))}
                 </div>
                 <form onSubmit={e => {

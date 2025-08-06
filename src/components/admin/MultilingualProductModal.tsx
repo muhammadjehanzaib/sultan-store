@@ -115,8 +115,19 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
         })),
         variants: (() => {
           const variants = Array.isArray((product as any).variants) && (product as any).variants.length > 0 ? (product as any).variants : [];
-          console.log('Modal: Loading variants for product:', product.id, variants);
-          return variants;
+          console.log('Modal: Loading variants for product:', product.id, 'variants count:', variants.length, 'variants:', variants);
+          // Ensure variants have proper structure
+          const processedVariants = variants.map((variant: any) => ({
+            id: variant.id || `variant-${Date.now()}-${Math.random()}`,
+            attributeValues: variant.attributeValues || {},
+            price: variant.price,
+            image: variant.image || '',
+            sku: variant.sku || '',
+            inStock: variant.inStock !== false,
+            stockQuantity: variant.stockQuantity || 0
+          }));
+          console.log('Modal: Processed variants:', processedVariants);
+          return processedVariants;
         })(),
         seo: {
           title: (product.seo && product.seo.title) ? product.seo.title : { en: '', ar: '' },
@@ -606,7 +617,7 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mt-6">
                 <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Product Variants</h4>
                 <ProductVariantsSection
-                  key={`variants-${product?.id || 'new'}`}
+                  key={`${product?.id || 'new'}`}
                   attributes={formData.attributes}
                   variants={formData.variants || []}
                   setVariants={(variants) => setFormData(prev => ({ ...prev, variants }))}

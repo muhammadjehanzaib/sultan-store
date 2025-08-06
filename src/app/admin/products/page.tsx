@@ -7,7 +7,7 @@ import { ProductsTable } from '@/components/admin/ProductsTable';
 import { MultilingualProductModal } from '@/components/admin/MultilingualProductModal';
 import { Button } from '@/components/ui/Button';
 import { products } from '@/data/products';
-import { Product, MultilingualProduct, Category } from '@/types';
+import { Product, MultilingualProduct, Category, ProductAttribute } from '@/types';
 import { convertToMultilingualProduct } from '@/lib/multilingualUtils';
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 import Price from '@/components/ui/Price';
@@ -50,6 +50,81 @@ export default function AdminProducts() {
 
   // Helper: Map API product to frontend format
   const apiToProduct = (apiProduct: any): Product => {
+    if (!apiProduct || !apiProduct.id) {
+      console.error('Invalid API product data:', apiProduct);
+      throw new Error('Invalid product data received from API');
+    }
+
+    console.log('apiToProduct: Converting API product:', apiProduct.id, 'variants:', apiProduct.variants?.length || 0);
+    console.log('apiToProduct: Raw API product:', JSON.stringify(apiProduct, null, 2));
+
+    // Process attributes properly
+    const processedAttributes = (apiProduct.attributes || []).map((attr: any) => {
+      console.log('Processing attribute:', attr.name, 'values:', attr.values);
+      return {
+        ...attr,
+        values: (attr.values || []).map((val: any) => ({
+          ...val,
+          priceModifier: val.priceModifier || 0
+        }))
+      };
+    });
+
+    // Process variants properly - handle new relational structure
+    const processedVariants = (apiProduct.variants || []).map((variant: any) => {
+      console.log('Processing variant:', variant.id, 'attributeValues relation:', variant.attributeValues);
+
+      // Convert relational attributeValues to simple object format for frontend compatibility
+      let attributeValues: Record<string, string> = {};
+
+      if (variant.attributeValues && Array.isArray(variant.attributeValues)) {
+        variant.attributeValues.forEach((joinRecord: any) => {
+          if (joinRecord.attributeValue && joinRecord.attributeValue.attribute) {
+            const attributeId = joinRecord.attributeValue.attribute.id;
+            const valueId = joinRecord.attributeValue.id;
+            attributeValues[attributeId] = valueId;
+          }
+        });
+        console.log('Converted relational attributeValues to:', attributeValues);
+      } else if (variant.attributeValues) {
+        // Legacy structure: direct object or JSON string
+        if (typeof variant.attributeValues === 'string') {
+          try {
+            attributeValues = JSON.parse(variant.attributeValues);
+          } catch (e) {
+            console.error('Failed to parse attributeValues:', variant.attributeValues);
+            attributeValues = {};
+          }
+        } else if (typeof variant.attributeValues === 'object') {
+          attributeValues = variant.attributeValues;
+        }
+      }
+
+      // Initialize attributeValues with default values if empty and attributes exist
+      if (Object.keys(attributeValues).length === 0 && processedAttributes.length > 0) {
+        console.log('Initializing empty attributeValues for variant:', variant.id);
+        processedAttributes.forEach((attr: ProductAttribute) => {
+          if (attr.values && attr.values.length > 0) {
+            attributeValues[attr.id] = attr.values[0].id; // Use first available value as default
+          }
+        });
+        console.log('Initialized attributeValues:', attributeValues);
+      }
+
+      const processedVariant = {
+        id: variant.id,
+        attributeValues,
+        price: variant.price,
+        image: variant.image || '',
+        sku: variant.sku || '',
+        inStock: variant.inStock !== false,
+        stockQuantity: variant.stockQuantity || 0
+      };
+
+      console.log('Processed variant:', processedVariant);
+      return processedVariant;
+    });
+
     // Store original multilingual data for later use
     const product = {
       id: apiProduct.id,
@@ -62,8 +137,10 @@ export default function AdminProducts() {
       inStock: apiProduct.inStock,
       rating: apiProduct.rating,
       reviews: apiProduct.reviews,
-      attributes: apiProduct.attributes || [],
-      variants: apiProduct.variants || [],
+      // Properly preserve attributes with values
+      attributes: processedAttributes,
+      // Properly preserve variants
+      variants: processedVariants,
       // Keep original multilingual data
       name_en: apiProduct.name_en,
       name_ar: apiProduct.name_ar,
@@ -72,6 +149,10 @@ export default function AdminProducts() {
       category_en: apiProduct.category ? apiProduct.category.name_en : '',
       category_ar: apiProduct.category ? apiProduct.category.name_ar : '',
     };
+
+    console.log('apiToProduct: Final converted product:', product);
+    console.log('apiToProduct: Final product variants:', product.variants);
+    console.log('apiToProduct: Final product attributes:', product.attributes);
     return product as Product;
   };
 
@@ -81,7 +162,7 @@ export default function AdminProducts() {
     const categoryId = categories.find(
       c => c.name_en === product.category.en || c.name === product.category.en
     )?.id;
-    
+
     const apiData = {
       name_en: product.name.en,
       name_ar: product.name.ar,
@@ -97,20 +178,27 @@ export default function AdminProducts() {
       variants: product.variants || [],
       attributes: product.attributes || [],
     };
-    
+
     return apiData;
   };
 
   // Fetch products from API
   useEffect(() => {
     setLoading(true);
-    fetch('/api/products')
+    fetch('/api/products?includeRelations=true')
       .then(res => res.json())
-      .then((data: { products: any[] }) => {
-        setProductsData(data.products.map(apiToProduct));
+      .then((data: any) => {
+        console.log('API Response:', data);
+        // Handle both direct array and wrapped response
+        const products = Array.isArray(data) ? data : (data.products || []);
+        console.log('Products to process:', products);
+        setProductsData(products.map(apiToProduct));
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((error) => {
+        console.error('Error fetching products:', error);
+        setLoading(false);
+      });
   }, []);
 
   const handleDeleteProduct = async (productId: string) => {
@@ -126,13 +214,13 @@ export default function AdminProducts() {
   const handleSaveProduct = async (multilingualProduct: MultilingualProduct) => {
     const isEdit = !!selectedProduct;
     const apiPayload = productToApi(multilingualProduct);
-    
+
     // Validate payload before sending
     if (!apiPayload.categoryId) {
       alert('Please select a category');
       return;
     }
-    
+
     let response, data: any;
     try {
       if (isEdit) {
@@ -143,7 +231,14 @@ export default function AdminProducts() {
         });
         data = await response.json();
         if (response.ok) {
-          setProductsData(prev => prev.map(p => p.id === selectedProduct!.id ? apiToProduct(data.product) : p));
+          // For PATCH, the API returns just a message, so we need to refetch the product
+          const refreshResponse = await fetch(`/api/products?includeRelations=true`);
+          const refreshData = await refreshResponse.json();
+          const products = Array.isArray(refreshData) ? refreshData : (refreshData.products || []);
+          const updatedProduct = products.find((p: any) => p.id === selectedProduct!.id);
+          if (updatedProduct) {
+            setProductsData(prev => prev.map(p => p.id === selectedProduct!.id ? apiToProduct(updatedProduct) : p));
+          }
         } else {
           console.error('Update failed:', data);
           alert(`Failed to update product: ${data.error || 'Unknown error'}`);
@@ -157,7 +252,11 @@ export default function AdminProducts() {
         });
         data = await response.json();
         if (response.ok) {
-          setProductsData(prev => [apiToProduct(data.product), ...prev]);
+          // For POST, the API returns just an ID, so we need to refetch all products
+          const refreshResponse = await fetch(`/api/products?includeRelations=true`);
+          const refreshData = await refreshResponse.json();
+          const products = Array.isArray(refreshData) ? refreshData : (refreshData.products || []);
+          setProductsData(products.map(apiToProduct));
         } else {
           console.error('Create failed:', data);
           alert(`Failed to create product: ${data.error || 'Unknown error'}`);
@@ -180,9 +279,9 @@ export default function AdminProducts() {
   };
 
   const handleBulkActivate = () => {
-    setProductsData(prev => 
-      prev.map(p => 
-        selectedProducts.includes(p.id) 
+    setProductsData(prev =>
+      prev.map(p =>
+        selectedProducts.includes(p.id)
           ? { ...p, inStock: true }
           : p
       )
@@ -192,9 +291,9 @@ export default function AdminProducts() {
   };
 
   const handleBulkDeactivate = () => {
-    setProductsData(prev => 
-      prev.map(p => 
-        selectedProducts.includes(p.id) 
+    setProductsData(prev =>
+      prev.map(p =>
+        selectedProducts.includes(p.id)
           ? { ...p, inStock: false }
           : p
       )
@@ -211,7 +310,7 @@ export default function AdminProducts() {
     }
   };
 
-    const handleSelectProduct = (productId: string) => {
+  const handleSelectProduct = (productId: string) => {
     setSelectedProducts(prev =>
       prev.includes(productId)
         ? prev.filter(id => id !== productId)

@@ -17,6 +17,20 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const [error, setError] = useState<string | null>(null);
+  const [guestUser, setGuestUser] = useState<User | null>(null);
+
+  // Load guest user from localStorage on mount
+  React.useEffect(() => {
+    const savedGuestUser = localStorage.getItem('guest-user');
+    if (savedGuestUser) {
+      try {
+        setGuestUser(JSON.parse(savedGuestUser));
+      } catch (error) {
+        console.error('Error parsing guest user from localStorage:', error);
+        localStorage.removeItem('guest-user');
+      }
+    }
+  }, []);
 
   const login = async (credentials: LoginCredentials) => {
     setError(null);
@@ -33,6 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(errorMessage);
       return { success: false, error: errorMessage };
     }
+    // Clear guest user data when user logs in normally
+    localStorage.removeItem('guest-user');
+    setGuestUser(null);
     return { success: true };
   };
 
@@ -46,18 +63,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
+        const errorMessage = data.error || 'Registration failed';
+        setError(errorMessage);
+        throw new Error(errorMessage);
       }
       // Auto-login after successful registration
       await login({ email: credentials.email, password: credentials.password });
     } catch (err: any) {
       setError(err.message);
+      throw err; // Re-throw the error so the calling code can catch it
     }
   };
 
   const loginAsGuest = (guestData: GuestCheckoutData) => {
     // For guest checkout, we can store in localStorage temporarily
-    const guestUser: User = {
+    const newGuestUser: User = {
       id: `guest-${Date.now()}`,
       email: guestData.email,
       name: `${guestData.firstName} ${guestData.lastName}`,
@@ -68,21 +88,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date(),
       role: 'viewer',
     };
-    localStorage.setItem('guest-user', JSON.stringify(guestUser));
+    localStorage.setItem('guest-user', JSON.stringify(newGuestUser));
+    setGuestUser(newGuestUser);
   };
 
   const logout = () => {
     localStorage.removeItem('guest-user');
+    setGuestUser(null);
     signOut();
   };
 
   const clearError = () => setError(null);
 
+  // Determine the current user (session user takes priority over guest user)
+  const currentUser = session?.user as User || guestUser;
+  const isAuthenticated = !!(session?.user || guestUser);
+
   return (
     <AuthContext.Provider
       value={{
-        user: session?.user as User || null,
-        isAuthenticated: !!session?.user,
+        user: currentUser,
+        isAuthenticated,
         isLoading: status === 'loading',
         error,
         login,

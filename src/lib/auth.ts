@@ -6,75 +6,64 @@ import bcrypt from 'bcryptjs';
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: 'credentials',
+      name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' }
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password are required');
         }
-        
+
         const user = await prisma.user.findUnique({
           where: { email: credentials.email }
         });
-        
-        if (!user) {
-          throw new Error('No user found with this email address');
+
+        if (!user || !user.password) {
+          throw new Error('Invalid credentials');
         }
-        
-        if (!user.password) {
-          throw new Error('Invalid login method for this account');
+
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isValid) {
+          throw new Error('Invalid credentials');
         }
-        
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-        
-        if (!isPasswordValid) {
-          throw new Error('Invalid password');
+
+        // Only allow specific roles
+        const allowedRoles = ['admin', 'manager', 'support'];
+        if (!allowedRoles.includes(user.role)) {
+          throw new Error('Access denied');
         }
-        
+
         return {
-        id: user.id,
-        name: user.name ?? undefined,
-        email: user.email,
-        image: user.image ?? undefined,
-        // These will be passed through `jwt` callback
-        role: user.role,
-        firstName: user.firstName ?? undefined,
-        lastName: user.lastName ?? undefined,
-        phone: user.phone ?? undefined,
-      } as any; // 👈 add this if TS still complains
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        };
       }
     })
   ],
-  session: {
-    strategy: 'jwt'
-  },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = user.role;
-        token.firstName = user.firstName;
-        token.lastName = user.lastName;
-        token.phone = user.phone;
-      }
-      return token;
-    },
     async session({ session, token }) {
       if (token) {
         session.user.id = token.sub!;
         session.user.role = token.role as string;
-        session.user.firstName = token.firstName as string;
-        session.user.lastName = token.lastName as string;
-        session.user.phone = token.phone as string;
       }
       return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = user.role;
+      }
+      return token;
     }
   },
   pages: {
-    signIn: '/auth/signin',
-    // signUp: '/auth/signup',
+    signIn: '/login',
+  },
+  session: {
+    strategy: 'jwt' as const,
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

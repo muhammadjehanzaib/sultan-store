@@ -95,23 +95,45 @@ export async function POST(request: Request) {
 
     // Update inventory for each item
     for (const item of items) {
-      await prisma.inventory.update({
-        where: { productId: item.productId },
-        data: {
-          stock: {
-            decrement: item.quantity
-          }
-        }
-      });
+      try {
+        // First, try to find existing inventory record
+        const existingInventory = await prisma.inventory.findUnique({
+          where: { productId: item.productId }
+        });
 
-      // Record stock history
-      await prisma.stockHistory.create({
-        data: {
-          productId: item.productId,
-          change: -item.quantity,
-          reason: `Order ${order.id}`
+        if (existingInventory) {
+          // Update existing inventory
+          await prisma.inventory.update({
+            where: { productId: item.productId },
+            data: {
+              stock: {
+                decrement: item.quantity
+              }
+            }
+          });
+        } else {
+          // Create new inventory record with initial stock of 0 (since we're decrementing)
+          await prisma.inventory.create({
+            data: {
+              productId: item.productId,
+              stock: Math.max(0, -item.quantity), // Ensure non-negative stock
+              stockThreshold: 10 // Default threshold
+            }
+          });
         }
-      });
+
+        // Record stock history
+        await prisma.stockHistory.create({
+          data: {
+            productId: item.productId,
+            change: -item.quantity,
+            reason: `Order ${order.id}`
+          }
+        });
+      } catch (inventoryError) {
+        console.error(`Error updating inventory for product ${item.productId}:`, inventoryError);
+        // Continue with other items but log the error
+      }
     }
 
     return NextResponse.json({ order }, { status: 201 });

@@ -36,39 +36,43 @@ export default function AdminOrders() {
     setIsModalOpen(true);
   };
 
-  const handleUpdateOrderStatus = (orderId: string, status: Order['status']) => {
-    setOrdersData(prev => 
-      prev.map(order => {
-        if (order.id === orderId) {
-          const updatedOrder = { ...order, status, updatedAt: new Date() };
-          
-          // Auto-generate tracking number when status changes to shipped
-          if (shouldGenerateTrackingNumber(order.status, status) && !order.trackingNumber) {
-            updatedOrder.trackingNumber = generateTrackingNumber('custom');
-            updatedOrder.trackingProvider = 'custom';
-          }
-          
-          return updatedOrder;
-        }
-        return order;
-      })
-    );
-    
-    // Update the selected order in the modal if it's the same order
-    if (selectedOrder && selectedOrder.id === orderId) {
-      setSelectedOrder(prev => {
-        if (!prev) return null;
-        
-        const updatedOrder = { ...prev, status, updatedAt: new Date() };
-        
-        // Auto-generate tracking number when status changes to shipped
-        if (shouldGenerateTrackingNumber(prev.status, status) && !prev.trackingNumber) {
-          updatedOrder.trackingNumber = generateTrackingNumber('custom');
-          updatedOrder.trackingProvider = 'custom';
-        }
-        
-        return updatedOrder;
+  const handleUpdateOrderStatus = async (orderId: string, status: Order['status']) => {
+    console.log('Updating order status:', { orderId, status });
+    try {
+      const response = await fetch(`/api/orders/${orderId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status }),
+        });
+
+      if (!response.ok) {
+        throw new Error('Failed to update order status');
+      }
+
+      const data = await response.json();
+      console.log('API Response:', data);
+      const updatedOrder = data.order; // API returns { order: ... }
+
+      // Update local state with a new array reference to ensure React detects the change
+      setOrdersData(prev => {
+        const newOrders = prev.map(order =>
+          order.id === orderId ? { ...order, ...updatedOrder } : order
+        );
+        console.log('Updated orders data:', newOrders);
+        return newOrders;
       });
+
+      // Update the selected order in the modal if it's the same order
+      if (selectedOrder && selectedOrder.id === orderId) {
+        console.log('Updating selected order in modal');
+        setSelectedOrder({ ...selectedOrder, ...updatedOrder });
+      }
+
+    } catch (error) {
+      console.error('Error updating order status:', error);
     }
   };
 
@@ -127,6 +131,7 @@ export default function AdminOrders() {
               <div className="py-8 text-center text-gray-500">Loading orders...</div>
             ) : (
               <OrdersTable
+                key={JSON.stringify(ordersData.map(o => ({ id: o.id, status: o.status })))}
                 orders={ordersData}
                 onView={handleViewOrder}
                 onUpdateStatus={handleUpdateOrderStatus}

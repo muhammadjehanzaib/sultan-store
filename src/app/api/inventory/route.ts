@@ -27,7 +27,15 @@ export async function GET(request: Request) {
             image: true,
             inStock: true,
             stockQuantity: true,
-            attributeValues: true,
+            attributeValues: {
+              include: {
+                attributeValue: {
+                  include: {
+                    attribute: true
+                  }
+                }
+              }
+            },
             createdAt: true,
           }
         },
@@ -54,8 +62,14 @@ export async function GET(request: Request) {
 
     // Transform data to include computed fields
     let inventoryData = products.map(product => {
-      const stock = product.inventory?.stock || 0;
+      const inventoryStock = product.inventory?.stock || 0;
       const stockThreshold = product.inventory?.stockThreshold || 5;
+      
+      // Calculate total variant stock
+      const totalVariantStock = product.variants.reduce((sum, variant) => sum + variant.stockQuantity, 0);
+      
+      // For products with variants, use variant stock total; otherwise use inventory stock
+      const actualStock = product.variants.length > 0 ? totalVariantStock : inventoryStock;
       
       return {
         id: product.id,
@@ -65,11 +79,11 @@ export async function GET(request: Request) {
         image: product.image,
         price: product.price,
         category: product.category,
-        stock,
+        stock: actualStock,
         stockThreshold,
-        isLowStock: stock <= stockThreshold,
+        isLowStock: actualStock <= stockThreshold,
         variants: product.variants,
-        totalVariantStock: product.variants.reduce((sum, variant) => sum + variant.stockQuantity, 0),
+        totalVariantStock,
         updatedAt: product.inventory?.updatedAt || product.createdAt,
       };
     });
@@ -110,27 +124,92 @@ export async function POST(request: Request) {
 
     // Start a transaction to ensure data consistency
     const result = await prisma.$transaction(async (tx) => {
-      // Get or create inventory record
-      let inventory = await tx.inventory.findUnique({
-        where: { productId }
+      // Check if product has variants
+      const productWithVariants = await tx.product.findUnique({
+        where: { id: productId },
+        include: { variants: true }
       });
 
-      if (!inventory) {
-        inventory = await tx.inventory.create({
-          data: {
-            productId,
-            stock: Math.max(0, stockChange),
-            stockThreshold: 5, // Default threshold
+      if (!productWithVariants) {
+        throw new Error('Product not found');
+      }
+
+      let inventory;
+
+      if (productWithVariants.variants.length > 0) {
+        // Product has variants - distribute stock change across variants proportionally
+        const totalCurrentVariantStock = productWithVariants.variants.reduce((sum, variant) => sum + variant.stockQuantity, 0);
+        
+        if (totalCurrentVariantStock > 0 || stockChange > 0) {
+          // Update variants proportionally
+          for (const variant of productWithVariants.variants) {
+            const proportion = totalCurrentVariantStock > 0 ? variant.stockQuantity / totalCurrentVariantStock : 1 / productWithVariants.variants.length;
+            const variantStockChange = Math.round(stockChange * proportion);
+            
+            await tx.productVariant.update({
+              where: { id: variant.id },
+              data: {
+                stockQuantity: Math.max(0, variant.stockQuantity + variantStockChange),
+                inStock: Math.max(0, variant.stockQuantity + variantStockChange) > 0
+              }
+            });
           }
-        });
+
+          // Calculate new total variant stock
+          const updatedVariants = await tx.productVariant.findMany({
+            where: { productId }
+          });
+          const newTotalStock = updatedVariants.reduce((sum, variant) => sum + variant.stockQuantity, 0);
+
+          // Get or create inventory record for the product
+          inventory = await tx.inventory.upsert({
+            where: { productId },
+            update: {
+              stock: newTotalStock
+            },
+            create: {
+              productId,
+              stock: newTotalStock,
+              stockThreshold: 5
+            }
+          });
+        } else {
+          // All variants are at 0, just update inventory record
+          inventory = await tx.inventory.upsert({
+            where: { productId },
+            update: {
+              stock: 0
+            },
+            create: {
+              productId,
+              stock: 0,
+              stockThreshold: 5
+            }
+          });
+        }
       } else {
-        // Update existing inventory
-        inventory = await tx.inventory.update({
-          where: { productId },
-          data: {
-            stock: Math.max(0, inventory.stock + stockChange)
-          }
+        // Product has no variants - handle normally
+        inventory = await tx.inventory.findUnique({
+          where: { productId }
         });
+
+        if (!inventory) {
+          inventory = await tx.inventory.create({
+            data: {
+              productId,
+              stock: Math.max(0, stockChange),
+              stockThreshold: 5, // Default threshold
+            }
+          });
+        } else {
+          // Update existing inventory
+          inventory = await tx.inventory.update({
+            where: { productId },
+            data: {
+              stock: Math.max(0, inventory.stock + stockChange)
+            }
+          });
+        }
       }
 
       // Record stock history

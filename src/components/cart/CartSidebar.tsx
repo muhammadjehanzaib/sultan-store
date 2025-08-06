@@ -116,7 +116,7 @@ export const CartSidebar: React.FC = () => {
                           </div>
                         )}
                         
-                        <Price amount={item.product.price} locale={isRTL ? 'ar' : 'en'} taxLabelType="excluded" className="text-purple-600 font-bold text-lg mt-1" />
+                        <Price amount={item.variantPrice || item.product.price} locale={isRTL ? 'ar' : 'en'} taxLabelType="excluded" className="text-purple-600 font-bold text-lg mt-1" />
                         
                         {/* Quantity Controls */}
                         <div className={`flex items-center mt-3 ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>

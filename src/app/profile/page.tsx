@@ -20,8 +20,13 @@ export default function ProfilePage() {
   const { t, isRTL } = useLanguage();
   const [activeSection, setActiveSection] = useState<ProfileSection>('overview');
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated or if user is a guest
   if (!isAuthenticated) {
+    redirect('/');
+  }
+
+  // Redirect guest users to home page since they don't have a full profile
+  if (user?.isGuest) {
     redirect('/');
   }
 

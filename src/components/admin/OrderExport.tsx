@@ -40,7 +40,7 @@ export function OrderExport({ orders }: OrderExportProps) {
         order.id,
         `${order.billingAddress.firstName} ${order.billingAddress.lastName}`,
         order.billingAddress.email,
-        order.createdAt.toISOString(),
+        new Date(order.createdAt).toISOString(),
         order.status,
         order.subtotal,
         order.tax,

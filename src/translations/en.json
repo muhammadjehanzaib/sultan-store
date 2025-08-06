@@ -491,5 +491,7 @@
   "admin.inventory.bulkUpdate": "Bulk Update",
   "admin.settings.title": "Settings",
   "admin.settings.subtitle": "Configure system settings and preferences",
-  "admin.logout": "log out"
+  "admin.logout": "log out",
+  "admin.orders.lineTotal": "Line Total",
+  "common.each": "each"
 }

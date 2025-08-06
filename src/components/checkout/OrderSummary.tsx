@@ -71,7 +71,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
                   </p>
                 )}
                 
-                <Price amount={item.product.price * item.quantity} taxLabelType="excluded" locale={isRTL ? 'ar' : 'en'} className="text-purple-600 font-semibold text-sm mt-1 pl-2" />
+                <Price amount={(item.variantPrice || item.product.price) * item.quantity} taxLabelType="excluded" locale={isRTL ? 'ar' : 'en'} className="text-purple-600 font-semibold text-sm mt-1 pl-2" />
               </div>
             </div>
           );

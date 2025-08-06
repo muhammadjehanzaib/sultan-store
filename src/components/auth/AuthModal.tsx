@@ -64,9 +64,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     clearError();
     try {
       await register(registerForm);
+      // If we reach here, registration was successful and user is auto-logged in
       onSuccess();
     } catch (error) {
-      // Error is handled by the context
+      // Error is handled by the context and will be displayed
+      // Don't call onSuccess() - let the user see the error and try again
     }
   };
 

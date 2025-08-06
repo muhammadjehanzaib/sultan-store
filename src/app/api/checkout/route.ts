@@ -34,13 +34,17 @@ export async function POST(request: Request) {
     const orderData = {
       customerEmail,
       customerName,
-      items: items.map((item: any) => ({
-        productId: item.product.id,
-        quantity: item.quantity,
-        price: item.product.price,
-        total: item.product.price * item.quantity,
-        selectedAttributes: item.selectedAttributes || null
-      })),
+      items: items.map((item: any) => {
+        // Use variant price if available, otherwise fallback to product price
+        const itemPrice = item.variantPrice || item.product.price;
+        return {
+          productId: item.product.id,
+          quantity: item.quantity,
+          price: itemPrice,
+          total: itemPrice * item.quantity,
+          selectedAttributes: item.selectedAttributes || null
+        };
+      }),
       subtotal,
       tax: tax || 0,
       shipping: shipping || 0,

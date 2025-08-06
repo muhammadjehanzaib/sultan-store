@@ -485,6 +485,7 @@
   "admin.inventory.showLowStock": "عرض المخزون المنخفض",
   "admin.inventory.bulkUpdate": "تحديث جماعي",
   "admin.settings.title": "الإعدادات",
-  "admin.settings.subtitle": "تكوين إعدادات النظام والتفضيلات"
-  
+  "admin.settings.subtitle": "تكوين إعدادات النظام والتفضيلات",
+  "admin.orders.lineTotal": "إجمالي السطر",
+  "common.each": "لكل"
 }

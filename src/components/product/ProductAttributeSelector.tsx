@@ -7,14 +7,41 @@ interface ProductAttributeSelectorProps {
   attributes: ProductAttribute[];
   selectedValues: { [attributeId: string]: string };
   onAttributeChange: (attributeId: string, valueId: string) => void;
+  variants?: { id: string; attributeValues: { [key: string]: string }; inStock?: boolean }[];
 }
 
 export function ProductAttributeSelector({
   attributes,
   selectedValues,
-  onAttributeChange
+  onAttributeChange,
+  variants = []
 }: ProductAttributeSelectorProps) {
   if (!attributes || attributes.length === 0) return null;
+  
+  // Helper function to check if an attribute value combination would result in an inactive variant
+  const isValueUnavailable = (attributeId: string, valueId: string) => {
+    if (!variants || variants.length === 0) return false;
+    
+    // Create a hypothetical selection with this value
+    const hypotheticalSelection = {
+      ...selectedValues,
+      [attributeId]: valueId
+    };
+    
+    // Check if any variant matches this selection and is in stock
+    const hasActiveVariant = variants.some(variant => {
+      // Check if this variant matches the hypothetical selection
+      const matches = Object.keys(hypotheticalSelection).every(attrId => 
+        variant.attributeValues[attrId] === hypotheticalSelection[attrId]
+      );
+      
+      // If it matches, check if it's active
+      return matches && variant.inStock !== false;
+    });
+    
+    // If no active variant matches, this value should be unavailable
+    return !hasActiveVariant && Object.keys(hypotheticalSelection).length > 0;
+  };
 
   // Helper function to format attribute values for display
   const formatValueForDisplay = (value: string, label: string | undefined, attributeType: string) => {
@@ -47,7 +74,7 @@ export function ProductAttributeSelector({
           <div className="flex flex-wrap gap-2">
             {attribute.values.map(value => {
               const isSelected = selectedValues[attribute.id] === value.id;
-              const isOutOfStock = value.inStock === false;
+              const isOutOfStock = value.inStock === false || isValueUnavailable(attribute.id, value.id);
               
               if (attribute.type === 'color') {
                 return (

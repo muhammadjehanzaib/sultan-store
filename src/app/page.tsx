@@ -16,11 +16,16 @@ export default function Home() {
 
   // Fetch products from API
   useEffect(() => {
-    fetch('/api/products')
+    fetch('/api/products?includeRelations=true')
       .then(res => res.json())
-      .then((data: { products: any[] }) => {
+      .then((data: any) => {
+        console.log('Main page API response:', data);
+        // The API now returns products directly as an array
+        const products = Array.isArray(data) ? data : [];
+        console.log('Products to process on main page:', products);
+        
         // Convert API format to frontend format
-        const frontendProducts = data.products.map(apiProduct => ({
+        const frontendProducts = products.map((apiProduct: any) => ({
           id: apiProduct.id,
           name: { en: apiProduct.name_en || '', ar: apiProduct.name_ar || '' },
           slug: apiProduct.slug,
@@ -36,10 +41,12 @@ export default function Home() {
           attributes: apiProduct.attributes || [],
           variants: apiProduct.variants || [],
         }));
+        console.log('Converted frontend products:', frontendProducts);
         setProducts(frontendProducts);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Error fetching products on main page:', error);
         setLoading(false);
       });
   }, []);

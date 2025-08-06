@@ -27,14 +27,14 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
 
   // Fetch products from API
   useEffect(() => {
-    fetch('/api/products')
+    fetch('/api/products?includeRelations=true')
       .then(res => res.json())
-      .then((data: { products: any[] }) => {
-        if (!Array.isArray(data.products)) {
+      .then((data: any[]) => {
+        if (!Array.isArray(data)) {
           setProducts([]);
           return;
         }
-        const frontendProducts = data.products.map(apiProduct => ({
+        const frontendProducts = data.map(apiProduct => ({
           id: apiProduct.id,
           name: apiProduct.name_en || '',
           slug: apiProduct.slug,
@@ -50,7 +50,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
         }));
         setProducts(frontendProducts);
       })
-      .catch(console.error);
+      .catch(error => {
+        console.error('Error fetching products:', error);
+        setProducts([]);
+      });
   }, []);
 
   useEffect(() => {

@@ -77,6 +77,7 @@ export interface CartItem {
   quantity: number;
   selectedAttributes?: { [attributeId: string]: string };
   variantId?: string; // Unique identifier for this specific variant
+  variantPrice?: number; // Price for this specific variant
 }
 
 export interface Cart {

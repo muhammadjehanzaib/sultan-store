@@ -31,7 +31,41 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
   const { t, isRTL, language } = useLanguage();
   const [quantity, setQuantity] = useState(1);
   const [selectedAttributes, setSelectedAttributes] = useState<{ [attributeId: string]: string }>({});
+  const [currentPrice, setCurrentPrice] = useState(product.price);
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
 
+  // Calculate current price based on selected attributes
+  const calculateCurrentPrice = () => {
+    let price = product.price;
+    
+    // Check for exact variant match first
+    if (product.variants && Object.keys(selectedAttributes).length > 0) {
+      const matchingVariant = product.variants.find(variant => {
+        return Object.keys(selectedAttributes).every(attrId => 
+          variant.attributeValues[attrId] === selectedAttributes[attrId]
+        );
+      });
+      
+      if (matchingVariant && matchingVariant.price !== undefined) {
+        return matchingVariant.price;
+      }
+    }
+    
+    // If no exact variant match, calculate based on attribute price modifiers
+    if (product.attributes) {
+      for (const attribute of product.attributes) {
+        const selectedValueId = selectedAttributes[attribute.id];
+        if (selectedValueId) {
+          const selectedValue = attribute.values.find(v => v.id === selectedValueId);
+          if (selectedValue && selectedValue.priceModifier) {
+            price += selectedValue.priceModifier;
+          }
+        }
+      }
+    }
+    
+    return price;
+  };
 
   const handleAddToCart = () => {
     for (let i = 0; i < quantity; i++) {
@@ -39,7 +73,8 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
         type: 'ADD_ITEM', 
         payload: { 
           product, 
-          selectedAttributes: Object.keys(selectedAttributes).length > 0 ? selectedAttributes : undefined 
+          selectedAttributes: Object.keys(selectedAttributes).length > 0 ? selectedAttributes : undefined,
+          variantPrice: currentPrice
         } 
       });
     }
@@ -147,7 +182,7 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
             {/* Price */}
             <div className="space-y-2">
               <div className="text-3xl font-bold text-purple-600">
-                <Price amount={product.price} locale={isRTL ? 'ar' : 'en'} taxLabelType="excluded" className="text-3xl font-bold text-purple-600" />
+                <Price amount={currentPrice} locale={isRTL ? 'ar' : 'en'} taxLabelType="excluded" className="text-3xl font-bold text-purple-600" />
               </div>
               <p className="text-sm text-green-600 font-medium">
                 ✓ Free shipping on orders over <Price amount={50} locale={isRTL ? 'ar' : 'en'} />
@@ -166,11 +201,61 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
                 <ProductAttributeSelector
                   attributes={product.attributes}
                   selectedValues={selectedAttributes}
+                  variants={product.variants || []}
                   onAttributeChange={(attributeId, valueId) => {
-                    setSelectedAttributes(prev => ({
-                      ...prev,
+                    const newAttributes = {
+                      ...selectedAttributes,
                       [attributeId]: valueId
-                    }));
+                    };
+                    setSelectedAttributes(newAttributes);
+                    
+                    // Calculate and update current price
+                    let price = product.price;
+                    
+                    // Check for exact variant match first (only active variants)
+                    let matchingVariant = null;
+                    if (product.variants && Object.keys(newAttributes).length > 0) {
+                      matchingVariant = product.variants.find(variant => {
+                        const attributesMatch = Object.keys(newAttributes).every(attrId => 
+                          variant.attributeValues[attrId] === newAttributes[attrId]
+                        );
+                        return attributesMatch && variant.inStock !== false;
+                      });
+                      
+                      if (matchingVariant && matchingVariant.price !== undefined) {
+                        price = matchingVariant.price;
+                      } else {
+                        // If no exact variant match, calculate based on attribute price modifiers
+                        if (product.attributes) {
+                          for (const attribute of product.attributes) {
+                            const selectedValueId = newAttributes[attribute.id];
+                            if (selectedValueId) {
+                              const selectedValue = attribute.values.find(v => v.id === selectedValueId);
+                              if (selectedValue && selectedValue.priceModifier) {
+                                price += selectedValue.priceModifier;
+                              }
+                            }
+                          }
+                        }
+                      }
+                    } else {
+                      // If no variants but has attributes with price modifiers
+                      if (product.attributes) {
+                        for (const attribute of product.attributes) {
+                          const selectedValueId = newAttributes[attribute.id];
+                          if (selectedValueId) {
+                            const selectedValue = attribute.values.find(v => v.id === selectedValueId);
+                            if (selectedValue && selectedValue.priceModifier) {
+                              price += selectedValue.priceModifier;
+                            }
+                          }
+                        }
+                      }
+                    }
+                    
+                    // Update selected variant and price
+                    setSelectedVariant(matchingVariant);
+                    setCurrentPrice(price);
                   }}
                 />
               )}
@@ -215,7 +300,7 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
                     size="lg"
                     className="flex-1"
                   >
-                    {t('product.addToCart')} {quantity > 1 ? `${quantity} ` : ''}- <Price amount={product.price * quantity} locale={isRTL ? 'ar' : 'en'} taxLabelType='excluded' />
+                    {t('product.addToCart')} {quantity > 1 ? `${quantity} ` : ''}- <Price amount={currentPrice * quantity} locale={isRTL ? 'ar' : 'en'} taxLabelType='excluded' />
                   </Button>
                   <button className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     ❤️

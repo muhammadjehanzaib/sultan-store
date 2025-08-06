@@ -285,47 +285,64 @@ export const Header: React.FC<HeaderProps> = ({
                   {/* Profile Dropdown */}
                   {isProfileDropdownOpen && (
                     <div className={`absolute mt-2 w-56 bg-white rounded-lg shadow-lg border py-2 z-50 ${isRTL ? 'left-0' : 'right-0'}`}>
-                      <button
-                        onClick={() => {
-                          router.push('/profile');
-                          setIsProfileDropdownOpen(false);
-                        }}
-                        className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
-                      >
-                        <span className="text-lg">👤</span>
-                        <span>{t('profile.myProfile')}</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          router.push('/profile?section=orders');
-                          setIsProfileDropdownOpen(false);
-                        }}
-                        className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
-                      >
-                        <span className="text-lg">📦</span>
-                        <span>{t('profile.myOrders')}</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          router.push('/profile?section=addresses');
-                          setIsProfileDropdownOpen(false);
-                        }}
-                        className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
-                      >
-                        <span className="text-lg">📍</span>
-                        <span>{t('profile.myAddresses')}</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          router.push('/admin');
-                          setIsProfileDropdownOpen(false);
-                        }}
-                        className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
-                      >
-                        <span className="text-lg">⚙️</span>
-                        <span>{t('admin.title')}</span>
-                      </button>
-                      <div className="border-t border-gray-100 my-1"></div>
+                      {/* Show profile links only for non-guest users */}
+                      {!user.isGuest && (
+                        <>
+                          <button
+                            onClick={() => {
+                              router.push('/profile');
+                              setIsProfileDropdownOpen(false);
+                            }}
+                            className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
+                          >
+                            <span className="text-lg">👤</span>
+                            <span>{t('profile.myProfile')}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              router.push('/profile?section=orders');
+                              setIsProfileDropdownOpen(false);
+                            }}
+                            className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
+                          >
+                            <span className="text-lg">📦</span>
+                            <span>{t('profile.myOrders')}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              router.push('/profile?section=addresses');
+                              setIsProfileDropdownOpen(false);
+                            }}
+                            className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
+                          >
+                            <span className="text-lg">📍</span>
+                            <span>{t('profile.myAddresses')}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              router.push('/admin');
+                              setIsProfileDropdownOpen(false);
+                            }}
+                            className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
+                          >
+                            <span className="text-lg">⚙️</span>
+                            <span>{t('admin.title')}</span>
+                          </button>
+                          <div className="border-t border-gray-100 my-1"></div>
+                        </>
+                      )}
+                      
+                      {/* Show guest info for guest users */}
+                      {user.isGuest && (
+                        <>
+                          <div className="px-4 py-2 text-sm text-gray-500">
+                            <div className="font-medium text-gray-700">Guest User</div>
+                            <div className="text-xs">{user.email}</div>
+                          </div>
+                          <div className="border-t border-gray-100 my-1"></div>
+                        </>
+                      )}
+                      
                       <button
                         onClick={() => {
                           logout();
@@ -334,7 +351,7 @@ export const Header: React.FC<HeaderProps> = ({
                         className={`w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
                       >
                         <span className="text-lg">🚪</span>
-                        <span>{t('profile.logout')}</span>
+                        <span>{user.isGuest ? t('auth.endSession') || 'End Session' : t('profile.logout')}</span>
                       </button>
                     </div>
                   )}
@@ -483,30 +500,44 @@ export const Header: React.FC<HeaderProps> = ({
                 </h3>
                 {isAuthenticated && user ? (
                   <>
-                    <button
-                      onClick={() => handleMobileNavClick(() => router.push('/profile'))}
-                      className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center gap-3"
-                    >
-                      <span className="text-lg">👤</span>
-                      <span className="font-medium">{t('profile.myProfile')}</span>
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleMobileNavClick(() =>
-                          router.push('/profile?section=orders')
-                        )
-                      }
-                      className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center gap-3"
-                    >
-                      <span className="text-lg">📦</span>
-                      <span className="font-medium">{t('profile.myOrders')}</span>
-                    </button>
+                    {/* Show profile links only for non-guest users */}
+                    {!user.isGuest && (
+                      <>
+                        <button
+                          onClick={() => handleMobileNavClick(() => router.push('/profile'))}
+                          className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center gap-3"
+                        >
+                          <span className="text-lg">👤</span>
+                          <span className="font-medium">{t('profile.myProfile')}</span>
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleMobileNavClick(() =>
+                              router.push('/profile?section=orders')
+                            )
+                          }
+                          className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center gap-3"
+                        >
+                          <span className="text-lg">📦</span>
+                          <span className="font-medium">{t('profile.myOrders')}</span>
+                        </button>
+                      </>
+                    )}
+                    
+                    {/* Show guest info for guest users */}
+                    {user.isGuest && (
+                      <div className="px-4 py-2 text-sm text-gray-500">
+                        <div className="font-medium text-gray-700">Guest User</div>
+                        <div className="text-xs">{user.email}</div>
+                      </div>
+                    )}
+                    
                     <button
                       onClick={() => handleMobileNavClick(() => logout())}
                       className="w-full text-left px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3"
                     >
                       <span className="text-lg">🚪</span>
-                      <span className="font-medium">{t('profile.logout')}</span>
+                      <span className="font-medium">{user.isGuest ? t('auth.endSession') || 'End Session' : t('profile.logout')}</span>
                     </button>
                   </>
                 ) : (

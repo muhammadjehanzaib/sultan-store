@@ -26,47 +26,6 @@ model StockHistory {
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
-model Order {
-  id              String      @id @default(cuid())
-  customerEmail   String
-  customerName    String
-  status          String      @default("pending") // pending, processing, shipped, delivered, cancelled
-  subtotal        Float
-  tax             Float       @default(0)
-  shipping        Float       @default(0)
-  total           Float
-  billingAddress  Json
-  shippingAddress Json
-  paymentMethod   String
-  trackingNumber  String?
-  trackingProvider String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  items           OrderItem[]
-}
-
-model OrderItem {
-  id                String   @id @default(cuid())
-  orderId           String
-  productId         String
-  quantity          Int
-  price             Float
-  total             Float
-  selectedAttributes Json?
-  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product           Product  @relation(fields: [productId], references: [id])
-}
-
-model Category {
-  id        String    @id @default(cuid())
-  slug      String    @unique
-  name_en   String
-  name_ar   String
-  icon      String?
-  createdAt DateTime  @default(now())
-  products  Product[]
-}
-
 model Product {
   id             String             @id @default(cuid())
   slug           String             @unique
@@ -82,24 +41,24 @@ model Product {
   categoryId     String
   createdAt      DateTime           @default(now())
   inventory      Inventory?
+  orderItems     OrderItem[]
   category       Category           @relation(fields: [categoryId], references: [id])
   attributes     ProductAttribute[]
   variants       ProductVariant[]
   stockHistory   StockHistory[]
-  orderItems     OrderItem[]
 }
 
 model ProductVariant {
-  id              String   @id @default(cuid())
+  id              String                  @id @default(cuid())
   productId       String
   sku             String?
   price           Float?
   image           String?
-  inStock         Boolean  @default(true)
-  stockQuantity   Int      @default(0)
-  attributeValues Json?
-  createdAt       DateTime @default(now())
-  product         Product  @relation(fields: [productId], references: [id])
+  inStock         Boolean                 @default(true)
+  stockQuantity   Int                     @default(0)
+  createdAt       DateTime                @default(now())
+  product         Product                 @relation(fields: [productId], references: [id])
+  attributeValues VariantAttributeValue[]
 }
 
 model ProductAttribute {
@@ -112,33 +71,83 @@ model ProductAttribute {
 }
 
 model AttributeValue {
-  id            String           @id @default(cuid())
+  id            String                  @id @default(cuid())
   attributeId   String
   value         String
   label         String?
   hexColor      String?
   priceModifier Float?
-  inStock       Boolean          @default(true)
+  inStock       Boolean                 @default(true)
   imageUrl      String?
-  attribute     ProductAttribute @relation(fields: [attributeId], references: [id])
+  attribute     ProductAttribute        @relation(fields: [attributeId], references: [id])
+  variantValues VariantAttributeValue[]
 }
 
-// NextAuth.js required models
+model VariantAttributeValue {
+  id               String         @id @default(cuid())
+  variantId        String
+  attributeValueId String
+  attributeValue   AttributeValue @relation(fields: [attributeValueId], references: [id], onDelete: Cascade)
+  variant          ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([variantId, attributeValueId])
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  customerEmail    String
+  customerName     String
+  status           String      @default("pending")
+  subtotal         Float
+  tax              Float       @default(0)
+  shipping         Float       @default(0)
+  total            Float
+  billingAddress   Json
+  shippingAddress  Json
+  paymentMethod    String
+  trackingNumber   String?
+  trackingProvider String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  items            OrderItem[]
+}
+
+model OrderItem {
+  id                 String  @id @default(cuid())
+  orderId            String
+  productId          String
+  quantity           Int
+  price              Float
+  total              Float
+  selectedAttributes Json?
+  order              Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product            Product @relation(fields: [productId], references: [id])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name_en   String
+  name_ar   String
+  icon      String?
+  createdAt DateTime  @default(now())
+  products  Product[]
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }

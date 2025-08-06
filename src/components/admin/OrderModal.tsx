@@ -5,7 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Order } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
-import { getProviderDisplayName, getTrackingUrl, TrackingProvider } from '@/lib/trackingUtils';
+import { getProviderDisplayName, getTrackingUrl, TrackingProvider, generateTrackingNumber, shouldGenerateTrackingNumber } from '@/lib/trackingUtils';
 import { RiyalSymbol } from '@/components/ui/RiyalSymbol';
 
 interface OrderModalProps {
@@ -27,6 +27,9 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
   const { t, isRTL, language } = useLanguage();
   const [trackingNumber, setTrackingNumber] = useState('');
   const [trackingProvider, setTrackingProvider] = useState<TrackingProvider>('custom');
+  const [isUpdatingTracking, setIsUpdatingTracking] = useState(false);
+  const [trackingError, setTrackingError] = useState<string | null>(null);
+  const [trackingSuccess, setTrackingSuccess] = useState(false);
   const [newNote, setNewNote] = useState('');
   const [noteType, setNoteType] = useState<'internal' | 'customer'>('internal');
   const [notes, setNotes] = useState<OrderNote[]>([
@@ -92,13 +95,95 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
     }
   };
 
-  const handleUpdateTrackingNumber = () => {
-    // Here you would typically call an API to update the tracking number
-    console.log('Updating tracking number:', trackingNumber, 'Provider:', trackingProvider);
+  const handleUpdateTrackingNumber = async () => {
+    if (!trackingNumber.trim()) {
+      setTrackingError('Please enter a tracking number');
+      return;
+    }
+
+    setIsUpdatingTracking(true);
+    setTrackingError(null);
+    setTrackingSuccess(false);
+
+    try {
+      const response = await fetch(`/api/orders/${order.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trackingNumber: trackingNumber.trim(),
+          trackingProvider: trackingProvider,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update tracking number');
+      }
+
+      const data = await response.json();
+      setTrackingSuccess(true);
+      
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => setTrackingSuccess(false), 3000);
+      
+      // Update the order object locally to reflect the changes
+      if (order) {
+        order.trackingNumber = trackingNumber.trim();
+        order.trackingProvider = trackingProvider;
+      }
+
+    } catch (error) {
+      console.error('Error updating tracking number:', error);
+      setTrackingError('Failed to update tracking number. Please try again.');
+    } finally {
+      setIsUpdatingTracking(false);
+    }
   };
 
-  const handleStatusChange = (newStatus: Order['status']) => {
-    onUpdateStatus(order.id, newStatus);
+  const handleGenerateTrackingNumber = () => {
+    const generated = generateTrackingNumber(trackingProvider);
+    setTrackingNumber(generated);
+  };
+
+  const handleStatusChange = async (newStatus: Order['status']) => {
+    // If changing to shipped and no tracking number exists, auto-generate one
+    if (shouldGenerateTrackingNumber(order.status, newStatus) && !order.trackingNumber) {
+      const autoTrackingNumber = generateTrackingNumber(trackingProvider);
+      
+      try {
+        const response = await fetch(`/api/orders/${order.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            status: newStatus,
+            trackingNumber: autoTrackingNumber,
+            trackingProvider: trackingProvider,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const updatedOrder = data.order; // API returns { order: ... }
+          // Update local state
+          setTrackingNumber(autoTrackingNumber);
+          if (order) {
+            order.status = newStatus;
+            order.trackingNumber = autoTrackingNumber;
+            order.trackingProvider = trackingProvider;
+          }
+        }
+      } catch (error) {
+        console.error('Error auto-generating tracking number:', error);
+        // Fallback to just updating status
+        onUpdateStatus(order.id, newStatus);
+      }
+    } else {
+      // No tracking number auto-generation needed, just update status
+      onUpdateStatus(order.id, newStatus);
+    }
   };
 
   const handleTrackingClick = () => {
@@ -206,32 +291,58 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                     {t('admin.orders.updateTrackingNumber')}
                   </p>
-                  <div className={`flex space-x-2 ${isRTL ? 'space-x-reverse' : ''}`}>
-                    <select
-                      value={trackingProvider}
-                      onChange={(e) => setTrackingProvider(e.target.value as TrackingProvider)}
-                      className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="custom">Custom</option>
-                      <option value="fedex">FedEx</option>
-                      <option value="ups">UPS</option>
-                      <option value="usps">USPS</option>
-                      <option value="dhl">DHL</option>
-                    </select>
-                    <input
-                      type="text"
-                      value={trackingNumber}
-                      onChange={(e) => setTrackingNumber(e.target.value)}
-                      placeholder="Enter new tracking number..."
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-                    />
-                    <Button
-                      onClick={handleUpdateTrackingNumber}
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      {t('common.update')}
-                    </Button>
+                  <div className="space-y-2">
+                    <div className={`flex space-x-2 ${isRTL ? 'space-x-reverse' : ''}`}>
+                      <select
+                        value={trackingProvider}
+                        onChange={(e) => setTrackingProvider(e.target.value as TrackingProvider)}
+                        disabled={isUpdatingTracking}
+                        className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50"
+                      >
+                        <option value="custom">Custom</option>
+                        <option value="fedex">FedEx</option>
+                        <option value="ups">UPS</option>
+                        <option value="usps">USPS</option>
+                        <option value="dhl">DHL</option>
+                      </select>
+                      <input
+                        type="text"
+                        value={trackingNumber}
+                        onChange={(e) => setTrackingNumber(e.target.value)}
+                        placeholder="Enter new tracking number..."
+                        disabled={isUpdatingTracking}
+                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm disabled:opacity-50"
+                      />
+                      <Button
+                        onClick={handleGenerateTrackingNumber}
+                        size="sm"
+                        variant="outline"
+                        disabled={isUpdatingTracking}
+                        className="text-gray-600 hover:text-gray-700 whitespace-nowrap"
+                      >
+                        Generate
+                      </Button>
+                      <Button
+                        onClick={handleUpdateTrackingNumber}
+                        size="sm"
+                        disabled={isUpdatingTracking || !trackingNumber.trim()}
+                        className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 whitespace-nowrap"
+                      >
+                        {isUpdatingTracking ? 'Updating...' : t('common.update')}
+                      </Button>
+                    </div>
+                    
+                    {/* Status Messages */}
+                    {trackingError && (
+                      <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-md">
+                        {trackingError}
+                      </div>
+                    )}
+                    {trackingSuccess && (
+                      <div className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-md">
+                        Tracking number updated successfully!
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -353,9 +464,10 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
                         <p className="text-sm font-medium text-gray-900 dark:text-white">
                           {getLocalizedString(ensureLocalizedContent(item.product.name), language)}
                         </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {t('cart.quantity')}: {item.quantity}
-                        </p>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
+                          <p>{t('cart.quantity')}: {item.quantity}</p>
+                          <p>{t('product.price')}: <RiyalSymbol />{item.price.toFixed(2)} {t('common.each')}</p>
+                        </div>
                         
                         {/* Selected Attributes (from real order item) */}
                         {item.selectedAttributes && (
@@ -381,8 +493,13 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
                         )}
                       </div>
                     </div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      <RiyalSymbol />{item.total.toFixed(2)}
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        <RiyalSymbol />{item.total.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {t('admin.orders.lineTotal')}
+                      </div>
                     </div>
                   </div>
                 ))}

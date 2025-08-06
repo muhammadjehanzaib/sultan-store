@@ -13,7 +13,7 @@ import { formatPrice } from '@/lib/utils';
 
 export default function CheckoutPage() {
   const { state } = useCart();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading } = useAuth();
   const { t, isRTL } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0); // Start with 0 for auth step
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -22,14 +22,17 @@ export default function CheckoutPage() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Check authentication on mount
+  // Check authentication on mount, but wait for loading to complete
   useEffect(() => {
+    // Don't check authentication while still loading
+    if (isLoading) return;
+    
     if (!isAuthenticated) {
       setShowAuthModal(true);
     } else {
       setCurrentStep(1); // Move to shipping step if authenticated
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isLoading]);
 
   const handleAuthSuccess = () => {
     setShowAuthModal(false);
