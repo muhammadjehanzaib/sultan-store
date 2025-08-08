@@ -3,12 +3,13 @@ import { NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
-export async function GET(request: Request, context: any) {
-  const email = decodeURIComponent(context.params.email);
+export async function GET(request: Request, context: { params: Promise<{ email: string }> }) {
+  const { email } = await context.params;
+  const decodedEmail = decodeURIComponent(email);
 
   try {
     const orders = await prisma.order.findMany({
-      where: { customerEmail: email },
+      where: { customerEmail: decodedEmail },
       orderBy: { createdAt: 'desc' },
       include: {
         items: {
