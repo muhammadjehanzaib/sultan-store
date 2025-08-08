@@ -3,13 +3,10 @@ import { NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
-export async function GET(
-  request: Request,
-  { params }: { params: { email: string } }
-) {
-  try {
-    const email = decodeURIComponent(params.email);
+export async function GET(request: Request, context: any) {
+  const email = decodeURIComponent(context.params.email);
 
+  try {
     const orders = await prisma.order.findMany({
       where: { customerEmail: email },
       orderBy: { createdAt: 'desc' },
@@ -29,7 +26,6 @@ export async function GET(
       }
     });
 
-    // Map IDs to readable names
     const mappedOrders = orders.map(order => ({
       ...order,
       items: order.items.map(item => {

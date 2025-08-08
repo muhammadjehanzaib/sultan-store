@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const orderId = decodeURIComponent(params.id);
+export async function GET(request: NextRequest, context: any) {
+  const { id } = context.params;
 
-    // Fetch order with attributes and values included
+  try {
+    const orderId = decodeURIComponent(id);
+
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
@@ -16,9 +14,7 @@ export async function GET(
           include: {
             product: {
               include: {
-                attributes: {
-                  include: { values: true }
-                }
+                attributes: { include: { values: true } }
               }
             }
           }
@@ -30,7 +26,6 @@ export async function GET(
       return new NextResponse('Order not found', { status: 404 });
     }
 
-    // Convert selectedAttributes IDs into readable labels
     const mappedOrder = {
       ...order,
       items: order.items.map(item => {
@@ -47,10 +42,7 @@ export async function GET(
           }
         }
 
-        return {
-          ...item,
-          selectedAttributes: readableAttrs
-        };
+        return { ...item, selectedAttributes: readableAttrs };
       })
     };
 
@@ -67,7 +59,6 @@ export async function GET(
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
-
 
 function generateInvoiceHTML(order: any): string {
   const orderDate = new Date(order.createdAt).toLocaleDateString('en-US', {
