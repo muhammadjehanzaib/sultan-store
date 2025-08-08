@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSearchParams } from 'next/navigation';
 import { ProfileSidebar } from '@/components/profile/ProfileSidebar';
 import { ProfileOverview } from '@/components/profile/ProfileOverview';
 import { PersonalInfo } from '@/components/profile/PersonalInfo';
@@ -18,7 +19,16 @@ type ProfileSection = 'overview' | 'personal' | 'addresses' | 'orders' | 'securi
 export default function ProfilePage() {
   const { user, isAuthenticated } = useAuth();
   const { t, isRTL } = useLanguage();
+  const searchParams = useSearchParams();
   const [activeSection, setActiveSection] = useState<ProfileSection>('overview');
+
+  // Handle URL section parameter
+  useEffect(() => {
+    const section = searchParams.get('section') as ProfileSection;
+    if (section && ['overview', 'personal', 'addresses', 'orders', 'security', 'notifications'].includes(section)) {
+      setActiveSection(section);
+    }
+  }, [searchParams]);
 
   // Redirect if not authenticated or if user is a guest
   if (!isAuthenticated) {

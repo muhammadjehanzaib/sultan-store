@@ -6,6 +6,7 @@ import { CartItem } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import Price from '@/components/ui/Price';
 import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
+import { useSettingsValues } from '@/hooks/useSettings';
 
 interface OrderSummaryProps {
   items: CartItem[];
@@ -14,11 +15,23 @@ interface OrderSummaryProps {
 
 export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
   const { t, isRTL, language } = useLanguage();
+  const { taxRate, freeShippingThreshold, shippingRate } = useSettingsValues();
 
   const subtotal = total;
-  const shipping = 0; // Free shipping
-  const tax = total * 0.15; // 15% tax
+  const shipping = subtotal >= freeShippingThreshold ? 0 : shippingRate;
+  const tax = subtotal * taxRate;
   const grandTotal = subtotal + shipping + tax;
+  
+  // Debug logging (remove in production)
+  console.log('OrderSummary Debug:', {
+    subtotal,
+    freeShippingThreshold,
+    shippingRate,
+    comparison: subtotal >= freeShippingThreshold,
+    shipping,
+    tax,
+    grandTotal
+  });
 
   // Helper function to format selected attributes
   const formatSelectedAttributes = (selectedAttributes: { [key: string]: string } | undefined, product: any) => {
@@ -91,7 +104,13 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
         
         <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
           <span className="text-gray-600">{t('cart.shipping')}</span>
-          <span className="font-medium text-green-600">{t('hero.features.freeShipping')}</span>
+          {shipping === 0 ? (
+            <span className="font-medium text-green-600">{t('hero.features.freeShipping')}</span>
+          ) : (
+            <span className="font-medium text-gray-600">
+              <Price amount={shipping} locale={isRTL ? 'ar' : 'en'} className="font-medium text-gray-600" />
+            </span>
+          )}
         </div>
         
         <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>

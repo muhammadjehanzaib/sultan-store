@@ -44,7 +44,7 @@ export default function CheckoutSuccessPage() {
         
         <div className="space-y-3">
           <a
-            href="/profile"
+            href="/orders"
             className="block w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             {t('checkout.success.viewOrders')}

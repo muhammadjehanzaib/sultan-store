@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { calculateCartTotals } from '@/lib/taxShippingUtils';
 
 export async function POST(request: Request) {
   try {
@@ -9,15 +10,11 @@ export async function POST(request: Request) {
       items, 
       billingAddress, 
       shippingAddress, 
-      paymentMethod,
-      subtotal,
-      tax,
-      shipping,
-      total 
+      paymentMethod
     } = body;
 
     // Validate required fields
-    if (!customerEmail || !customerName || !items || !total) {
+    if (!customerEmail || !customerName || !items) {
       return NextResponse.json({ 
         error: 'Missing required fields' 
       }, { status: 400 });
@@ -30,7 +27,10 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Create order data
+    // Calculate totals using the tax and shipping utils
+    const calculation = await calculateCartTotals(items);
+
+    // Create order data with calculated totals
     const orderData = {
       customerEmail,
       customerName,
@@ -45,10 +45,10 @@ export async function POST(request: Request) {
           selectedAttributes: item.selectedAttributes || null
         };
       }),
-      subtotal,
-      tax: tax || 0,
-      shipping: shipping || 0,
-      total,
+      subtotal: calculation.subtotal,
+      tax: calculation.taxAmount,
+      shipping: calculation.shippingAmount,
+      total: calculation.total,
       billingAddress,
       shippingAddress,
       paymentMethod

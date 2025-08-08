@@ -5,12 +5,11 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ email: string }> }
+  { params }: { params: { email: string } }
 ) {
   try {
-    const { email: rawEmail } = await params;
-    const email = decodeURIComponent(rawEmail);
-    
+    const email = decodeURIComponent(params.email);
+
     const orders = await prisma.order.findMany({
       where: { customerEmail: email },
       orderBy: { createdAt: 'desc' },
@@ -19,7 +18,10 @@ export async function GET(
           include: {
             product: {
               include: {
-                category: true
+                category: true,
+                attributes: {
+                  include: { values: true }
+                }
               }
             }
           }
@@ -27,9 +29,35 @@ export async function GET(
       }
     });
 
-    return NextResponse.json({ orders });
+    // Map IDs to readable names
+    const mappedOrders = orders.map(order => ({
+      ...order,
+      items: order.items.map(item => {
+        if (!item.selectedAttributes || !item.product?.attributes) {
+          return item;
+        }
+
+        const readable: Record<string, string> = {};
+        for (const [attrId, valueId] of Object.entries(
+          item.selectedAttributes as Record<string, string>
+        )) {
+          const attr = item.product.attributes.find(a => a.id === attrId);
+          const val = attr?.values.find(v => v.id === valueId);
+          if (attr && val) {
+            readable[attr.name] = val.label || val.value;
+          }
+        }
+
+        return {
+          ...item,
+          selectedAttributes: readable
+        };
+      })
+    }));
+
+    return NextResponse.json({ orders: mappedOrders });
   } catch (err) {
     console.error('[GET /orders/customer/[email]]', err);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
-} 
+}

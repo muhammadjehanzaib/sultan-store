@@ -406,7 +406,7 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
               <div className="space-y-2 text-sm">
                 <p><strong>{t('admin.orders.date')}:</strong> {formatDate(order.createdAt)}</p>
                 <p><strong>{t('admin.orders.total')}:</strong> <RiyalSymbol />{order.total.toFixed(2)}</p>
-                <p><strong>{t('admin.orders.paymentMethod')}:</strong> {order.paymentMethod.name}</p>
+                <p><strong>{t('admin.orders.paymentMethod')}:</strong> {order.paymentMethod.toString()}</p>
                 {order.trackingNumber && (
                   <p><strong>{t('admin.orders.trackingNumber')}:</strong> {order.trackingNumber}</p>
                 )}

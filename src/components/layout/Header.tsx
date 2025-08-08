@@ -300,7 +300,7 @@ export const Header: React.FC<HeaderProps> = ({
                           </button>
                           <button
                             onClick={() => {
-                              router.push('/profile?section=orders');
+                              router.push('/orders');
                               setIsProfileDropdownOpen(false);
                             }}
                             className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
@@ -318,27 +318,40 @@ export const Header: React.FC<HeaderProps> = ({
                             <span className="text-lg">📍</span>
                             <span>{t('profile.myAddresses')}</span>
                           </button>
-                          <button
-                            onClick={() => {
-                              router.push('/admin');
-                              setIsProfileDropdownOpen(false);
-                            }}
-                            className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
-                          >
-                            <span className="text-lg">⚙️</span>
-                            <span>{t('admin.title')}</span>
-                          </button>
+                          {/* Show admin panel button only for admin, manager, and support roles */}
+                          {['admin', 'manager', 'support'].includes(user.role) && (
+                            <button
+                              onClick={() => {
+                                router.push('/admin');
+                                setIsProfileDropdownOpen(false);
+                              }}
+                              className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
+                            >
+                              <span className="text-lg">⚙️</span>
+                              <span>{t('admin.title')}</span>
+                            </button>
+                          )}
                           <div className="border-t border-gray-100 my-1"></div>
                         </>
                       )}
                       
-                      {/* Show guest info for guest users */}
+                      {/* Show guest info and orders link for guest users */}
                       {user.isGuest && (
                         <>
                           <div className="px-4 py-2 text-sm text-gray-500">
                             <div className="font-medium text-gray-700">Guest User</div>
                             <div className="text-xs">{user.email}</div>
                           </div>
+                          <button
+                            onClick={() => {
+                              router.push('/orders');
+                              setIsProfileDropdownOpen(false);
+                            }}
+                            className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
+                          >
+                            <span className="text-lg">📦</span>
+                            <span>{t('profile.myOrders')}</span>
+                          </button>
                           <div className="border-t border-gray-100 my-1"></div>
                         </>
                       )}
@@ -513,7 +526,7 @@ export const Header: React.FC<HeaderProps> = ({
                         <button
                           onClick={() =>
                             handleMobileNavClick(() =>
-                              router.push('/profile?section=orders')
+                              router.push('/orders')
                             )
                           }
                           className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center gap-3"
@@ -524,12 +537,21 @@ export const Header: React.FC<HeaderProps> = ({
                       </>
                     )}
                     
-                    {/* Show guest info for guest users */}
+                    {/* Show guest info and orders link for guest users */}
                     {user.isGuest && (
-                      <div className="px-4 py-2 text-sm text-gray-500">
-                        <div className="font-medium text-gray-700">Guest User</div>
-                        <div className="text-xs">{user.email}</div>
-                      </div>
+                      <>
+                        <div className="px-4 py-2 text-sm text-gray-500">
+                          <div className="font-medium text-gray-700">Guest User</div>
+                          <div className="text-xs">{user.email}</div>
+                        </div>
+                        <button
+                          onClick={() => handleMobileNavClick(() => router.push('/orders'))}
+                          className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center gap-3"
+                        >
+                          <span className="text-lg">📦</span>
+                          <span className="font-medium">{t('profile.myOrders')}</span>
+                        </button>
+                      </>
                     )}
                     
                     <button

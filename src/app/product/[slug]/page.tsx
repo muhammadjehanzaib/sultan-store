@@ -11,7 +11,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   
   try {
     // Fetch product by slug
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/products?includeRelations=true`);
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/products?includeRelations=true`);
     const data = await response.json();
     
     // Handle both direct array and wrapped response

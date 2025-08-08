@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState } from 'react';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useSession, signIn, signOut, getSession } from 'next-auth/react';
 import { User, AuthState, LoginCredentials, RegisterCredentials, GuestCheckoutData } from '@/types';
 
 interface AuthContextType extends AuthState {
@@ -9,6 +9,7 @@ interface AuthContextType extends AuthState {
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => void;
   loginAsGuest: (guestData: GuestCheckoutData) => void;
+  updateUser: (updatedUser: Partial<User>) => void;
   clearError: () => void;
 }
 
@@ -98,6 +99,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut();
   };
 
+  const updateUser = async (updatedUser: Partial<User>) => {
+    if (guestUser) {
+      // Update guest user
+      const updated = { ...guestUser, ...updatedUser };
+      setGuestUser(updated);
+      localStorage.setItem('guest-user', JSON.stringify(updated));
+    }
+    // For session users, we need to trigger a session update
+    // The session will be refreshed and updated with new data from the database
+    if (session?.user) {
+      // Refresh the session to get updated user data
+      await getSession();
+      window.location.reload(); // Temporary solution to ensure UI updates
+    }
+  };
+
   const clearError = () => setError(null);
 
   // Determine the current user (session user takes priority over guest user)
@@ -115,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         logout,
         loginAsGuest,
+        updateUser,
         clearError,
       }}
     >

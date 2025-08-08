@@ -42,6 +42,7 @@ model Product {
   createdAt      DateTime           @default(now())
   inventory      Inventory?
   orderItems     OrderItem[]
+  productReviews Review[]
   category       Category           @relation(fields: [categoryId], references: [id])
   attributes     ProductAttribute[]
   variants       ProductVariant[]
@@ -110,6 +111,7 @@ model Order {
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
   items            OrderItem[]
+  orderReviews     Review[]
 }
 
 model OrderItem {
@@ -176,6 +178,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
+  userReviews   Review[]
 }
 
 model VerificationToken {
@@ -184,4 +187,38 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Settings {
+  id                    String  @id @default(cuid())
+  // Tax & Shipping Settings
+  taxRate               Float   @default(0.15)   // 15% VAT
+  shippingRate          Float   @default(15.0)   // Standard shipping cost
+  freeShippingThreshold Float   @default(50.0)   // Free shipping over 50 SAR
+  
+  // Business Settings
+  businessName          String  @default("SaudiSafety")
+  businessEmail         String  @default("support@saudisafety.com")
+  businessPhone         String  @default("+966 XXX XXXX")
+  businessAddress       String  @default("Riyadh, Saudi Arabia")
+  
+  updatedAt             DateTime @updatedAt
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  productId   String
+  userId      String
+  orderId     String
+  rating      Int      // 1-5 stars
+  comment     String
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  // One review per user per product per order
+  @@unique([productId, userId, orderId])
 }

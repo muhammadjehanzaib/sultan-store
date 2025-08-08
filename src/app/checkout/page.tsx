@@ -10,11 +10,13 @@ import { PaymentGateway } from '@/components/payment/PaymentGateway';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { BillingAddress, ShippingAddress, PaymentMethod } from '@/types';
 import { formatPrice } from '@/lib/utils';
+import { useSettingsValues } from '@/hooks/useSettings';
 
 export default function CheckoutPage() {
   const { state } = useCart();
   const { isAuthenticated, user, isLoading } = useAuth();
   const { t, isRTL } = useLanguage();
+  const { taxRate, freeShippingThreshold, shippingRate } = useSettingsValues();
   const [currentStep, setCurrentStep] = useState(0); // Start with 0 for auth step
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [billingAddress, setBillingAddress] = useState<BillingAddress | null>(null);
@@ -79,15 +81,21 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     setIsProcessing(true);
     try {
+      // Calculate totals with dynamic settings
+      const subtotal = state.total;
+      const shipping = subtotal >= freeShippingThreshold ? 0 : shippingRate;
+      const tax = subtotal * taxRate;
+      const total = subtotal + shipping + tax;
+      
       // Prepare order data
       const orderData = {
         customerEmail: user?.email || billingAddress?.email || '',
         customerName: `${billingAddress?.firstName || ''} ${billingAddress?.lastName || ''}`.trim(),
         items: state.items,
-        subtotal: state.total,
-        tax: 0, // TODO: Calculate tax based on location
-        shipping: 0, // TODO: Calculate shipping based on address
-        total: state.total,
+        subtotal,
+        tax,
+        shipping,
+        total,
         billingAddress,
         shippingAddress,
         paymentMethod: selectedPaymentMethod?.type || 'card'

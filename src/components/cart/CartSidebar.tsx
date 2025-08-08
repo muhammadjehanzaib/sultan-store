@@ -174,10 +174,10 @@ export const CartSidebar: React.FC = () => {
                   <Price amount={state.total} locale={isRTL ? 'ar' : 'en'} taxLabelType="excluded" className="font-medium" />
                 </span>
               </div>
-              <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+              {/* <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('cart.shipping')}</span>
                 <span className="text-green-600">{t('hero.features.freeShipping')}</span>
-              </div>
+              </div> */}
               <div className={`flex justify-between font-semibold text-lg border-t pt-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('cart.total')}</span>
                 <span>
