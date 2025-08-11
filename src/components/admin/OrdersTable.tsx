@@ -24,11 +24,17 @@ export function OrdersTable({ orders, onView, onUpdateStatus }: OrdersTableProps
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(order => 
-        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        `${order.billingAddress.firstName} ${order.billingAddress.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.billingAddress.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter(order => {
+        const searchLower = searchTerm.toLowerCase();
+        const orderId = order.id?.toLowerCase() || '';
+        const customerName = order.billingAddress ? 
+          `${order.billingAddress.firstName || ''} ${order.billingAddress.lastName || ''}`.toLowerCase() : '';
+        const customerEmail = order.billingAddress?.email?.toLowerCase() || '';
+        
+        return orderId.includes(searchLower) ||
+               customerName.includes(searchLower) ||
+               customerEmail.includes(searchLower);
+      });
     }
 
     // Status filter
@@ -200,10 +206,10 @@ export function OrdersTable({ orders, onView, onUpdateStatus }: OrdersTableProps
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 dark:text-white">
-                      {order.billingAddress.firstName} {order.billingAddress.lastName}
+                      {order.billingAddress ? `${order.billingAddress.firstName || ''} ${order.billingAddress.lastName || ''}` : 'N/A'}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {order.billingAddress.email}
+                      {order.billingAddress?.email || 'N/A'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

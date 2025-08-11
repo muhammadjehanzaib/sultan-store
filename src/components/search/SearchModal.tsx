@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { categories } from '@/data/products';
 import { formatPrice } from '@/lib/utils';
 import Price from '@/components/ui/Price';
 import { useLanguage } from '@/contexts/LanguageContext';

@@ -377,6 +377,12 @@ function generateAdminInvoiceHTML(order: any): string {
                 <td>VAT (15%):</td>
                 <td class="text-right">SAR ${order.tax.toFixed(2)}</td>
             </tr>
+            ${order.codFee > 0 ? `
+            <tr>
+                <td>COD Fee:</td>
+                <td class="text-right">SAR ${order.codFee.toFixed(2)}</td>
+            </tr>
+            ` : ''}
             <tr class="total-row">
                 <td>Total:</td>
                 <td class="text-right">SAR ${order.total.toFixed(2)}</td>

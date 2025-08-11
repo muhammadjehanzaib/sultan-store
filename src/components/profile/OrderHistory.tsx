@@ -437,6 +437,12 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
                           <span className="text-gray-600">{t('cart.tax')}:</span>
                           <Price amount={order.tax} locale={isRTL ? 'ar' : 'en'} />
                         </div>
+                        {(order as any).codFee > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">{t('payment.codFee')}:</span>
+                            <Price amount={(order as any).codFee} locale={isRTL ? 'ar' : 'en'} />
+                          </div>
+                        )}
                         <div className="flex justify-between pt-2 border-t border-gray-200 font-semibold">
                           <span>{t('cart.total')}:</span>
                           <Price amount={order.total} locale={isRTL ? 'ar' : 'en'} />

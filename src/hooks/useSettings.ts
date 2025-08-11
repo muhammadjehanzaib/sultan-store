@@ -6,6 +6,7 @@ interface Settings {
   taxRate: number;
   shippingRate: number;
   freeShippingThreshold: number;
+  codFee: number;
   businessName: string;
   businessEmail: string;
   businessPhone: string;
@@ -53,6 +54,7 @@ export function useSettings(): UseSettingsReturn {
         taxRate: data.tax.rate,
         shippingRate: data.shipping.rate,
         freeShippingThreshold: data.shipping.freeThreshold,
+        codFee: data.codFee || 25.0, // COD fee from API or default
         businessName: 'SaudiSafety',
         businessEmail: 'support@saudisafety.com',
         businessPhone: '+966 XXX XXXX',
@@ -77,6 +79,7 @@ export function useSettings(): UseSettingsReturn {
         taxRate: 0.15,
         shippingRate: 15.0,
         freeShippingThreshold: 50.0,
+        codFee: 25.0,
         businessName: 'SaudiSafety',
         businessEmail: 'support@saudisafety.com',
         businessPhone: '+966 XXX XXXX',
@@ -112,6 +115,7 @@ export function useSettingsValues() {
     taxRate: 0.15,
     shippingRate: 15.0,
     freeShippingThreshold: 50.0,
+    codFee: 25.0,
     businessName: 'SaudiSafety',
     businessEmail: 'support@saudisafety.com',
     businessPhone: '+966 XXX XXXX',

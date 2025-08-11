@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Settings" ADD COLUMN     "codFee" DOUBLE PRECISION NOT NULL DEFAULT 25.0;

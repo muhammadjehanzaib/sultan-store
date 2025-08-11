@@ -4,7 +4,16 @@ import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Product, LocalizedContent } from '@/types';
 import { Button } from '@/components/ui/Button';
-import { categories } from '@/data/products';
+
+interface Category {
+  id: string;
+  slug: string;
+  name_en: string;
+  name_ar: string;
+  icon?: string;
+  isActive?: boolean;
+  sortOrder?: number;
+}
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -25,6 +34,27 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
     rating: 0,
     reviews: 0
   });
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // Fetch categories from API
+  useEffect(() => {
+    async function fetchCategories() {
+      setCategoriesLoading(true);
+      try {
+        const response = await fetch('/api/categories');
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const data = await response.json();
+        setCategories(data.categories || []);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        setCategories([]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    }
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     if (product) {
@@ -142,11 +172,14 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                 className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">Select category</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={typeof cat.name === 'string' ? cat.name : cat.name.en}>
-                    {typeof cat.name === 'string' ? cat.name : cat.name.en}
+                {!categoriesLoading && categories.map(cat => (
+                  <option key={cat.id} value={cat.name_en}>
+                    {cat.name_en}
                   </option>
                 ))}
+                {categoriesLoading && (
+                  <option disabled>Loading categories...</option>
+                )}
               </select>
             </div>
           </div>

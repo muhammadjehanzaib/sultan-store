@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { clearSettingsCache } from '@/lib/taxShippingUtils';
 
 // GET - Fetch current settings
 export async function GET() {
@@ -49,6 +50,7 @@ export async function PUT(request: NextRequest) {
       taxRate,
       shippingRate,
       freeShippingThreshold,
+      codFee,
       businessName,
       businessEmail,
       businessPhone,
@@ -67,6 +69,10 @@ export async function PUT(request: NextRequest) {
     if (freeShippingThreshold !== undefined && (isNaN(freeShippingThreshold) || freeShippingThreshold < 0)) {
       return NextResponse.json({ error: 'Free shipping threshold must be a positive number' }, { status: 400 });
     }
+    
+    if (codFee !== undefined && (isNaN(codFee) || codFee < 0)) {
+      return NextResponse.json({ error: 'COD fee must be a positive number' }, { status: 400 });
+    }
 
     // Get existing settings or create if none exist
     let settings = await prisma.settings.findFirst();
@@ -77,6 +83,7 @@ export async function PUT(request: NextRequest) {
           taxRate: taxRate || 0.15,
           shippingRate: shippingRate || 15.0,
           freeShippingThreshold: freeShippingThreshold || 50.0,
+          codFee: codFee || 25.0,
           businessName: businessName || 'SaudiSafety',
           businessEmail: businessEmail || 'support@saudisafety.com',
           businessPhone: businessPhone || '+966 XXX XXXX',
@@ -91,6 +98,7 @@ export async function PUT(request: NextRequest) {
           ...(taxRate !== undefined && { taxRate }),
           ...(shippingRate !== undefined && { shippingRate }),
           ...(freeShippingThreshold !== undefined && { freeShippingThreshold }),
+          ...(codFee !== undefined && { codFee }),
           ...(businessName !== undefined && { businessName }),
           ...(businessEmail !== undefined && { businessEmail }),
           ...(businessPhone !== undefined && { businessPhone }),
@@ -98,6 +106,9 @@ export async function PUT(request: NextRequest) {
         }
       });
     }
+
+    // Clear cache to ensure real-time updates
+    clearSettingsCache();
 
     return NextResponse.json({ 
       message: 'Settings updated successfully',

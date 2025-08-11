@@ -6,6 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import Price from '@/components/ui/Price';
+import { ProfileCompletionIndicator } from './ProfileCompletionIndicator';
 
 interface ProfileOverviewProps {
   user: User;
@@ -131,6 +132,9 @@ export const ProfileOverview: React.FC<ProfileOverviewProps> = ({ user }) => {
           {t('profile.welcomeBack').replace('{{name}}', user.firstName || user.name || 'User')}
         </p>
       </div>
+
+      {/* Profile Completion Indicator */}
+      <ProfileCompletionIndicator user={user} />
 
       {/* Account Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

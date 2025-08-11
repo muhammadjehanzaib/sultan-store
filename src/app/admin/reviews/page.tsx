@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-// import { ReviewsTable } from '@/components/admin/ReviewsTable';
-// import { ReviewModal } from '@/components/admin/ReviewModal';
+import { ReviewsTable } from '@/components/admin/ReviewsTable';
+import { ReviewModal } from '@/components/admin/ReviewModal';
 import { Button } from '@/components/ui/Button';
-import { mockReviews } from '@/data/mockCustomers';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Review } from '@/types';
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 
@@ -14,8 +14,34 @@ export default function AdminReviews() {
   const { t, isRTL } = useLanguage();
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [reviewsData, setReviewsData] = useState(mockReviews);
+  const [reviewsData, setReviewsData] = useState<Review[]>([]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [statusFilter]);
+
+  const fetchReviews = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`/api/admin/reviews?status=${statusFilter}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch reviews');
+      }
+      
+      const data = await response.json();
+      setReviewsData(data.reviews || []);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      setError('Failed to load reviews');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleViewReview = (review: Review) => {
     setSelectedReview(review);
@@ -86,20 +112,33 @@ export default function AdminReviews() {
             </div>
           </div>
 
-          {/* <ReviewsTable
-            reviews={filteredReviews}
-            onView={handleViewReview}
-            onUpdateStatus={handleUpdateReviewStatus}
-            onDelete={handleDeleteReview}
-            onBulkAction={handleBulkAction}
-          />
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <LoadingSpinner />
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+              <Button onClick={fetchReviews} variant="outline">
+                Try Again
+              </Button>
+            </div>
+          ) : (
+            <ReviewsTable
+              reviews={filteredReviews}
+              onView={handleViewReview}
+              onUpdateStatus={handleUpdateReviewStatus}
+              onDelete={handleDeleteReview}
+              onBulkAction={handleBulkAction}
+            />
+          )}
 
           <ReviewModal
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             review={selectedReview}
             onUpdateStatus={handleUpdateReviewStatus}
-          /> */}
+          />
         </div>
       </AdminLayout>
     </AdminAuthGuard>

@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-// import { categories } from '@/data/products';
 import { scrollToElement } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
+import { NotificationBell } from '@/components/layout/NotificationBell';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { Logo } from '@/components/ui/Logo';
 
 interface HeaderProps {
   cartItemCount?: number;
@@ -121,12 +122,12 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex justify-between items-center py-4 md:py-6">
           {/* Logo */}
           <div className="flex items-center">
-            <button
+            <Logo
+              variant="default"
+              size="sm"
               onClick={onLogoClick}
-              className="text-xl md:text-2xl font-bold text-gray-900 hover:text-purple-600 transition-colors"
-            >
-              {t('site.title')}
-            </button>
+              className="hover:scale-105 transition-transform duration-200"
+            />
           </div>
 
           {/* Navigation - Hidden on mobile */}
@@ -253,6 +254,9 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="hidden lg:block">
               <LanguageSwitcher />
             </div>
+
+            {/* Notifications - Desktop Only */}
+            <NotificationBell className="hidden lg:block" />
 
             {/* Cart Button */}
             <button

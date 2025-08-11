@@ -35,7 +35,8 @@ async function getSettings() {
     return {
       taxRate: 0.15,
       shippingRate: 15.0,
-      freeShippingThreshold: 50.0
+      freeShippingThreshold: 50.0,
+      codFee: 25.0
     };
   }
 }
@@ -125,6 +126,17 @@ export async function getShippingInfo() {
     rate: settings.shippingRate,
     freeThreshold: settings.freeShippingThreshold,
     freeShippingMessage: `Free shipping on orders over ${formatCurrency(settings.freeShippingThreshold)}`
+  };
+}
+
+// Helper function to get COD info
+export async function getCodInfo() {
+  const settings = await getSettings();
+  
+  return {
+    fee: settings.codFee,
+    enabled: true,
+    description: `COD fee: ${formatCurrency(settings.codFee)}`
   };
 }
 

@@ -525,6 +525,12 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
                 <span>{t('admin.orders.shipping')}</span>
                 <span><RiyalSymbol />{order.shipping.toFixed(2)}</span>
               </div>
+              {order.codFee > 0 && (
+                <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <span>{t('payment.codFee')}</span>
+                  <span><RiyalSymbol />{order.codFee.toFixed(2)}</span>
+                </div>
+              )}
               <div className={`flex justify-between font-medium text-base pt-2 border-t border-gray-200 dark:border-gray-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('admin.orders.grandTotal')}</span>
                 <span><RiyalSymbol />{order.total.toFixed(2)}</span>

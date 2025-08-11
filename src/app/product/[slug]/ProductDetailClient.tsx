@@ -9,7 +9,6 @@ import { ProductAttributeSelector } from '@/components/product/ProductAttributeS
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import Price from '@/components/ui/Price';
 import { Product } from '@/types';
-import { products as mockProducts } from '@/data/products';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Fragment } from 'react';
 import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';

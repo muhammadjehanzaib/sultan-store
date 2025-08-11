@@ -85,7 +85,8 @@ export default function CheckoutPage() {
       const subtotal = state.total;
       const shipping = subtotal >= freeShippingThreshold ? 0 : shippingRate;
       const tax = subtotal * taxRate;
-      const total = subtotal + shipping + tax;
+      const codFee = selectedPaymentMethod?.type === 'cod' && selectedPaymentMethod?.codFee ? selectedPaymentMethod.codFee : 0;
+      const total = subtotal + shipping + tax + codFee;
       
       // Prepare order data
       const orderData = {
@@ -95,6 +96,7 @@ export default function CheckoutPage() {
         subtotal,
         tax,
         shipping,
+        codFee,
         total,
         billingAddress,
         shippingAddress,
@@ -232,7 +234,11 @@ export default function CheckoutPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <OrderSummary items={state.items} total={state.total} />
+            <OrderSummary 
+              items={state.items} 
+              total={state.total} 
+              selectedPaymentMethod={selectedPaymentMethod}
+            />
           </div>
         </div>
       </div>

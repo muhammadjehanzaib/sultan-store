@@ -6,6 +6,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { DashboardStats } from '@/components/admin/DashboardStats';
 import { RecentOrders } from '@/components/admin/RecentOrders';
 import { QuickActions } from '@/components/admin/QuickActions';
+import { QuickOverview } from '@/components/admin/QuickOverview';
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 
 export default function AdminDashboard() {
@@ -25,9 +26,13 @@ export default function AdminDashboard() {
           </div>
 
           <DashboardStats />
+          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <RecentOrders />
-            <QuickActions />
+            <div className="space-y-6">
+              <QuickOverview />
+              <QuickActions />
+            </div>
           </div>
         </div>
       </AdminLayout>

@@ -7,7 +7,6 @@ import { OrdersTable } from '@/components/admin/OrdersTable';
 import { OrderModal } from '@/components/admin/OrderModal';
 import { OrderAnalytics } from '@/components/admin/OrderAnalytics';
 import { OrderExport } from '@/components/admin/OrderExport';
-import { mockOrders } from '@/data/mockOrders';
 import { Order } from '@/types';
 import { generateTrackingNumber, shouldGenerateTrackingNumber } from '@/lib/trackingUtils';
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';

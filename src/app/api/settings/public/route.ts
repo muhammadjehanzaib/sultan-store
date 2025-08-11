@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTaxInfo, getShippingInfo } from '@/lib/taxShippingUtils';
+import { getTaxInfo, getShippingInfo, getCodInfo } from '@/lib/taxShippingUtils';
 
 // Public endpoint to get tax and shipping information for frontend
 export async function GET() {
   try {
-    const [taxInfo, shippingInfo] = await Promise.all([
+    const [taxInfo, shippingInfo, codInfo] = await Promise.all([
       getTaxInfo(),
-      getShippingInfo()
+      getShippingInfo(),
+      getCodInfo()
     ]);
 
     return NextResponse.json({
       tax: taxInfo,
-      shipping: shippingInfo
+      shipping: shippingInfo,
+      codFee: codInfo.fee
     });
   } catch (error) {
     console.error('Error fetching public settings:', error);
@@ -27,7 +29,8 @@ export async function GET() {
         rate: 15.0,
         freeThreshold: 50.0,
         freeShippingMessage: 'Free shipping on orders over SAR 50.00'
-      }
+      },
+      codFee: 25.0
     });
   }
 }

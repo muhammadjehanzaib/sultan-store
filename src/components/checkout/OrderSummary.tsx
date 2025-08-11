@@ -11,16 +11,18 @@ import { useSettingsValues } from '@/hooks/useSettings';
 interface OrderSummaryProps {
   items: CartItem[];
   total: number;
+  selectedPaymentMethod?: { type: string; codFee?: number } | null;
 }
 
-export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
+export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total, selectedPaymentMethod }) => {
   const { t, isRTL, language } = useLanguage();
   const { taxRate, freeShippingThreshold, shippingRate } = useSettingsValues();
 
   const subtotal = total;
   const shipping = subtotal >= freeShippingThreshold ? 0 : shippingRate;
   const tax = subtotal * taxRate;
-  const grandTotal = subtotal + shipping + tax;
+  const codFee = selectedPaymentMethod?.type === 'cod' && selectedPaymentMethod?.codFee ? selectedPaymentMethod.codFee : 0;
+  const grandTotal = subtotal + shipping + tax + codFee;
   
   // Debug logging (remove in production)
   console.log('OrderSummary Debug:', {
@@ -121,6 +123,15 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total }) => {
             <Price amount={tax} locale={isRTL ? 'ar' : 'en'} className="font-medium text-gray-600" />
           </span>
         </div>
+        
+        {codFee > 0 && (
+          <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <span className="text-gray-600">{t('payment.codFee')}</span>
+            <span className="font-medium text-orange-600">
+              <Price amount={codFee} locale={isRTL ? 'ar' : 'en'} className="font-medium text-orange-600" />
+            </span>
+          </div>
+        )}
         
         <hr className="my-2" />
         

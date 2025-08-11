@@ -165,10 +165,11 @@ export interface GuestCheckoutData {
 
 export interface PaymentMethod {
   id: string;
-  type: 'card' | 'paypal' | 'stripe' | 'apple_pay' | 'google_pay';
+  type: 'card' | 'paypal' | 'stripe' | 'apple_pay' | 'google_pay' | 'cod';
   name: string;
   icon?: string;
   description?: string;
+  codFee?: number; // Additional fee for COD
 }
 
 export interface BillingAddress {
@@ -210,6 +211,7 @@ export interface Order {
   subtotal: number;
   tax: number;
   shipping: number;
+  codFee: number;
   total: number;
   billingAddress: BillingAddress;
   shippingAddress: ShippingAddress;

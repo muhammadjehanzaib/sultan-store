@@ -4,12 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useSettings } from '@/hooks/useSettings';
 
 interface Settings {
   id: string;
   taxRate: number;
   shippingRate: number;
   freeShippingThreshold: number;
+  codFee: number;
   businessName: string;
   businessEmail: string;
   businessPhone: string;
@@ -25,15 +27,16 @@ export const SettingsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Form state
+  // Form state with proper default values to prevent uncontrolled input issues
   const [formData, setFormData] = useState({
-    taxRate: 0,
-    shippingRate: 0,
-    freeShippingThreshold: 0,
-    businessName: '',
-    businessEmail: '',
-    businessPhone: '',
-    businessAddress: ''
+    taxRate: 15, // Default 15% VAT
+    shippingRate: 15.0, // Default 15 SAR shipping
+    freeShippingThreshold: 50.0, // Default 50 SAR free shipping threshold
+    codFee: 25.0, // Default 25 SAR COD fee
+    businessName: 'SaudiSafety',
+    businessEmail: 'support@saudisafety.com',
+    businessPhone: '+966 XXX XXXX',
+    businessAddress: 'Riyadh, Saudi Arabia'
   });
 
   // Fetch current settings
@@ -51,13 +54,14 @@ export const SettingsPage: React.FC = () => {
       
       // Update form data
       setFormData({
-        taxRate: data.settings.taxRate * 100, // Convert to percentage for display
-        shippingRate: data.settings.shippingRate,
-        freeShippingThreshold: data.settings.freeShippingThreshold,
-        businessName: data.settings.businessName,
-        businessEmail: data.settings.businessEmail,
-        businessPhone: data.settings.businessPhone,
-        businessAddress: data.settings.businessAddress
+        taxRate: data.settings.taxRate * 100 || 15, // Convert to percentage for display
+        shippingRate: data.settings.shippingRate || 15.0,
+        freeShippingThreshold: data.settings.freeShippingThreshold || 50.0,
+        codFee: data.settings.codFee || 25.0,
+        businessName: data.settings.businessName || 'SaudiSafety',
+        businessEmail: data.settings.businessEmail || 'support@saudisafety.com',
+        businessPhone: data.settings.businessPhone || '+966 XXX XXXX',
+        businessAddress: data.settings.businessAddress || 'Riyadh, Saudi Arabia'
       });
       
     } catch (error) {
@@ -158,7 +162,7 @@ export const SettingsPage: React.FC = () => {
             Tax & Shipping Settings
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Tax Rate */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -209,6 +213,23 @@ export const SettingsPage: React.FC = () => {
                 required
               />
               <p className="text-xs text-gray-500 mt-1">Orders above this amount get free shipping</p>
+            </div>
+            
+            {/* COD Fee */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                COD Fee (SAR)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.codFee}
+                onChange={(e) => handleInputChange('codFee', parseFloat(e.target.value) || 0)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">Fee charged for Cash on Delivery orders</p>
             </div>
           </div>
         </div>
@@ -304,6 +325,7 @@ export const SettingsPage: React.FC = () => {
           <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
             <p>• Tax Rate: {Math.round(settings.taxRate * 100)}% VAT</p>
             <p>• Shipping: {settings.shippingRate} SAR (Free over {settings.freeShippingThreshold} SAR)</p>
+            <p>• COD Fee: {settings.codFee} SAR</p>
             <p>• Last Updated: {new Date(settings.updatedAt).toLocaleString()}</p>
           </div>
         </div>

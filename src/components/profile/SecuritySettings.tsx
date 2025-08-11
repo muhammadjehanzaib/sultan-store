@@ -4,65 +4,15 @@ import React, { useState } from 'react';
 import { User } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { PasswordChangeForm } from './PasswordChangeForm';
 
 interface SecuritySettingsProps {
   user: User;
 }
 
-interface PasswordForm {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-}
-
 export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ user }) => {
   const { t } = useLanguage();
-  const [passwordForm, setPasswordForm] = useState<PasswordForm>({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [isLoading, setIsLoading] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setPasswordForm(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handlePasswordChange = async () => {
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert(t('profile.passwordNoMatch'));
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Password changed successfully');
-      setPasswordForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-      setShowPasswordForm(false);
-    } catch (error) {
-      console.error('Error changing password:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const cancelPasswordChange = () => {
-    setPasswordForm({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
-    setShowPasswordForm(false);
-  };
 
   return (
     <div className="space-y-6">
@@ -74,6 +24,12 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ user }) => {
             <div>
               <h3 className="text-lg font-semibold text-gray-800">{t('profile.password')}</h3>
               <p className="text-gray-600">{t('profile.changePasswordDesc')}</p>
+              <div className="mt-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                  Secured with strong password
+                </span>
+              </div>
             </div>
             {!showPasswordForm && (
               <Button onClick={() => setShowPasswordForm(true)} variant="outline">
@@ -83,55 +39,12 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ user }) => {
           </div>
 
           {showPasswordForm && (
-            <div className="mt-4 space-y-4 text-gray-700">
-              <div>
-                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('profile.currentPassword')}
-                </label>
-                <input
-                  type="password"
-                  id="currentPassword"
-                  name="currentPassword"
-                  value={passwordForm.currentPassword}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('profile.newPassword')}
-                </label>
-                <input
-                  type="password"
-                  id="newPassword"
-                  name="newPassword"
-                  value={passwordForm.newPassword}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('profile.confirmPassword')}
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={passwordForm.confirmPassword}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="flex space-x-4">
-                <Button onClick={handlePasswordChange} disabled={isLoading}>
-                  {isLoading ? 'Changing...' : 'Change Password'}
-                </Button>
-                <Button onClick={cancelPasswordChange} variant="outline" disabled={isLoading}>
-                  Cancel
-                </Button>
-              </div>
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <PasswordChangeForm
+                user={user}
+                onSuccess={() => setShowPasswordForm(false)}
+                onCancel={() => setShowPasswordForm(false)}
+              />
             </div>
           )}
         </div>

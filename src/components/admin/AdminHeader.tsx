@@ -3,6 +3,7 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { useRouter } from 'next/navigation';
+import { NotificationBell } from '@/components/layout/NotificationBell';
 
 interface AdminHeaderProps {
   onMenuClick: () => void;
@@ -47,14 +48,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
         {/* User info */}
         <div className={`flex items-center space-x-4 ${isRTL ? 'space-x-reverse' : ''}`}>
           {/* Notifications */}
-          <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors relative">
-            <span className="sr-only">{t('admin.notifications')}</span>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5-5V9a6 6 0 10-12 0v3l-5 5h5m7 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            {/* Notification badge */}
-            <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          <NotificationBell className="text-gray-500 hover:text-gray-700" />
 
           {/* User profile */}
           <div className={`flex items-center space-x-3 ${isRTL ? 'space-x-reverse' : ''}`}>

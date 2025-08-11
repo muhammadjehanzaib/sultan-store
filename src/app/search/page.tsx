@@ -7,7 +7,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-// import { products, categories } from '@/data/products';
 import { searchUtils } from '@/lib/utils';
 import { Product } from '@/types';
 import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';

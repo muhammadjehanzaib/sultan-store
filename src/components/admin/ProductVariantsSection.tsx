@@ -15,102 +15,116 @@ const ProductVariantsSection: React.FC<ProductVariantsSectionProps> = ({
   selectedLanguage,
 }) => {
   const [displayVariants, setDisplayVariants] = useState<ProductVariant[]>([]);
+  const [isAutoGenerating, setIsAutoGenerating] = useState(false);
 
+  // Auto-generate variants when attributes change
   useEffect(() => {
-    // A variant is valid only if its attributes and values still exist.
-    const getValidVariants = () => {
-      if (!attributes || attributes.length === 0) {
-        return []; // No attributes means no valid variants.
-      }
-      if (!variants) {
-        return [];
-      }
-      
-      return variants.filter(variant => {
-        const attributeValues = variant.attributeValues || {};
-        const variantAttrIds = Object.keys(attributeValues);
-        
-        if (variantAttrIds.length === 0) return false; // Variant is invalid if it has no attributes linked
-
-        return variantAttrIds.every(attrId => {
-          const attrDef = attributes.find(a => a.id === attrId);
-          if (!attrDef) return false; // The attribute itself was deleted.
-
-          const valueId = attributeValues[attrId];
-          return attrDef.values?.some(v => v.id === valueId); // The specific value was deleted.
-        });
-      });
-    };
-
-    const validVariants = getValidVariants();
+    if (isAutoGenerating) return; // Prevent infinite loops
     
-    // The display should only show valid variants.
-    setDisplayVariants(validVariants);
-
-    // If the filtering resulted in a change, update the parent state.
-    if (validVariants.length !== variants.length) {
-      setVariants(validVariants);
-    }
-  }, [variants, attributes, setVariants]);
-
-  const generateVariants = () => {
-    if (!attributes || attributes.length === 0) {
-      alert('Please add attributes first before generating variants.');
-      return;
-    }
-
-    const attributesWithValues = attributes.filter(
-      (attr) => attr.values && attr.values.length > 0
-    );
-    if (attributesWithValues.length === 0) {
-      alert('Please add values to your attributes first.');
-      return;
-    }
-
-    const combinations: any[] = [];
-
-    const generateCombinations = (attrIndex: number, currentCombination: any) => {
-      if (attrIndex >= attributesWithValues.length) {
-        combinations.push(currentCombination);
+    const autoManageVariants = () => {
+      if (!attributes || attributes.length === 0) {
+        // If no attributes, keep existing variants (might be manually created)
+        const validVariants = variants || [];
+        setDisplayVariants(validVariants);
         return;
       }
 
-      const attr = attributesWithValues[attrIndex];
-      attr.values.forEach((value) => {
-        generateCombinations(attrIndex + 1, {
-          ...currentCombination,
-          [attr.id]: value.id,
+      const attributesWithValues = attributes.filter(
+        (attr) => attr.values && attr.values.length > 0
+      );
+
+      if (attributesWithValues.length === 0) {
+        // If attributes exist but have no values, keep existing variants
+        const validVariants = variants || [];
+        setDisplayVariants(validVariants);
+        return;
+      }
+
+      // Generate all possible combinations
+      const combinations: any[] = [];
+      const generateCombinations = (attrIndex: number, currentCombination: any) => {
+        if (attrIndex >= attributesWithValues.length) {
+          combinations.push(currentCombination);
+          return;
+        }
+
+        const attr = attributesWithValues[attrIndex];
+        attr.values.forEach((value) => {
+          generateCombinations(attrIndex + 1, {
+            ...currentCombination,
+            [attr.id]: value.id,
+          });
         });
+      };
+      generateCombinations(0, {});
+
+      // Create a map of existing variants for quick lookup
+      const existingVariantsMap = new Map<string, ProductVariant>();
+      (variants || []).forEach(variant => {
+        const key = JSON.stringify(variant.attributeValues);
+        existingVariantsMap.set(key, variant);
       });
+
+      // Create variants for all combinations, preserving existing data
+      const managedVariants: ProductVariant[] = combinations.map((combo, index) => {
+        const key = JSON.stringify(combo);
+        const existingVariant = existingVariantsMap.get(key);
+        
+        if (existingVariant) {
+          // Preserve existing variant with all its customizations
+          console.log(`🔄 Preserving existing variant ${existingVariant.id}`);
+          return existingVariant;
+        }
+        
+        // Create new variant
+        const skuParts: string[] = [];
+        attributesWithValues.forEach((attr) => {
+          const valueId = combo[attr.id];
+          const value = attr.values.find((v) => v.id === valueId);
+          if (value) {
+            skuParts.push(value.label || value.value);
+          }
+        });
+
+        const newVariant: ProductVariant = {
+          id: `variant-${Date.now()}-${index}`,
+          attributeValues: combo,
+          price: undefined, // Let it inherit from parent product
+          image: '',
+          sku: skuParts.join('-').toUpperCase().replace(/\s+/g, '-'),
+          inStock: true,
+          stockQuantity: 0,
+        };
+        
+        console.log(`➕ Created new variant:`, newVariant.sku);
+        return newVariant;
+      });
+
+      console.log('🎯 Auto-managed variants:', {
+        totalCombinations: combinations.length,
+        preserved: managedVariants.filter(v => existingVariantsMap.has(JSON.stringify(v.attributeValues))).length,
+        created: managedVariants.filter(v => !existingVariantsMap.has(JSON.stringify(v.attributeValues))).length
+      });
+
+      setDisplayVariants(managedVariants);
+      
+      // Update parent state if different
+      if (JSON.stringify(managedVariants) !== JSON.stringify(variants)) {
+        setIsAutoGenerating(true);
+        setVariants(managedVariants);
+      }
     };
 
-    generateCombinations(0, {});
+    autoManageVariants();
+  }, [attributes, variants, setVariants, isAutoGenerating]);
 
-    const newVariants: ProductVariant[] = combinations.map((combo, index) => {
-      const skuParts: string[] = [];
-      attributesWithValues.forEach((attr) => {
-        const valueId = combo[attr.id];
-        const value = attr.values.find((v) => v.id === valueId);
-        if (value) {
-          skuParts.push(value.label || value.value);
-        }
-      });
+  // Reset auto-generating flag after state update
+  useEffect(() => {
+    if (isAutoGenerating) {
+      setIsAutoGenerating(false);
+    }
+  }, [variants, isAutoGenerating]);
 
-      return {
-        id: `variant-${Date.now()}-${index}`,
-        attributeValues: combo,
-        price: 0,
-        image: '',
-        sku: skuParts.join('-').toUpperCase().replace(/\s+/g, '-'),
-        inStock: true,
-        stockQuantity: 0,
-      };
-    });
-
-    console.log('Generated variants:', newVariants);
-    setDisplayVariants(newVariants);
-    setVariants(newVariants);
-  };
 
   const handleVariantChange = (idx: number, field: string, value: any) => {
     const updated = [...displayVariants];
@@ -123,30 +137,19 @@ const ProductVariantsSection: React.FC<ProductVariantsSectionProps> = ({
     return (
       <div className="p-4 border border-dashed border-gray-300 rounded-lg">
         <div className="text-gray-500 text-sm text-center">
-          No variants available.
+          {!attributes || attributes.length === 0 ? (
+            <>No variants - add some attributes first to create variants automatically.</>
+          ) : attributes.every(attr => !attr.values || attr.values.length === 0) ? (
+            <>No variants - add values to your attributes to create variants automatically.</>
+          ) : (
+            <>Loading variants...</>
+          )}
         </div>
 
-        {attributes && attributes.length > 0 && (
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={generateVariants}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
-            >
-              Generate Variants from Attributes
-            </button>
-            <div className="text-xs text-gray-400 mt-2">
-              This will create variants for all attribute combinations
-            </div>
-          </div>
-        )}
-
         <div className="text-xs text-gray-400 mt-2 text-center">
-          Debug Info:
+          Variants are created automatically based on your attributes.
           <br />
-          Variants received: {variants?.length || 0}
-          <br />
-          Attributes received: {attributes?.length || 0}
+          Attributes: {attributes?.length || 0}, Variants: {variants?.length || 0}
         </div>
       </div>
     );
@@ -154,8 +157,15 @@ const ProductVariantsSection: React.FC<ProductVariantsSectionProps> = ({
 
   return (
     <div className="overflow-x-auto">
-      <div className="mb-2 text-xs text-gray-500">
-        Displaying {displayVariants.length} variants
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-sm text-gray-700">
+          <span className="font-medium">Product Variants</span>
+          <span className="text-xs text-gray-500 ml-2">({displayVariants.length} variants auto-generated)</span>
+        </div>
+        
+        <div className="text-xs text-gray-500">
+          🔄 Auto-managed based on attributes
+        </div>
       </div>
       <table className="min-w-full text-sm">
         <thead>

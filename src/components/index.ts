@@ -18,3 +18,4 @@ export { Button } from './ui/Button';
 export { LanguageSwitcher } from './ui/LanguageSwitcher';
 export { LoadingSpinner } from './ui/LoadingSpinner';
 export { Breadcrumb } from './ui/Breadcrumb';
+export { Logo } from './ui/Logo';

@@ -19,8 +19,10 @@ const ProductAttributesSection: React.FC<ProductAttributesSectionProps> = ({ att
   const [showAttrModal, setShowAttrModal] = useState(false);
 
   const handleAddAttribute = () => {
+    // Generate a proper unique ID for new attributes
+    const newId = `attr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     setEditingAttr({
-      id: Date.now().toString(),
+      id: newId,
       name: '',
       type: 'size',
       values: [],
@@ -101,11 +103,15 @@ const AttributeModal: React.FC<AttributeModalProps> = ({ attribute, onSave, onCl
 
   const handleAddValue = () => {
     if (!valueInput) return;
+    // Generate a proper unique ID for new attribute values
+    const newValueId = `val_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newValue: ProductAttributeValue = {
-      id: Date.now().toString(),
+      id: newValueId,
       value: valueInput,
       label: valueInput,
       hexColor: attr.type === 'color' ? colorInput : undefined,
+      inStock: true, // Default to in stock
+      priceModifier: 0, // Default price modifier
     };
     setAttr({ ...attr, values: [...attr.values, newValue] });
     setValueInput('');

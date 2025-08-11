@@ -1,5 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
+import { notificationService } from '@/lib/notificationService';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
@@ -51,6 +54,7 @@ export async function POST(request: Request) {
       subtotal, 
       tax, 
       shipping, 
+      codFee,
       total,
       billingAddress,
       shippingAddress,
@@ -69,6 +73,7 @@ export async function POST(request: Request) {
         subtotal,
         tax,
         shipping,
+        codFee: codFee || 0,
         total,
         status: 'pending',
         billingAddress,
@@ -134,6 +139,21 @@ export async function POST(request: Request) {
         console.error(`Error updating inventory for product ${item.productId}:`, inventoryError);
         // Continue with other items but log the error
       }
+    }
+
+    // Send order confirmation notification
+    try {
+      const session = await getServerSession(authOptions);
+      if (session?.user?.id) {
+        await notificationService.notifyOrderCreated(
+          session.user.id, 
+          order.id, 
+          total
+        );
+      }
+    } catch (notificationError) {
+      console.error('Failed to send order notification:', notificationError);
+      // Don't fail the order creation if notification fails
     }
 
     return NextResponse.json({ order }, { status: 201 });

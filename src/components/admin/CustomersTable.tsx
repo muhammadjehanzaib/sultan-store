@@ -4,21 +4,41 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Customer } from '@/types';
 import { Button } from '@/components/ui/Button';
 import Price from '@/components/ui/Price';
+import { useState } from 'react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 interface CustomersTableProps {
   customers: Customer[];
+  loading?: boolean;
   onView: (customer: Customer) => void;
   onUpdateStatus: (customerId: string, status: Customer['status']) => void;
-  onDelete: (customerId: string) => void;
+  onDelete?: (customerId: string) => void;
+  onEdit?: (customer: Customer) => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+  onPageChange?: (page: number) => void;
 }
 
 export function CustomersTable({
   customers,
+  loading = false,
   onView,
   onUpdateStatus,
   onDelete,
+  onEdit,
+  searchQuery = '',
+  onSearchChange,
+  pagination,
+  onPageChange,
 }: CustomersTableProps) {
   const { t, isRTL } = useLanguage();
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   const getStatusColor = (status: Customer['status']) => {
     switch (status) {
@@ -33,26 +53,68 @@ export function CustomersTable({
     }
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
     return new Intl.DateTimeFormat(isRTL ? 'ar-EG' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    }).format(date);
+    }).format(dateObj);
   };
+
+  const handleStatusUpdate = async (customerId: string, newStatus: Customer['status']) => {
+    setUpdatingStatus(customerId);
+    try {
+      await onUpdateStatus(customerId, newStatus);
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    );
+  }
 
   if (customers.length === 0) {
     return (
-      <div className="text-center py-8 bg-white dark:bg-gray-800 rounded-lg shadow">
-        <p className="text-gray-500 dark:text-gray-400">
-          {t('admin.customers.noCustomers')}
-        </p>
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+        <div className="text-center py-8">
+          <p className="text-gray-500 dark:text-gray-400">
+            {searchQuery ? t('admin.customers.noCustomersFound') : t('admin.customers.noCustomers')}
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+      {/* Search Bar */}
+      {onSearchChange && (
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:border-gray-600 dark:text-white sm:text-sm"
+              placeholder={t('admin.customers.searchPlaceholder')}
+            />
+          </div>
+        </div>
+      )}
+      
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700">
@@ -124,7 +186,7 @@ export function CustomersTable({
 
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    <Price amount={customer.totalSpent} locale={isRTL ? 'ar' : 'en'} className="text-sm font-medium text-gray-900 dark:text-white" />
+                    <Price amount={customer.totalSpent} locale={isRTL ? 'ar' : 'en'} />
                   </div>
                 </td>
 
@@ -132,16 +194,22 @@ export function CustomersTable({
                   <select
                     value={customer.status}
                     onChange={(e) =>
-                      onUpdateStatus(customer.id, e.target.value as Customer['status'])
+                      handleStatusUpdate(customer.id, e.target.value as Customer['status'])
                     }
+                    disabled={updatingStatus === customer.id}
                     className={`text-xs px-2 py-1 rounded-full font-semibold ${getStatusColor(
                       customer.status
-                    )} border-none`}
+                    )} border-none disabled:opacity-50`}
                   >
                     <option value="active">{t('admin.customers.active')}</option>
                     <option value="inactive">{t('admin.customers.inactive')}</option>
                     <option value="blocked">{t('admin.customers.blocked')}</option>
                   </select>
+                  {updatingStatus === customer.id && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <LoadingSpinner size="sm" />
+                    </div>
+                  )}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -165,14 +233,26 @@ export function CustomersTable({
                     >
                       {t('admin.customers.view')}
                     </Button>
-                    <Button
-                      onClick={() => onDelete(customer.id)}
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      {t('common.delete')}
-                    </Button>
+                    {onEdit && (
+                      <Button
+                        onClick={() => onEdit(customer)}
+                        variant="outline"
+                        size="sm"
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        {t('common.edit')}
+                      </Button>
+                    )}
+                    {onDelete && (
+                      <Button
+                        onClick={() => onDelete(customer.id)}
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        {t('common.delete')}
+                      </Button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -180,6 +260,81 @@ export function CustomersTable({
           </tbody>
         </table>
       </div>
+      
+      {/* Pagination */}
+      {pagination && onPageChange && pagination.pages > 1 && (
+        <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
+          <div className="flex-1 flex justify-between sm:hidden">
+            <Button
+              onClick={() => onPageChange(Math.max(pagination.page - 1, 1))}
+              disabled={pagination.page <= 1}
+              variant="outline"
+              size="sm"
+            >
+              {t('common.previous')}
+            </Button>
+            <Button
+              onClick={() => onPageChange(Math.min(pagination.page + 1, pagination.pages))}
+              disabled={pagination.page >= pagination.pages}
+              variant="outline"
+              size="sm"
+            >
+              {t('common.next')}
+            </Button>
+          </div>
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                {t('admin.customers.showing')} {((pagination.page - 1) * pagination.limit) + 1} {t('admin.customers.to')} {Math.min(pagination.page * pagination.limit, pagination.total)} {t('admin.customers.of')} {pagination.total} {t('admin.customers.results')}
+              </p>
+            </div>
+            <div>
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <Button
+                  onClick={() => onPageChange(Math.max(pagination.page - 1, 1))}
+                  disabled={pagination.page <= 1}
+                  variant="outline"
+                  size="sm"
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md"
+                >
+                  <span className="sr-only">{t('common.previous')}</span>
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </Button>
+                
+                {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <Button
+                      key={pageNum}
+                      onClick={() => onPageChange(pageNum)}
+                      variant={pageNum === pagination.page ? 'primary' : 'outline'}
+                      size="sm"
+                      className="relative inline-flex items-center px-4 py-2"
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+                
+                <Button
+                  onClick={() => onPageChange(Math.min(pagination.page + 1, pagination.pages))}
+                  disabled={pagination.page >= pagination.pages}
+                  variant="outline"
+                  size="sm"
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md"
+                >
+                  <span className="sr-only">{t('common.next')}</span>
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                </Button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

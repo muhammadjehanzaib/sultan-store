@@ -6,7 +6,6 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { ProductsTable } from '@/components/admin/ProductsTable';
 import { MultilingualProductModal } from '@/components/admin/MultilingualProductModal';
 import { Button } from '@/components/ui/Button';
-import { products } from '@/data/products';
 import { Product, MultilingualProduct, Category, ProductAttribute } from '@/types';
 import { convertToMultilingualProduct } from '@/lib/multilingualUtils';
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
@@ -16,7 +15,7 @@ export default function AdminProducts() {
   const { t, isRTL } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [productsData, setProductsData] = useState(products);
+  const [productsData, setProductsData] = useState<Product[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -60,13 +59,25 @@ export default function AdminProducts() {
 
     // Process attributes properly
     const processedAttributes = (apiProduct.attributes || []).map((attr: any) => {
-      console.log('Processing attribute:', attr.name, 'values:', attr.values);
+      console.log('🔍 Processing attribute:', attr.name, 'type:', attr.type, 'values count:', attr.values?.length || 0);
+      console.log('🔍 Raw attribute data:', JSON.stringify(attr, null, 2));
       return {
-        ...attr,
-        values: (attr.values || []).map((val: any) => ({
-          ...val,
-          priceModifier: val.priceModifier || 0
-        }))
+        id: attr.id,
+        name: attr.name,
+        type: attr.type,
+        required: attr.required || false,
+        values: (attr.values || []).map((val: any) => {
+          console.log('🔍 Processing attribute value:', val.value, 'label:', val.label);
+          return {
+            id: val.id,
+            value: val.value,
+            label: val.label || val.value,
+            hexColor: val.hexColor,
+            priceModifier: typeof val.priceModifier === 'number' ? val.priceModifier : 0,
+            inStock: val.inStock !== false, // Default to true
+            imageUrl: val.imageUrl
+          };
+        })
       };
     });
 
@@ -150,9 +161,25 @@ export default function AdminProducts() {
       category_ar: apiProduct.category ? apiProduct.category.name_ar : '',
     };
 
-    console.log('apiToProduct: Final converted product:', product);
-    console.log('apiToProduct: Final product variants:', product.variants);
-    console.log('apiToProduct: Final product attributes:', product.attributes);
+    console.log('🔍 apiToProduct: Final converted product:', {
+      id: product.id,
+      name: product.name,
+      attributeCount: product.attributes?.length || 0
+    });
+    console.log('🔍 apiToProduct: Final product attributes:', product.attributes);
+    
+    // Validate attributes structure
+    if (product.attributes && product.attributes.length > 0) {
+      product.attributes.forEach((attr: any, index: number) => {
+        console.log(`🔍 Attribute ${index + 1}:`, {
+          id: attr.id,
+          name: attr.name,
+          type: attr.type,
+          valueCount: attr.values?.length || 0
+        });
+      });
+    }
+    
     return product as Product;
   };
 

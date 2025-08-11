@@ -102,6 +102,7 @@ model Order {
   subtotal         Float
   tax              Float       @default(0)
   shipping         Float       @default(0)
+  codFee           Float       @default(0)
   total            Float
   billingAddress   Json
   shippingAddress  Json
@@ -179,6 +180,8 @@ model User {
   accounts      Account[]
   sessions      Session[]
   userReviews   Review[]
+  notifications Notification[]
+  notificationPreferences NotificationPreferences?
 }
 
 model VerificationToken {
@@ -195,6 +198,7 @@ model Settings {
   taxRate               Float   @default(0.15)   // 15% VAT
   shippingRate          Float   @default(15.0)   // Standard shipping cost
   freeShippingThreshold Float   @default(50.0)   // Free shipping over 50 SAR
+  codFee                Float   @default(25.0)   // Cash on Delivery fee
   
   // Business Settings
   businessName          String  @default("SaudiSafety")
@@ -221,4 +225,59 @@ model Review {
   
   // One review per user per product per order
   @@unique([productId, userId, orderId])
+}
+
+// Unified Notification System
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String?  // null for system-wide notifications
+  type        String   // 'order_created', 'order_shipped', 'low_stock', etc.
+  title_en    String
+  title_ar    String
+  message_en  String
+  message_ar  String
+  actionUrl   String?
+  
+  // Channel delivery flags
+  sendEmail   Boolean  @default(false)
+  sendInApp   Boolean  @default(true)
+  
+  // Status tracking
+  isRead      Boolean  @default(false)
+  emailSent   Boolean  @default(false)
+  emailSentAt DateTime?
+  
+  // Priority and metadata
+  priority    String   @default("normal") // 'low', 'normal', 'high'
+  metadata    Json?    // Order ID, product info, etc.
+  expiresAt   DateTime?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, isRead])
+  @@index([type, createdAt])
+}
+
+// Enhanced notification preferences (extend existing)
+model NotificationPreferences {
+  id                String  @id @default(cuid())
+  userId            String  @unique
+  
+  // Email preferences  
+  emailOrders       Boolean @default(true)
+  emailPromotions   Boolean @default(false)
+  emailSystem       Boolean @default(true)
+  
+  // In-app preferences
+  inAppOrders       Boolean @default(true)
+  inAppPromotions   Boolean @default(true)
+  inAppSystem       Boolean @default(true)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

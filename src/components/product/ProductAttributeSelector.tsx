@@ -16,7 +16,18 @@ export function ProductAttributeSelector({
   onAttributeChange,
   variants = []
 }: ProductAttributeSelectorProps) {
-  if (!attributes || attributes.length === 0) return null;
+  // Debug logging
+  console.log('🎯 ProductAttributeSelector render:', {
+    attributeCount: attributes?.length || 0,
+    attributes: attributes,
+    selectedValues,
+    variantCount: variants?.length || 0
+  });
+  
+  if (!attributes || attributes.length === 0) {
+    console.log('🚫 No attributes to display - returning null');
+    return null;
+  }
   
   // Helper function to check if an attribute value combination would result in an inactive variant
   const isValueUnavailable = (attributeId: string, valueId: string) => {

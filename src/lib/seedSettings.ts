@@ -16,6 +16,7 @@ export async function seedSettings() {
         taxRate: 0.15,              // 15% VAT
         shippingRate: 15.0,         // 15 SAR shipping
         freeShippingThreshold: 50.0, // Free shipping over 50 SAR
+        codFee: 25.0,               // 25 SAR COD fee
         businessName: 'SaudiSafety',
         businessEmail: 'support@saudisafety.com',
         businessPhone: '+966 XXX XXXX',

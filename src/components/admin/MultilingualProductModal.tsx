@@ -169,8 +169,19 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
       return;
     }
 
+    // Ensure attributes have proper structure before saving
+    const processedAttributes = formData.attributes.map(attr => ({
+      ...attr,
+      // Ensure all required fields are present
+      values: attr.values.map(val => ({
+        ...val,
+        inStock: val.inStock !== false, // Default to true if undefined
+        priceModifier: val.priceModifier || 0 // Default to 0 if undefined
+      }))
+    }));
+
     const productData: MultilingualProduct & { categoryId: string } = {
-      id: product?.id || `prod_${Date.now()}`,
+      id: product?.id || `prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name: formData.name,
       slug: formData.slug,
       price: formData.price,
@@ -181,10 +192,36 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
       inStock: formData.inStock,
       rating: formData.rating,
       reviews: formData.reviews,
-      attributes: formData.attributes,
+      attributes: processedAttributes,
       variants: formData.variants,
       seo: formData.seo
     };
+
+    console.log('💾 Saving product with attributes:', {
+      productId: productData.id,
+      attributeCount: processedAttributes.length,
+      attributes: processedAttributes
+    });
+    
+    // Validate attributes before saving
+    const validationErrors: string[] = [];
+    processedAttributes.forEach((attr, index) => {
+      if (!attr.name) validationErrors.push(`Attribute ${index + 1}: Missing name`);
+      if (!attr.type) validationErrors.push(`Attribute ${index + 1}: Missing type`);
+      if (!attr.values || attr.values.length === 0) {
+        validationErrors.push(`Attribute ${index + 1}: No values added`);
+      } else {
+        attr.values.forEach((val, valIndex) => {
+          if (!val.value) validationErrors.push(`Attribute ${index + 1}, Value ${valIndex + 1}: Missing value`);
+        });
+      }
+    });
+    
+    if (validationErrors.length > 0) {
+      console.error('❌ Attribute validation errors:', validationErrors);
+      alert('Please fix the following issues with attributes:\n\n' + validationErrors.join('\n'));
+      return;
+    }
 
     onSave(productData);
   };
