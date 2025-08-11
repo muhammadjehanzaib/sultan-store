@@ -4,7 +4,7 @@ import { ProductVariant } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   try {
-    const { variantId, action, stockChange } = await request.json();
+    const { variantId, action, stockChange, reason } = await request.json();
 
     if (!variantId || !action) {
       return NextResponse.json(
@@ -75,7 +75,15 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        // TODO: Add variant stock history tracking if needed
+        // Record variant stock history
+        await prisma.stockHistory.create({
+          data: {
+            productId: currentVariant.productId,
+            variantId: variantId, // Record which variant was affected
+            change: stockChange,
+            reason: reason || `Variant stock adjustment: ${stockChange > 0 ? '+' : ''}${stockChange}`
+          }
+        });
         break;
 
       case 'toggleStatus':

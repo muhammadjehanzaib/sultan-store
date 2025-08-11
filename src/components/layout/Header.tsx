@@ -166,7 +166,7 @@ export const Header: React.FC<HeaderProps> = ({
                         }}
                         className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
                       >
-                        <span className="text-lg">{category.icon || getCategoryIcon(category.id)}</span>
+                        <span className="text-lg">{category.icon}</span>
                         <span>{language === 'ar' ? category.name.ar : category.name.en}</span>
                       </button>
                     ))}
@@ -219,7 +219,7 @@ export const Header: React.FC<HeaderProps> = ({
                         }}
                         className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
                       >
-                        <span className="text-lg">{category.icon || getCategoryIcon(category.id)}</span>
+                        <span className="text-lg">{category.icon}</span>
                         <span>{language === 'ar' ? category.name.ar : category.name.en}</span>
                       </button>
                     ))}
@@ -472,7 +472,7 @@ export const Header: React.FC<HeaderProps> = ({
                       }
                       className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center gap-3"
                     >
-                      <span className="text-lg">{category.icon || getCategoryIcon(category.id)}</span>
+                      <span className="text-lg">{category.icon}</span>
                       <span className="font-medium">{language === 'ar' ? category.name.ar : category.name.en}</span>
                     </button>
                   ))}
@@ -609,27 +609,3 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
-
-// Helper function to get category icons
-function getCategoryIcon(categoryId: string): string {
-  switch (categoryId.toLowerCase()) {
-    case 'electronics':
-      return '📱';
-    case 'fashion':
-      return '👕';
-    case 'home':
-      return '🏠';
-    case 'sports':
-      return '⚽';
-    case 'books':
-      return '📚';
-    case 'beauty':
-      return '💄';
-    case 'toys':
-      return '🧸';
-    case 'automotive':
-      return '🚗';
-    default:
-      return '🏷️';
-  }
-}

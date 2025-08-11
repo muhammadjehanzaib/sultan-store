@@ -63,7 +63,8 @@ export async function POST(request: Request) {
           quantity: item.quantity,
           price: itemPrice,
           total: itemPrice * item.quantity,
-          selectedAttributes: item.selectedAttributes || null
+          selectedAttributes: item.selectedAttributes || null,
+          variantImage: item.variantImage || null
         };
       }),
       subtotal: calculation.subtotal,
@@ -96,7 +97,8 @@ export async function POST(request: Request) {
             quantity: item.quantity,
             price: item.price,
             total: item.total,
-            selectedAttributes: item.selectedAttributes || null
+            selectedAttributes: item.selectedAttributes || null,
+            variantImage: item.variantImage || null
           }))
         }
       },
@@ -109,16 +111,81 @@ export async function POST(request: Request) {
       }
     });
 
-    // Update inventory for each item
+    // Update inventory for each item (both product-level and variant-specific)
     for (const item of orderData.items) {
       try {
-        // First, try to find existing inventory record
+        console.log(`📦 Processing inventory for product ${item.productId}, quantity: ${item.quantity}`);
+        
+        // Find the specific variant based on selected attributes
+        let targetVariant = null;
+        if (item.selectedAttributes) {
+          console.log('🔍 Finding variant with attributes:', item.selectedAttributes);
+          
+          // Get all variants for this product with their attribute values
+          const productVariants = await prisma.productVariant.findMany({
+            where: { productId: item.productId },
+            include: {
+              attributeValues: {
+                include: {
+                  attributeValue: {
+                    include: {
+                      attribute: true
+                    }
+                  }
+                }
+              }
+            }
+          });
+          
+          // Find the variant that matches all selected attributes
+          targetVariant = productVariants.find(variant => {
+            const variantAttributes: { [key: string]: string } = {};
+            
+            // Build a map of attribute ID to value ID for this variant
+            variant.attributeValues.forEach(av => {
+              variantAttributes[av.attributeValue.attribute.id] = av.attributeValue.id;
+            });
+            
+            // Check if all selected attributes match this variant
+            const selectedAttributeIds = Object.keys(item.selectedAttributes);
+            return selectedAttributeIds.every(attrId => 
+              variantAttributes[attrId] === item.selectedAttributes[attrId]
+            );
+          });
+          
+          if (targetVariant) {
+            console.log(`✅ Found matching variant: ${targetVariant.id}`);
+          } else {
+            console.log('❌ No matching variant found for selected attributes');
+          }
+        }
+        
+        // Update variant stock if we found a matching variant
+        if (targetVariant) {
+          const newStockQuantity = Math.max(0, targetVariant.stockQuantity - item.quantity);
+          const shouldMarkOutOfStock = newStockQuantity === 0;
+          
+          console.log(`📉 Updating variant ${targetVariant.id}: ${targetVariant.stockQuantity} -> ${newStockQuantity}`);
+          
+          await prisma.productVariant.update({
+            where: { id: targetVariant.id },
+            data: {
+              stockQuantity: newStockQuantity,
+              inStock: !shouldMarkOutOfStock // Mark as out of stock if quantity is 0
+            }
+          });
+          
+          if (shouldMarkOutOfStock) {
+            console.log(`🚫 Variant ${targetVariant.id} is now out of stock`);
+          }
+        }
+        
+        // Also update general product inventory (for backward compatibility)
         const existingInventory = await prisma.inventory.findUnique({
           where: { productId: item.productId }
         });
 
         if (existingInventory) {
-          // Update existing inventory
           await prisma.inventory.update({
             where: { productId: item.productId },
             data: {
@@ -128,26 +195,29 @@ export async function POST(request: Request) {
             }
           });
         } else {
-          // Create new inventory record with initial stock of 0 (since we're decrementing)
           await prisma.inventory.create({
             data: {
               productId: item.productId,
-              stock: Math.max(0, -item.quantity), // Ensure non-negative stock
-              stockThreshold: 10 // Default threshold
+              stock: Math.max(0, -item.quantity),
+              stockThreshold: 10
             }
           });
         }
 
-        // Record stock history
+        // Record stock history (both product-level and variant-specific)
         await prisma.stockHistory.create({
           data: {
             productId: item.productId,
+            variantId: targetVariant?.id || null, // Add variant ID if available
             change: -item.quantity,
-            reason: `Order ${order.id}`
+            reason: `Order ${order.id}${targetVariant ? ` - Variant ${targetVariant.id}` : ''}`
           }
         });
+        
+        console.log(`✅ Inventory updated successfully for product ${item.productId}`);
+        
       } catch (inventoryError) {
-        console.error(`Error updating inventory for product ${item.productId}:`, inventoryError);
+        console.error(`❌ Error updating inventory for product ${item.productId}:`, inventoryError);
         // Continue with other items but log the error
       }
     }

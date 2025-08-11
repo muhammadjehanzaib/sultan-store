@@ -14,6 +14,7 @@ interface OrderItem {
   price: number;
   total: number;
   selectedAttributes?: Record<string, string>;
+  variantImage?: string;
   product: {
     id: string;
     name?: string;
@@ -377,7 +378,8 @@ export default function OrderDetailsPage() {
                 <div className="space-y-6">
                   {order.items.map((item, index) => {
                     const productName = getProductName(item.product);
-                    const productImage = item.product?.image || '/placeholder-product.jpg';
+                    // Use variant image if available, otherwise fallback to product image
+                    const productImage = item.variantImage || item.product?.image || '/placeholder-product.jpg';
 
                     return (
                       <div key={index} className="group relative">
@@ -405,6 +407,10 @@ export default function OrderDetailsPage() {
                             <div className="absolute -top-2 -right-2 bg-purple-100 text-purple-800 text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
                               {item.quantity}
                             </div>
+                            {/* Show indicator if using variant image */}
+                            {item.variantImage && item.variantImage !== item.product?.image && (
+                              <div className="absolute bottom-0 left-0 w-3 h-3 bg-purple-500 rounded-full border-2 border-white"></div>
+                            )}
                           </div>
                           
                           {/* Product Details */}

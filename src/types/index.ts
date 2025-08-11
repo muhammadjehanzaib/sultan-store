@@ -64,7 +64,7 @@ export interface MultilingualProduct {
 
 export interface ProductVariant {
   id: string;
-  attributeValues: { [attributeId: string]: string }; // Maps attribute ID to selected value ID
+  attributeValues: { [attributeId: string]: string } | any[]; // Maps attribute ID to selected value ID or array for complex structures
   price?: number; // Override price for this variant
   image?: string; // Specific image for this variant
   sku?: string;
@@ -78,6 +78,7 @@ export interface CartItem {
   selectedAttributes?: { [attributeId: string]: string };
   variantId?: string; // Unique identifier for this specific variant
   variantPrice?: number; // Price for this specific variant
+  variantImage?: string; // Selected variant image
 }
 
 export interface Cart {
@@ -203,6 +204,7 @@ export interface OrderItem {
   price: number;
   total: number;
   selectedAttributes?: { [attributeId: string]: string };
+  variantImage?: string; // Selected variant image
 }
 
 export interface Order {
@@ -333,6 +335,18 @@ export interface EmailTemplate {
   textContent: string;
   variables: string[];
   isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Contact Query Types
+export interface ContactQuery {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: 'new' | 'in progress' | 'resolved' | 'closed';
   createdAt: Date;
   updatedAt: Date;
 }

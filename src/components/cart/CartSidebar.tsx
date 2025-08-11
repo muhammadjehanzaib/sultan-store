@@ -75,13 +75,19 @@ export const CartSidebar: React.FC = () => {
                 {state.items.map((item, index) => (
                   <div key={`${item.product.id}-${item.variantId || 'default'}-${index}`} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                     <div className={`flex items-start ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
-                      {/* Product Image */}
+                      {/* Product Image - Show variant image if available */}
                       <div className="relative">
                         <img
-                          src={item.product.image}
+                          src={item.variantImage || item.product.image}
                           alt={getLocalizedString(ensureLocalizedContent(item.product.name), language)}
                           className="w-16 h-16 object-cover rounded-lg border border-gray-200"
                         />
+                        {/* Show a small indicator if using variant image */}
+                        {item.variantImage && item.variantImage !== item.product.image && (
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          </div>
+                        )}
                       </div>
                       
                       {/* Product Details */}

@@ -453,9 +453,20 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
                 {order.items.map((item, index) => (
                   <div key={index} className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <div className={`flex items-center space-x-3 ${isRTL ? 'space-x-reverse' : ''}`}>
-                      <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
-                        {item.product.image ? (
-                          <img src={item.product.image} alt={getLocalizedString(ensureLocalizedContent(item.product.name), language)} className="w-full h-full object-cover rounded-lg" />
+                      <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center relative">
+                        {/* Use variant image if available, otherwise fallback to product image */}
+                        {((item as any).variantImage || item.product.image) ? (
+                          <>
+                            <img 
+                              src={(item as any).variantImage || item.product.image} 
+                              alt={getLocalizedString(ensureLocalizedContent(item.product.name), language)} 
+                              className="w-full h-full object-cover rounded-lg" 
+                            />
+                            {/* Show indicator if using variant image */}
+                            {(item as any).variantImage && (item as any).variantImage !== item.product.image && (
+                              <div className="absolute bottom-0 right-0 w-2 h-2 bg-purple-500 rounded-full border border-white"></div>
+                            )}
+                          </>
                         ) : (
                           <span className="text-gray-400">📦</span>
                         )}
@@ -474,16 +485,31 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
                           <div className="mt-2 bg-blue-50 dark:bg-blue-900/20 rounded p-2">
                             <div className="space-y-1">
                               {Object.entries(item.selectedAttributes).map(([attrId, valueId]) => {
-                                // Find the attribute and value details
-                                const attribute = item.product.attributes?.find((attr: any) => attr.id === attrId);
+                                // Find the attribute and value details with defensive coding
+                                const attribute = item.product?.attributes?.find((attr: any) => attr.id === attrId);
                                 const value = attribute?.values?.find((val: any) => val.id === valueId);
+                                
+                                // Fallback display name resolution
+                                let attributeName = attribute?.name || attrId;
+                                let valueName = value?.label || value?.value || String(valueId);
+                                
+                                // If we can't resolve names, check if this is already resolved (from customer API)
+                                if (!attribute && typeof item.selectedAttributes === 'object') {
+                                  // Check if selectedAttributes is already in readable format
+                                  const readableAttrs = item.selectedAttributes as any;
+                                  if (typeof readableAttrs[attrId] === 'string' && !readableAttrs[attrId].includes('_')) {
+                                    attributeName = attrId;
+                                    valueName = readableAttrs[attrId];
+                                  }
+                                }
+                                
                                 return (
                                   <div key={attrId} className="flex items-center space-x-2">
                                     <span className="text-xs text-blue-600 dark:text-blue-400">
-                                      {attribute?.name || attrId}:
+                                      {attributeName}:
                                     </span>
                                     <span className="text-xs text-blue-700 dark:text-blue-300">
-                                      {value?.label || value?.value || String(valueId) || 'N/A'}
+                                      {valueName || 'N/A'}
                                     </span>
                                   </div>
                                 );

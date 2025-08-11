@@ -68,13 +68,17 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ items, total, select
             <div key={uniqueKey} className={`flex items-start ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
               <div className="relative">
                 <img
-                  src={item.product.image}
+                  src={item.variantImage || item.product.image}
                   alt={getLocalizedString(ensureLocalizedContent(item.product.name), language)}
                   className="w-12 h-12 object-cover rounded-lg border border-gray-200"
                 />
                 <span className="absolute -top-2 -right-2 bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {item.quantity}
                 </span>
+                {/* Small indicator for variant image */}
+                {item.variantImage && item.variantImage !== item.product.image && (
+                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-purple-500 rounded-full border border-white"></div>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-sm text-gray-800 truncate">{getLocalizedString(ensureLocalizedContent(item.product.name), language)}</h4>

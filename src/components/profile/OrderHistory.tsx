@@ -361,7 +361,8 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
                         };
 
                         const productName = getProductName();
-                        const productImage = item.product?.image || '/placeholder-product.jpg';
+                        // Use variant image if available, otherwise fallback to product image
+                        const productImage = (item as any).variantImage || item.product?.image || '/placeholder-product.jpg';
                         const itemTotal = item.total || (item.price * item.quantity) || 0;
                         
                         console.log('Order item debug:', {

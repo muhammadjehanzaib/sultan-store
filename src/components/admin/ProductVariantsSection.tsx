@@ -188,10 +188,14 @@ const ProductVariantsSection: React.FC<ProductVariantsSectionProps> = ({
               {attributes.map((attr) => (
                 <td key={attr.id} className="px-2 py-1">
                   {(() => {
-                    const valueId = variant.attributeValues?.[attr.id];
-                    if (!valueId) return 'No data';
-                    const value = attr.values.find((v) => v.id === valueId);
-                    return value ? value.label || value.value : 'No data';
+                    // Handle both object and array types for attributeValues
+                    if (typeof variant.attributeValues === 'object' && !Array.isArray(variant.attributeValues)) {
+                      const valueId = variant.attributeValues[attr.id];
+                      if (!valueId) return 'No data';
+                      const value = attr.values.find((v) => v.id === valueId);
+                      return value ? value.label || value.value : 'No data';
+                    }
+                    return 'No data';
                   })()}
                 </td>
               ))}

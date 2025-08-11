@@ -16,7 +16,13 @@ export async function GET(
           include: {
             product: {
               include: {
-                category: true
+                category: true,
+                attributes: {
+                  include: {
+                    values: true
+                  }
+                },
+                variants: true
               }
             }
           }
@@ -55,7 +61,17 @@ export async function PATCH(
       include: {
         items: {
           include: {
-            product: true
+            product: {
+              include: {
+                category: true,
+                attributes: {
+                  include: {
+                    values: true
+                  }
+                },
+                variants: true
+              }
+            }
           }
         }
       }

@@ -123,7 +123,7 @@ const AttributeModal: React.FC<AttributeModalProps> = ({ attribute, onSave, onCl
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded shadow-lg w-full max-w-md">
+      <div className="bg-white   dark:bg-gray-800 p-6 rounded shadow-lg w-full max-w-md">
         <h4 className="font-semibold mb-4">Edit Attribute</h4>
         <div className="mb-2">
           <label className="block text-sm font-medium mb-1">Name</label>
@@ -134,12 +134,12 @@ const AttributeModal: React.FC<AttributeModalProps> = ({ attribute, onSave, onCl
             className="w-full p-2 border rounded"
           />
         </div>
-        <div className="mb-2">
+        <div className="mb-2 ">
           <label className="block text-sm font-medium mb-1">Type</label>
           <select
             value={attr.type}
             onChange={e => setAttr({ ...attr, type: e.target.value as any })}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border text-gray-500 rounded"
           >
             {ATTRIBUTE_TYPES.map(type => (
               <option key={type.value} value={type.value}>{type.label}</option>
@@ -180,7 +180,7 @@ const AttributeModal: React.FC<AttributeModalProps> = ({ attribute, onSave, onCl
           </ul>
         </div>
         <div className="flex justify-end gap-2 mt-4">
-          <button type="button" className="px-4 py-2 bg-gray-200 rounded" onClick={onClose}>Cancel</button>
+          <button type="button" className="px-4 py-2 text-gray-700 bg-gray-200 rounded" onClick={onClose}>Cancel</button>
           <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => onSave(attr)}>Save</button>
         </div>
       </div>

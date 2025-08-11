@@ -29,7 +29,8 @@ export async function GET(request: Request) {
                   include: {
                     values: true
                   }
-                }
+                },
+                variants: true
               }
             }
           }

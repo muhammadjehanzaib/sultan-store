@@ -19,7 +19,8 @@ export async function GET(request: Request, context: { params: Promise<{ email: 
                 category: true,
                 attributes: {
                   include: { values: true }
-                }
+                },
+                variants: true
               }
             }
           }
