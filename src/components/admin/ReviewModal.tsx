@@ -37,13 +37,11 @@ export function ReviewModal({ isOpen, onClose, review, onUpdateStatus }: ReviewM
     setSubmittingResponse(true);
     try {
       // Here you would typically make an API call to save the admin response
-      console.log('Submitting admin response:', adminResponse);
       // For now, just simulate the API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       setAdminResponse('');
       onClose();
     } catch (error) {
-      console.error('Error submitting response:', error);
     } finally {
       setSubmittingResponse(false);
     }

@@ -11,6 +11,7 @@ interface CategoriesTableProps {
   categories: MultilingualCategory[];
   onEdit: (category: MultilingualCategory) => void;
   onDelete: (categoryId: string) => void;
+  onToggleActive?: (categoryId: string, isActive: boolean) => void;
   selectedCategories?: string[];
   onSelectCategory?: (categoryId: string) => void;
   onSelectAll?: () => void;
@@ -20,6 +21,7 @@ export function CategoriesTable({
   categories, 
   onEdit, 
   onDelete, 
+  onToggleActive,
   selectedCategories = [], 
   onSelectCategory, 
   onSelectAll 
@@ -289,6 +291,19 @@ export function CategoriesTable({
                     >
                       {t('common.edit')}
                     </Button>
+                    {onToggleActive && (
+                      <Button
+                        onClick={() => onToggleActive(category.id, !category.isActive)}
+                        variant="outline"
+                        size="sm"
+                        className={category.isActive 
+                          ? "text-yellow-600 hover:text-yellow-700" 
+                          : "text-green-600 hover:text-green-700"
+                        }
+                      >
+                        {category.isActive ? 'Deactivate' : 'Activate'}
+                      </Button>
+                    )}
                     <Button
                       onClick={() => handleDelete(category.id)}
                       variant="outline"

@@ -75,7 +75,6 @@ export async function PATCH(
     });
 
   } catch (error) {
-    console.error('[PATCH /api/inventory/[productId]/threshold]', error);
     return NextResponse.json(
       { error: 'Failed to update stock threshold' },
       { status: 500 }

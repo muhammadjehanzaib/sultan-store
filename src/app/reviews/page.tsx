@@ -53,7 +53,6 @@ export default function ReviewsPage() {
       const data = await response.json();
       setOrders(data.orders || []);
     } catch (error) {
-      console.error('Error fetching reviewable orders:', error);
       setError('Failed to load orders');
     } finally {
       setLoading(false);
@@ -125,7 +124,6 @@ export default function ReviewsPage() {
       // Show success message (you could add a toast here)
       alert('Review submitted successfully!');
     } catch (error: any) {
-      console.error('Error submitting review:', error);
       setError(error.message || 'Failed to submit review');
     } finally {
       setSubmitting(null);

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import InventoryTable from '@/components/admin/InventoryTable';
+import { EnhancedInventoryDashboard } from '@/components/admin/EnhancedInventoryDashboard';
 import StockAdjustmentModal from '@/components/admin/StockAdjustmentModal';
 import LowStockAlerts from '@/components/admin/LowStockAlerts';
 import StockHistoryModal from '@/components/admin/StockHistoryModal';
@@ -20,6 +21,7 @@ export default function AdminInventory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
+  const [activeView, setActiveView] = useState<'dashboard' | 'table'>('dashboard');
   const [selectedHistoryProduct, setSelectedHistoryProduct] = useState<InventoryItem | null>(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([]);
@@ -291,6 +293,16 @@ export default function AdminInventory() {
     }
   };
 
+  const handleReorderAlert = (productId: string) => {
+    // TODO: Implement purchase order creation
+    alert(`Reorder alert created for product ${productId}. Purchase order functionality will be implemented soon!`);
+  };
+
+  const handleBulkInventoryAdjust = (productIds: string[]) => {
+    setBulkSelectedIds(productIds);
+    setIsBulkModalOpen(true);
+  };
+
   const lowStockItems = inventoryData.filter(item => item.currentStock <= item.reorderPoint);
   const filteredInventory = showLowStockOnly 
     ? inventoryData.filter(item => item.currentStock <= item.reorderPoint)
@@ -310,20 +322,47 @@ export default function AdminInventory() {
               </p>
             </div>
             <div className="flex items-center space-x-3">
-              <Button
-                onClick={() => setShowLowStockOnly(!showLowStockOnly)}
-                variant={showLowStockOnly ? 'primary' : 'outline'}
-                className={showLowStockOnly ? 'bg-red-600 hover:bg-red-700' : 'border-red-300 text-red-700 hover:bg-red-50'}
-              >
-                {showLowStockOnly ? t('admin.inventory.showAll') : t('admin.inventory.showLowStock')}
-              </Button>
-              <Button
-                onClick={() => {/* TODO: Bulk update modal */}}
-                variant="outline"
-                className="border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                {t('admin.inventory.bulkUpdate')}
-              </Button>
+              <div className="bg-gray-100 dark:bg-gray-700 p-1 rounded-lg flex">
+                <button
+                  onClick={() => setActiveView('dashboard')}
+                  className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                    activeView === 'dashboard'
+                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  }`}
+                >
+                  📊 Dashboard
+                </button>
+                <button
+                  onClick={() => setActiveView('table')}
+                  className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                    activeView === 'table'
+                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  }`}
+                >
+                  📋 Table
+                </button>
+              </div>
+              
+              {activeView === 'table' && (
+                <>
+                  <Button
+                    onClick={() => setShowLowStockOnly(!showLowStockOnly)}
+                    variant={showLowStockOnly ? 'primary' : 'outline'}
+                    className={showLowStockOnly ? 'bg-red-600 hover:bg-red-700' : 'border-red-300 text-red-700 hover:bg-red-50'}
+                  >
+                    {showLowStockOnly ? t('admin.inventory.showAll') : t('admin.inventory.showLowStock')}
+                  </Button>
+                  <Button
+                    onClick={() => {/* TODO: Bulk update modal */}}
+                    variant="outline"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    {t('admin.inventory.bulkUpdate')}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
@@ -360,29 +399,39 @@ export default function AdminInventory() {
 
           {/* Content */}
           {!loading && !error && (
-            <>
-              {/* Low Stock Alerts */}
-              {lowStockItems.length > 0 && (
-                <LowStockAlerts
-                  lowStockItems={lowStockItems}
+            activeView === 'dashboard' ? (
+              <EnhancedInventoryDashboard
+                products={productList}
+                inventory={inventoryData}
+                onAdjustStock={handleAdjustStock}
+                onBulkAdjust={handleBulkInventoryAdjust}
+                onReorderAlert={handleReorderAlert}
+              />
+            ) : (
+              <>
+                {/* Low Stock Alerts */}
+                {lowStockItems.length > 0 && (
+                  <LowStockAlerts
+                    lowStockItems={lowStockItems}
+                    products={productList}
+                    onAdjustStock={handleAdjustStock}
+                    onAdjustVariantStock={handleAdjustVariantStock}
+                  />
+                )}
+
+                {/* Inventory Table */}
+                <InventoryTable
+                  inventory={filteredInventory}
                   products={productList}
                   onAdjustStock={handleAdjustStock}
+                  onViewHistory={handleViewHistory}
+                  onBulkAdjust={handleBulkAdjust}
+                  onToggleVariantActive={handleToggleVariantActive}
                   onAdjustVariantStock={handleAdjustVariantStock}
+                  onViewVariantHistory={handleViewVariantHistory}
                 />
-              )}
-
-              {/* Inventory Table */}
-              <InventoryTable
-                inventory={filteredInventory}
-                products={productList}
-                onAdjustStock={handleAdjustStock}
-                onViewHistory={handleViewHistory}
-                onBulkAdjust={handleBulkAdjust}
-                onToggleVariantActive={handleToggleVariantActive}
-                onAdjustVariantStock={handleAdjustVariantStock}
-                onViewVariantHistory={handleViewVariantHistory}
-              />
-            </>
+              </>
+            )
           )}
 
           {/* Bulk Stock Adjustment Modal */}

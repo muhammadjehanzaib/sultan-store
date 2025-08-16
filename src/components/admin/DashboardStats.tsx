@@ -49,7 +49,6 @@ export function DashboardStats({}: DashboardStatsProps) {
         try {
           ordersData = await ordersRes.value.json();
         } catch (e) {
-          console.warn('Failed to parse orders data:', e);
         }
       }
 
@@ -57,7 +56,6 @@ export function DashboardStats({}: DashboardStatsProps) {
         try {
           customersData = await customersRes.value.json();
         } catch (e) {
-          console.warn('Failed to parse customers data:', e);
         }
       }
 
@@ -65,7 +63,6 @@ export function DashboardStats({}: DashboardStatsProps) {
         try {
           productsData = await productsRes.value.json();
         } catch (e) {
-          console.warn('Failed to parse products data:', e);
         }
       }
 
@@ -104,7 +101,6 @@ export function DashboardStats({}: DashboardStatsProps) {
         customersGrowth: 8.7 // Mock data for now
       });
     } catch (err) {
-      console.error('Error fetching dashboard stats:', err);
       setError('Failed to load dashboard statistics');
     } finally {
       setLoading(false);

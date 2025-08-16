@@ -4,10 +4,8 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting seeding...');
 
   // 1. Create Settings
-  console.log('📝 Creating settings...');
   let settings = await prisma.settings.findFirst();
   if (!settings) {
     settings = await prisma.settings.create({
@@ -21,13 +19,10 @@ async function main() {
         businessAddress: 'Riyadh, Saudi Arabia'
       }
     });
-    console.log('✅ Settings created');
   } else {
-    console.log('ℹ️  Settings already exist');
   }
 
   // 2. Create Admin Users
-  console.log('👥 Creating users...');
   const testUsers = [
     {
       email: 'admin@saudisafety.com',
@@ -79,11 +74,9 @@ async function main() {
       },
     });
 
-    console.log(`✅ User: ${user.email} (${user.role})`);
   }
 
   // 3. Create Categories
-  console.log('📂 Creating categories...');
   const categories = [
     {
       slug: 'electronics',
@@ -135,11 +128,9 @@ async function main() {
       create: categoryData,
     });
     createdCategories.push(category);
-    console.log(`✅ Category: ${category.name_en}`);
   }
 
   // 4. Create Products
-  console.log('📦 Creating products...');
   const products = [
     // Electronics
     {
@@ -331,7 +322,6 @@ async function main() {
           categoryId: category.id,
         },
       });
-      console.log(`✅ Product: ${product.name_en} (${productData.price} SAR)`);
 
       // Create inventory for each product
       await prisma.inventory.upsert({
@@ -349,19 +339,10 @@ async function main() {
     }
   }
 
-  console.log('\n🎉 Seeding completed successfully!');
-  console.log('\n📋 Summary:');
-  console.log(`👥 Users: ${testUsers.length}`);
-  console.log(`📂 Categories: ${categories.length}`);
-  console.log(`📦 Products: ${products.length}`);
-  console.log('\n🔐 Admin Login:');
-  console.log('Email: admin@saudisafety.com');
-  console.log('Password: admin123');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

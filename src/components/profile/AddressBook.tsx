@@ -85,7 +85,6 @@ export const AddressBook: React.FC<AddressBookProps> = ({ user }) => {
 
       cancelEditing();
     } catch (error) {
-      console.error('Error saving address:', error);
     } finally {
       setIsLoading(false);
     }

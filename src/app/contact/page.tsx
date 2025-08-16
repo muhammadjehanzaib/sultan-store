@@ -50,7 +50,6 @@ export default function ContactPage() {
         alert(result.error || 'Failed to submit contact query');
       }
     } catch (error) {
-      console.error('Error submitting contact query:', error);
       alert('Failed to submit contact query. Please try again.');
     } finally {
       setIsSubmitting(false);

@@ -82,7 +82,6 @@ export function CustomerModal({
       });
       setIsEditing(false);
     } catch (error) {
-      console.error('Failed to update customer:', error);
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +95,6 @@ export function CustomerModal({
       await onUpdateStatus(customer.id, newStatus);
       setFormData(prev => ({ ...prev, status: newStatus }));
     } catch (error) {
-      console.error('Failed to update status:', error);
     } finally {
       setIsLoading(false);
     }

@@ -4,6 +4,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { 
+  IoNotifications,
+  IoWarning,
+  IoGift,
+  IoAlert,
+  IoStar,
+  IoCube,
+  IoMail
+} from 'react-icons/io5';
+import { HiBell } from 'react-icons/hi';
 
 interface Notification {
   id: string;
@@ -44,7 +54,6 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className = 
         setUnreadCount(data.count);
       }
     } catch (error) {
-      console.error('Failed to fetch notification count:', error);
     }
   };
 
@@ -60,7 +69,6 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className = 
         setNotifications(data.notifications);
       }
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +93,6 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className = 
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
     }
   };
 
@@ -103,34 +110,28 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className = 
         setUnreadCount(0);
       }
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
     }
   };
 
   // Handle notification click
   const handleNotificationClick = (notification: Notification) => {
-    console.log('🔔 Notification clicked:', notification);
     
     // Mark as read first
     if (!notification.isRead) {
-      console.log('📖 Marking notification as read:', notification.id);
       markAsRead(notification.id);
     }
     
     // Handle navigation
     if (notification.actionUrl) {
-      console.log('🔗 Navigating to:', notification.actionUrl);
       
       // Check if it's an external URL
       if (notification.actionUrl.startsWith('http')) {
         window.location.href = notification.actionUrl;
       } else {
         // Use Next.js router for internal navigation
-        console.log('🔀 Using router navigation to:', notification.actionUrl);
         router.push(notification.actionUrl);
       }
     } else {
-      console.log('ℹ️ No action URL for this notification');
       // Just show the notification details
       alert(`Notification: ${notification.title_en}\n\n${notification.message_en}`);
     }
@@ -182,17 +183,17 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className = 
       case 'order_created':
       case 'order_shipped':
       case 'order_delivered':
-        return '📦';
+        return IoCube;
       case 'low_stock':
-        return '⚠️';
+        return IoWarning;
       case 'promotion':
-        return '🎉';
+        return IoGift;
       case 'system_alert':
-        return '🚨';
+        return IoAlert;
       case 'review_request':
-        return '⭐';
+        return IoStar;
       default:
-        return '🔔';
+        return HiBell;
     }
   };
 
@@ -231,7 +232,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className = 
         aria-label="Notifications"
         title="Notifications"
       >
-        <span className="text-lg">🔔</span>
+        <HiBell className="text-lg" />
         
         {/* Unread Count Badge */}
         {unreadCount > 0 && (
@@ -268,7 +269,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className = 
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
-                <span className="text-4xl mb-2 block">📭</span>
+                <IoMail className="text-4xl mb-2 mx-auto text-gray-300" />
                 {language === 'ar' ? 'لا توجد إشعارات' : 'No notifications'}
               </div>
             ) : (
@@ -283,9 +284,11 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className = 
                   >
                     <div className={`flex items-start ${isRTL ? 'flex-row-reverse space-x-reverse' : ''} space-x-3`}>
                       {/* Icon */}
-                      <span className="text-lg flex-shrink-0">
-                        {getNotificationIcon(notification.type)}
-                      </span>
+                      <div className="text-lg flex-shrink-0">
+                        {React.createElement(getNotificationIcon(notification.type), {
+                          className: `text-lg ${getPriorityColor(notification.priority)}`
+                        })}
+                      </div>
                       
                       {/* Content */}
                       <div className="flex-1 min-w-0">

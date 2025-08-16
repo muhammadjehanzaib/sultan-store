@@ -63,7 +63,6 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('[GET /api/inventory/[productId]/history]', error);
     return NextResponse.json(
       { error: 'Failed to fetch stock history' },
       { status: 500 }

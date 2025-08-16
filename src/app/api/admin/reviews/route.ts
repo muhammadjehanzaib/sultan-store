@@ -86,7 +86,6 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error fetching admin reviews:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -115,16 +114,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Review not found' }, { status: 404 });
     }
 
-    // For now, we'll just log the admin response since our schema doesn't have admin responses
-    // In a real implementation, you'd create an AdminResponse model and store it
-    console.log('Admin response saved:', {
-      reviewId,
-      adminId: session.user.id,
-      adminName: session.user.name,
-      response,
-      timestamp: new Date(),
-    });
-
     return NextResponse.json({
       message: 'Admin response saved successfully',
       response: {
@@ -137,7 +126,6 @@ export async function POST(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error saving admin response:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

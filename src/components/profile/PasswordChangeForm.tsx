@@ -222,7 +222,6 @@ export const PasswordChangeForm: React.FC<PasswordChangeFormProps> = ({
         }
       }
     } catch (error) {
-      console.error('Error changing password:', error);
       setErrors({ general: 'Network error. Please try again.' });
     } finally {
       setIsLoading(false);

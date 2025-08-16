@@ -66,7 +66,6 @@ export default function ContactQueriesTable({ onQueryUpdate }: ContactQueriesTab
       }
     } catch (err) {
       setError('Failed to fetch contact queries');
-      console.error('Error fetching queries:', err);
     } finally {
       setLoading(false);
     }
@@ -116,7 +115,6 @@ export default function ContactQueriesTable({ onQueryUpdate }: ContactQueriesTab
         alert(result.error || 'Failed to update query status');
       }
     } catch (error) {
-      console.error('Error updating query status:', error);
       alert('Failed to update query status');
     } finally {
       setUpdating(false);
@@ -142,7 +140,6 @@ export default function ContactQueriesTable({ onQueryUpdate }: ContactQueriesTab
         alert(result.error || 'Failed to delete query');
       }
     } catch (error) {
-      console.error('Error deleting query:', error);
       alert('Failed to delete query');
     }
   };

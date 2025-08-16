@@ -43,7 +43,6 @@ export async function GET(
       }
     });
   } catch (error) {
-    console.error('Error generating admin invoice:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

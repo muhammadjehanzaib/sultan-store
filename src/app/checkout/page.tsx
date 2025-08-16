@@ -122,7 +122,6 @@ export default function CheckoutPage() {
         throw new Error(result.error || 'Order failed');
       }
     } catch (error) {
-      console.error('Order failed:', error);
       alert('Order failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
       setIsProcessing(false);
     }

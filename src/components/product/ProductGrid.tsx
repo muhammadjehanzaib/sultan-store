@@ -11,6 +11,10 @@ interface ProductGridProps {
   subtitle?: string;
   onAddToCart?: (product: Product) => void;
   onViewProduct?: (product: Product) => void;
+  viewMode?: 'grid' | 'list';
+  showHeader?: boolean;
+  showViewAllButton?: boolean;
+  className?: string;
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({
@@ -19,6 +23,10 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   subtitle,
   onAddToCart,
   onViewProduct,
+  viewMode = 'grid',
+  showHeader = true,
+  showViewAllButton = true,
+  className = '',
 }) => {
   const { t, isRTL } = useLanguage();
   
@@ -27,32 +35,83 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   
   if (products.length === 0) {
     return (
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className={`text-center ${isRTL ? 'rtl' : 'ltr'}`}>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">{displayTitle}</h2>
-          <p className="text-gray-600 mb-8">{displaySubtitle}</p>
-          <div className="text-gray-500">{t('products.noProducts')}</div>
-        </div>
-      </section>
+      <div className={`text-center py-8 ${className}`}>
+        {showHeader && (
+          <>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">{displayTitle}</h2>
+            <p className="text-gray-600 mb-8">{displaySubtitle}</p>
+          </>
+        )}
+        <div className="text-gray-500">{t('products.noProducts')}</div>
+      </div>
     );
   }
 
-  return (
-    <section id="featured-products" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className={`text-center mb-12 ${isRTL ? 'rtl' : 'ltr'}`}>
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">{displayTitle}</h2>
-        <p className="text-gray-600">{displaySubtitle}</p>
+  // For category pages or when showHeader is false, use a simpler layout
+  if (!showHeader) {
+    return (
+      <div className={className}>
+        {/* Products Grid/List */}
+        <div className={viewMode === 'grid' 
+          ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6" 
+          : "space-y-4"
+        }>
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onAddToCart={onAddToCart}
+              onViewProduct={onViewProduct}
+              viewMode={viewMode}
+            />
+          ))}
+        </div>
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onAddToCart={onAddToCart}
-            onViewProduct={onViewProduct}
-          />
-        ))}
+  // Default homepage layout
+  return (
+    <section id="featured-products" className="bg-white py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <div className={`text-center mb-16 ${isRTL ? 'rtl' : 'ltr'}`}>
+          <div className="inline-block">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 relative">
+              {displayTitle}
+              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-20 h-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full"></div>
+            </h2>
+          </div>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">{displaySubtitle}</p>
+        </div>
+
+        {/* Products Grid/List */}
+        <div className={viewMode === 'grid' 
+          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" 
+          : "space-y-4"
+        }>
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onAddToCart={onAddToCart}
+              onViewProduct={onViewProduct}
+              viewMode={viewMode}
+            />
+          ))}
+        </div>
+        
+        {/* View All Products Button */}
+        {showViewAllButton && (
+          <div className="text-center mt-16">
+            <button className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+              {t('products.viewAll')}
+              <svg className={`w-5 h-5 ${isRTL ? 'mr-2' : 'ml-2'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isRTL ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

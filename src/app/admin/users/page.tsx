@@ -75,7 +75,6 @@ export default function UsersPage() {
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      console.error('Error fetching users:', err);
     } finally {
       setLoading(false);
     }

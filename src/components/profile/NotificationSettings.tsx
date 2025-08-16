@@ -35,9 +35,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      console.log('Notification preferences saved:', preferences);
     } catch (error) {
-      console.error('Error saving preferences:', error);
     } finally {
       setIsLoading(false);
     }

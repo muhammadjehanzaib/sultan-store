@@ -72,7 +72,6 @@ const ProductVariantsSection: React.FC<ProductVariantsSectionProps> = ({
         
         if (existingVariant) {
           // Preserve existing variant with all its customizations
-          console.log(`🔄 Preserving existing variant ${existingVariant.id}`);
           return existingVariant;
         }
         
@@ -96,14 +95,7 @@ const ProductVariantsSection: React.FC<ProductVariantsSectionProps> = ({
           stockQuantity: 0,
         };
         
-        console.log(`➕ Created new variant:`, newVariant.sku);
         return newVariant;
-      });
-
-      console.log('🎯 Auto-managed variants:', {
-        totalCombinations: combinations.length,
-        preserved: managedVariants.filter(v => existingVariantsMap.has(JSON.stringify(v.attributeValues))).length,
-        created: managedVariants.filter(v => !existingVariantsMap.has(JSON.stringify(v.attributeValues))).length
       });
 
       setDisplayVariants(managedVariants);

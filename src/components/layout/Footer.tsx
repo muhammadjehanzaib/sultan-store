@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { scrollToElement } from '@/lib/utils';
 import { Logo } from '@/components/ui/Logo';
+import { FaFacebook, FaInstagram, FaLinkedin } from 'react-icons/fa';
+import { FaXTwitter } from 'react-icons/fa6';
 
 interface Category {
   id: string;
@@ -35,7 +37,6 @@ export const Footer: React.FC = () => {
         const data = await response.json();
         setCategories(data.categories || []);
       } catch (error) {
-        console.error('Error fetching categories:', error);
         setCategories([]);
       } finally {
         setCategoriesLoading(false);
@@ -60,7 +61,6 @@ export const Footer: React.FC = () => {
     e.preventDefault();
     if (email) {
       // Here you would typically send the email to your backend
-      console.log('Newsletter subscription:', email);
       setIsSubscribed(true);
       setEmail('');
       setTimeout(() => setIsSubscribed(false), 3000);
@@ -70,23 +70,27 @@ export const Footer: React.FC = () => {
   const socialLinks = [
     {
       name: 'Facebook',
-      icon: '📘',
-      url: 'https://facebook.com/saudisafety'
+      icon: FaFacebook,
+      url: 'https://facebook.com/saudisafety',
+      color: 'hover:text-blue-600'
     },
     {
-      name: 'Twitter',
-      icon: '🐦',
-      url: 'https://twitter.com/saudisafety'
+      name: 'X',
+      icon: FaXTwitter,
+      url: 'https://x.com/saudisafety',
+      color: 'hover:text-gray-200'
     },
     {
       name: 'Instagram',
-      icon: '📷',
-      url: 'https://instagram.com/saudisafety'
+      icon: FaInstagram,
+      url: 'https://instagram.com/saudisafety',
+      color: 'hover:text-pink-600'
     },
     {
       name: 'LinkedIn',
-      icon: '💼',
-      url: 'https://linkedin.com/company/saudisafety'
+      icon: FaLinkedin,
+      url: 'https://linkedin.com/company/saudisafety',
+      color: 'hover:text-blue-500'
     }
   ];
 
@@ -136,18 +140,22 @@ export const Footer: React.FC = () => {
             <div>
               <h4 className="text-lg font-semibold mb-4">{t('footer.followUs')}</h4>
               <div className={`flex ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
-                {socialLinks.map((social) => (
-                  <a
-                    key={social.name}
-                    href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-10 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"
-                    title={social.name}
-                  >
-                    <span className="text-lg">{social.icon}</span>
-                  </a>
-                ))}
+                {socialLinks.map((social) => {
+                  const IconComponent = social.icon;
+                  return (
+                    <a
+                      key={social.name}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`w-10 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 text-white ${social.color}`}
+                      title={social.name}
+                      aria-label={`Follow us on ${social.name}`}
+                    >
+                      <IconComponent className="text-lg" />
+                    </a>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -335,13 +343,29 @@ export const Footer: React.FC = () => {
               <p>{t('footer.copyright').replace('2024', currentYear.toString())}</p>
             </div>
             
-            {/* Payment Methods */}
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-400 text-sm">{t('footer.paymentMethods') || 'Payment Methods'}:</span>
-              <div className="flex space-x-2">
-                <div className="w-8 h-5 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-300">💳</div>
-                <div className="w-8 h-5 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-300">💰</div>
-                <div className="w-8 h-5 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-300">📱</div>
+            {/* Payment Methods & Security */}
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex items-center space-x-4">
+                <span className="text-gray-400 text-sm">{t('footer.paymentMethods') || 'Payment Methods'}:</span>
+                <div className="flex space-x-2">
+                  <div className="w-10 h-6 bg-blue-600 rounded flex items-center justify-center text-xs text-white font-semibold">VISA</div>
+                  <div className="w-10 h-6 bg-red-600 rounded flex items-center justify-center text-xs text-white font-semibold">MC</div>
+                  <div className="w-10 h-6 bg-blue-500 rounded flex items-center justify-center text-xs text-white font-semibold">AMEX</div>
+                  <div className="w-10 h-6 bg-yellow-500 rounded flex items-center justify-center text-xs text-white font-semibold">💰</div>
+                  <div className="w-10 h-6 bg-green-600 rounded flex items-center justify-center text-xs text-white font-semibold">📱</div>
+                </div>
+              </div>
+              
+              {/* Security Badges */}
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center gap-1 text-xs text-gray-400">
+                  <span className="text-green-400">🔒</span>
+                  <span>SSL Secured</span>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-gray-400">
+                  <span className="text-blue-400">🛡️</span>
+                  <span>PCI Compliant</span>
+                </div>
               </div>
             </div>
           </div>

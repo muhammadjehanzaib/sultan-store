@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[GET /api/notifications]', error);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }
@@ -43,7 +42,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ id: notificationId }, { status: 201 });
   } catch (error) {
-    console.error('[POST /api/notifications]', error);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }

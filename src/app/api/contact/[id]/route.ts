@@ -34,7 +34,6 @@ export async function GET(
     return NextResponse.json({ contactQuery });
 
   } catch (error) {
-    console.error('Error fetching contact query:', error);
     return NextResponse.json(
       { error: 'Failed to fetch contact query' },
       { status: 500 }
@@ -85,7 +84,6 @@ export async function PUT(
     });
 
   } catch (error: any) {
-    console.error('Error updating contact query:', error);
     if (error?.code === 'P2025') {
       return NextResponse.json(
         { error: 'Contact query not found' },
@@ -126,7 +124,6 @@ export async function DELETE(
     });
 
   } catch (error: any) {
-    console.error('Error deleting contact query:', error);
     if (error?.code === 'P2025') {
       return NextResponse.json(
         { error: 'Contact query not found' },

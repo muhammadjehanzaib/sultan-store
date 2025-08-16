@@ -19,7 +19,7 @@
 //     });
 //     return NextResponse.json({ products });
 //   } catch (err) {
-//     console.error('[GET /products]', err);
+//     
 //     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
 //   }
 // }
@@ -75,7 +75,7 @@
 //         },
 //         variants: {
 //           create: variants?.map((variant: any) => {
-//             console.log('API CREATE: Creating variant:', variant);
+//             
 //             // Ensure attributeValues is properly serialized
 //             let attributeValuesJson = null;
 //             if (variant.attributeValues && typeof variant.attributeValues === 'object') {
@@ -91,7 +91,7 @@
 //               attributeValues: attributeValuesJson,
 //             };
             
-//             console.log('API CREATE: Final variant data:', variantData);
+//             
 //             return variantData;
 //           }) || []
 //         }
@@ -108,7 +108,7 @@
 //     });
 //     return NextResponse.json({ product }, { status: 201 });
 //   } catch (err) {
-//     console.error('[POST /products]', err);
+//     
 //     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
 //   }
 // } 
@@ -119,23 +119,63 @@ import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-/** GET /api/products  – optional ?includeRelations=true */
+/** GET /api/products  – optional ?includeRelations=true, ?includeInactiveCategories=true */
 export async function GET(req: NextRequest) {
   const include = req.nextUrl.searchParams.get('includeRelations') === 'true';
+  const includeInactiveCategories = req.nextUrl.searchParams.get('includeInactiveCategories') === 'true';
+
+  // Build the where clause to filter by active categories unless explicitly requested
+  const whereClause: any = {};
+  if (!includeInactiveCategories) {
+    whereClause.category = {
+      isActive: true
+    };
+  }
 
   const products = await prisma.product.findMany({
-    include: include ? {
-      category: true,
-      inventory: true, // Include inventory data
-      attributes: { include: { values: true } },
-      variants: {
-        include: {
-          attributeValues: {                     // 💡 follow the join
-            include: { attributeValue: { include: { attribute: true } } }
+    where: whereClause,
+    select: {
+      id: true,
+      slug: true,
+      name_en: true,
+      name_ar: true,
+      description_en: true,
+      description_ar: true,
+      image: true,
+      price: true,
+      // Include discount fields
+      salePrice: true,
+      discountPercent: true,
+      onSale: true,
+      saleStartDate: true,
+      saleEndDate: true,
+      inStock: true,
+      rating: true,
+      reviews: true,
+      categoryId: true,
+      createdAt: true,
+      // Include relations if requested
+      ...(include && {
+        category: {
+          select: {
+            id: true,
+            slug: true,
+            name_en: true,
+            name_ar: true,
+            icon: true
+          }
+        },
+        inventory: true,
+        attributes: { include: { values: true } },
+        variants: {
+          include: {
+            attributeValues: {
+              include: { attributeValue: { include: { attribute: true } } }
+            }
           }
         }
-      }
-    } : undefined
+      })
+    }
   });
 
   return NextResponse.json(products);
@@ -150,6 +190,8 @@ export async function POST(req: NextRequest) {
     const {
       slug, name_en, name_ar, description_en, description_ar,
       image, price, categoryId, inStock = true, rating = 0, reviews = 0,
+      // Discount fields
+      salePrice, discountPercent, onSale = false, saleStartDate, saleEndDate,
       attributes = [],                    // [{ name,type, values:[{…}] }]
       variants   = []                     // [{ sku, price, stockQuantity, attrs:{[attrId]:valueId} }]
     } = body as any;
@@ -181,6 +223,12 @@ export async function POST(req: NextRequest) {
         description_en, description_ar,
         image, price, categoryId,
         inStock, rating, reviews,
+        // Include discount fields
+        salePrice: salePrice || null,
+        discountPercent: discountPercent || null,
+        onSale,
+        saleStartDate: saleStartDate ? new Date(saleStartDate) : null,
+        saleEndDate: saleEndDate ? new Date(saleEndDate) : null,
         attributes: { create: attributeCreates }
       },
       include: { attributes: { include: { values: true } } }
@@ -223,7 +271,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {
-    console.error('[POST /api/products]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

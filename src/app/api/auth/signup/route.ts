@@ -54,7 +54,6 @@ export async function POST(request: Request) {
     }, { status: 201 });
 
   } catch (err) {
-    console.error('[POST /auth/signup]', err);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }

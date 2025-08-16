@@ -13,6 +13,10 @@ import { ProductCard } from '@/components/product/ProductCard';
 import { Fragment } from 'react';
 import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
 import { useSettingsValues } from '@/hooks/useSettings';
+import { formatPercentage } from '@/lib/numberFormatter';
+import { calculateProductPrice, ProductWithDiscount } from '@/lib/discounts';
+import { DiscountBadge } from '@/components/ui/DiscountBadge';
+import { PriceDisplay } from '@/components/ui/PriceDisplay';
 
 // Types for reviews
 interface Review {
@@ -39,7 +43,7 @@ function isCategoryObject(category: unknown): category is { name_en: string } {
 
 const ProductDetailClient = memo(function ProductDetailClient({ product, allProducts }: ProductDetailClientProps) {
   const router = useRouter();
-  const { dispatch } = useCart();
+  const { state, dispatch } = useCart();
   const { t, isRTL, language } = useLanguage();
   const [quantity, setQuantity] = useState(1);
   const [selectedAttributes, setSelectedAttributes] = useState<{ [attributeId: string]: string }>({});
@@ -47,6 +51,15 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [discountInfo, setDiscountInfo] = useState(calculateProductPrice({
+    id: product.id,
+    price: product.price,
+    salePrice: product.salePrice,
+    discountPercent: product.discountPercent,
+    onSale: product.onSale || false,
+    saleStartDate: product.saleStartDate ? new Date(product.saleStartDate) : null,
+    saleEndDate: product.saleEndDate ? new Date(product.saleEndDate) : null
+  }));
   
   // Enhanced Image System State
   const [currentImage, setCurrentImage] = useState<string>(product.image);
@@ -56,6 +69,20 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
   
   // Get dynamic settings
   const { freeShippingThreshold } = useSettingsValues();
+
+  // Update discount info when current price changes
+  useEffect(() => {
+    const newDiscountInfo = calculateProductPrice({
+      id: product.id,
+      price: currentPrice,
+      salePrice: product.salePrice,
+      discountPercent: product.discountPercent,
+      onSale: product.onSale || false,
+      saleStartDate: product.saleStartDate ? new Date(product.saleStartDate) : null,
+      saleEndDate: product.saleEndDate ? new Date(product.saleEndDate) : null
+    });
+    setDiscountInfo(newDiscountInfo);
+  }, [currentPrice, product.id, product.salePrice, product.discountPercent, product.onSale, product.saleStartDate, product.saleEndDate]);
 
   // Initialize Image Gallery System
   useEffect(() => {
@@ -101,11 +128,9 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
           const data = await response.json();
           setReviews(data.reviews || []);
         } else {
-          console.error('Failed to fetch reviews');
           setReviews([]);
         }
       } catch (error) {
-        console.error('Error fetching reviews:', error);
         setReviews([]);
       } finally {
         setReviewsLoading(false);
@@ -156,18 +181,26 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
   };
 
   const handleAddToCart = () => {
+    
+    // Use discounted price if there's a discount, otherwise use current price
+    const priceToUse = discountInfo.hasDiscount ? discountInfo.discountedPrice : currentPrice;
+        
     for (let i = 0; i < quantity; i++) {
       dispatch({ 
         type: 'ADD_ITEM', 
         payload: { 
           product, 
           selectedAttributes: Object.keys(selectedAttributes).length > 0 ? selectedAttributes : undefined,
-          variantPrice: currentPrice,
+          variantPrice: priceToUse, // Use discounted price when applicable
           variantImage: currentImage // Pass the currently displayed image
         } 
       });
     }
-    dispatch({ type: 'TOGGLE_CART' });
+    
+    
+    // Add a small delay to check the state after dispatch
+    setTimeout(() => {
+    }, 100);
   };
 
   const updateQuantity = (newQuantity: number) => {
@@ -306,11 +339,29 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
               </div>
             )}
 
-            {/* Price */}
-            <div className="space-y-2">
-              <div className="text-3xl font-bold text-purple-600">
-                <Price amount={currentPrice} locale={isRTL ? 'ar' : 'en'} taxLabelType="excluded" className="text-3xl font-bold text-purple-600" />
+            {/* Price with Discount Display */}
+            <div className="space-y-4">
+              {/* Discount Badge */}
+              {discountInfo.hasDiscount && (
+                <div className="mb-3">
+                  <DiscountBadge 
+                    discountInfo={discountInfo}
+                    size="lg"
+                    variant="default"
+                  />
+                </div>
+              )}
+              
+              {/* Price Display */}
+              <div className="mb-3">
+                <PriceDisplay
+                  discountInfo={discountInfo}
+                  currency="SAR"
+                  size="xl"
+                  showSavings={discountInfo.hasDiscount}
+                />
               </div>
+              
               <p className="text-sm text-green-600 font-medium">
                 ✓ Free shipping on orders over <Price amount={freeShippingThreshold} locale={isRTL ? 'ar' : 'en'} />
               </p>
@@ -518,11 +569,65 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
               )}
             </div>
 
-            {/* Quantity and Add to Cart */}
-            {product.inStock !== false && (
-              <div className="space-y-4">
-                {/* Quantity Selector - only show if variant is in stock */}
-                {(!selectedVariant || selectedVariant.inStock !== false) && (
+            {/* Quantity and Add to Cart - Show only if product is in stock */}
+            <div className="space-y-4">
+              {/* Check if product is out of stock or selected variant is out of stock */}
+              {product.inStock === false ? (
+                // Product completely out of stock
+                <div className="flex-1 space-y-3">
+                  <Button
+                    disabled
+                    size="lg"
+                    className="w-full bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300"
+                  >
+                    <span className="flex items-center justify-center space-x-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 008.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>{t('product.outOfStock')}</span>
+                    </span>
+                  </Button>
+                  
+                  {/* Expected restock info */}
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-sm text-orange-700 font-medium">Expected back in stock: SOON</span>
+                    </div>
+                  </div>
+                </div>
+              ) : selectedVariant && selectedVariant.inStock === false ? (
+                // Selected variant is out of stock
+                <div className="flex-1 space-y-3">
+                  <Button
+                    disabled
+                    size="lg"
+                    className="w-full bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300"
+                  >
+                    <span className="flex items-center justify-center space-x-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 008.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>This Variant is Out of Stock</span>
+                    </span>
+                  </Button>
+                  
+                  {/* Expected restock info */}
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-sm text-orange-700 font-medium">Expected back in stock: SOON</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // Product and variant are in stock - show quantity and add to cart
+                <>
+                  {/* Quantity Selector */}
                   <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
                     <span className="font-medium text-gray-700">{t('cart.quantity')}:</span>
                     <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
@@ -542,91 +647,51 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
                       </button>
                     </div>
                   </div>
-                )}
 
-                {/* Add to Cart Button or Out of Stock Message */}
-                <div className={`flex ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
-                  {selectedVariant && selectedVariant.inStock === false ? (
-                    // Out of Stock Button
-                    <div className="flex-1 space-y-3">
-                      <Button
-                        disabled
-                        size="lg"
-                        className="flex-1 bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300"
-                      >
-                        <span className="flex items-center space-x-2">
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 008.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
-                          </svg>
-                          <span>This Variant is Out of Stock</span>
-                        </span>
-                      </Button>
-                      
-                      {/* Alternative Actions
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <button className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium">
-                          📧 Notify When Available
-                        </button>
-                        <button className="px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors font-medium">
-                          🔍 View Similar Items
-                        </button>
-                      </div> */}
-                      
-                      {/* Expected restock info */}
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                        <div className="flex items-center space-x-2">
-                          <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                          </svg>
-                          <span className="text-sm text-orange-700 font-medium">Expected back in stock: SOON</span>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    // Regular Add to Cart Button
+                  {/* Add to Cart Button */}
+                  <div className={`flex ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
                     <Button
                       onClick={handleAddToCart}
                       size="lg"
                       className="flex-1"
-                      disabled={selectedVariant && selectedVariant.inStock === false}
                     >
-                      {t('product.addToCart')} {quantity > 1 ? `${quantity} ` : ''}- <Price amount={currentPrice * quantity} locale={isRTL ? 'ar' : 'en'} taxLabelType='excluded' />
+                      {t('product.addToCart')} {quantity > 1 ? `${quantity} ` : ''}- <Price amount={(discountInfo.hasDiscount ? discountInfo.discountedPrice : currentPrice) * quantity} locale={isRTL ? 'ar' : 'en'} taxLabelType='excluded' />
                     </Button>
-                  )}
-                  
-                  {/* Wishlist Button */}
-                  <button className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    ❤️
-                  </button>
-                </div>
+                    
+                    {/* Wishlist Button */}
+                    <button className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                      ❤️
+                    </button>
+                  </div>
+                </>
+              )}
 
-                {/* --- Restored: Badges/Icons for Shipping, Returns, Warranty --- */}
-                <div className="grid grid-cols-3 gap-4 text-center mt-2">
-                  <div className="space-y-2">
-                    <div className="text-2xl">🚚</div>
-                    <div className="text-sm text-gray-600">
-                      <div className="font-medium">{t('product.freeShipping') || 'Free Shipping'}</div>
-                      <div>{t('product.freeShippingSubtitle') || 'Orders over 50'}</div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-2xl">🔄</div>
-                    <div className="text-sm text-gray-600">
-                      <div className="font-medium">{t('product.easyReturns') || 'Easy Returns'}</div>
-                      <div>{t('product.easyReturnsSubtitle') || '30-day policy'}</div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-2xl">🛡️</div>
-                    <div className="text-sm text-gray-600">
-                      <div className="font-medium">{t('product.warranty') || 'Warranty'}</div>
-                      <div>{t('product.warrantySubtitle') || '1-year coverage'}</div>
-                    </div>
+              {/* --- Restored: Badges/Icons for Shipping, Returns, Warranty --- */}
+              <div className="grid grid-cols-3 gap-4 text-center mt-6">
+                <div className="space-y-2">
+                  <div className="text-2xl">🚚</div>
+                  <div className="text-sm text-gray-600">
+                    <div className="font-medium">{t('product.freeShipping') || 'Free Shipping'}</div>
+                    <div>{t('product.freeShippingSubtitle') || 'Orders over 50'}</div>
                   </div>
                 </div>
-                {/* --- End Badges/Icons --- */}
+                <div className="space-y-2">
+                  <div className="text-2xl">🔄</div>
+                  <div className="text-sm text-gray-600">
+                    <div className="font-medium">{t('product.easyReturns') || 'Easy Returns'}</div>
+                    <div>{t('product.easyReturnsSubtitle') || '30-day policy'}</div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-2xl">🛡️</div>
+                  <div className="text-sm text-gray-600">
+                    <div className="font-medium">{t('product.warranty') || 'Warranty'}</div>
+                    <div>{t('product.warrantySubtitle') || '1-year coverage'}</div>
+                  </div>
+                </div>
               </div>
-            )}
+              {/* --- End Badges/Icons --- */}
+            </div>
           </div>
         </div>
       </div>

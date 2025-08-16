@@ -72,7 +72,6 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error('[GET /api/admin/users]', error);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }
@@ -147,7 +146,6 @@ export async function POST(request: Request) {
     // TODO: If sendInvite is true, send invitation email here
     if (sendInvite) {
       // Placeholder for email sending logic
-      console.log(`Invitation email should be sent to: ${email}`);
     }
 
     return NextResponse.json({ 
@@ -156,7 +154,6 @@ export async function POST(request: Request) {
     }, { status: 201 });
 
   } catch (error) {
-    console.error('[POST /api/admin/users]', error);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }

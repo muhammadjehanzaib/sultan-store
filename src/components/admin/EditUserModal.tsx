@@ -98,7 +98,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       onUserUpdated();
       onClose();
     } catch (error) {
-      console.error(error);
       setErrors({ general: 'Unexpected error occurred' });
     } finally {
       setIsSubmitting(false);

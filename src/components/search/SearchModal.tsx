@@ -19,13 +19,16 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
   const [isLoading, setIsLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { t, isRTL, language } = useLanguage();
 
-  // Fetch products from API
+  // Fetch products and categories from API
   useEffect(() => {
+    // Fetch products
     fetch('/api/products?includeRelations=true')
       .then(res => res.json())
       .then((data: any[]) => {
@@ -35,22 +38,38 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
         }
         const frontendProducts = data.map(apiProduct => ({
           id: apiProduct.id,
-          name: apiProduct.name_en || '',
+          name: { en: apiProduct.name_en || '', ar: apiProduct.name_ar || '' },
           slug: apiProduct.slug,
           price: apiProduct.price,
           image: apiProduct.image,
-          category: apiProduct.category ? apiProduct.category.name_en : '',
-          description: apiProduct.description_en || '',
-          inStock: apiProduct.inStock,
+          category: apiProduct.category
+            ? { en: apiProduct.category.name_en || '', ar: apiProduct.category.name_ar || '' }
+            : { en: '', ar: '' },
+          description: { en: apiProduct.description_en || '', ar: apiProduct.description_ar || '' },
+          inStock: Boolean(apiProduct.inStock),
           rating: apiProduct.rating,
           reviews: apiProduct.reviews,
           attributes: apiProduct.attributes || [],
           variants: apiProduct.variants || [],
+          // Include discount fields
+          salePrice: apiProduct.salePrice,
+          discountPercent: apiProduct.discountPercent,
+          onSale: apiProduct.onSale || false,
+          saleStartDate: apiProduct.saleStartDate,
+          saleEndDate: apiProduct.saleEndDate,
         }));
         setProducts(frontendProducts);
+        
+        // Extract unique categories
+        const uniqueCategories = data
+          .map((product: any) => product.category)
+          .filter((category: any) => category && category.id)
+          .filter((value: any, index: number, self: any[]) => 
+            index === self.findIndex((t: any) => t.id === value.id)
+          );
+        setCategories(uniqueCategories);
       })
       .catch(error => {
-        console.error('Error fetching products:', error);
         setProducts([]);
       });
   }, []);
@@ -61,7 +80,6 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
       try {
         setRecentSearches(JSON.parse(saved));
       } catch (error) {
-        console.error('Error loading recent searches:', error);
       }
     }
   }, []);
@@ -74,23 +92,52 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
-      setFilteredProducts([]);
-      return;
+      // If no search query but a category is selected, show products from that category
+      if (selectedCategory) {
+        setIsLoading(true);
+        const timer = setTimeout(() => {
+          const filtered = products.filter(product => {
+            const productCategory = getLocalizedString(ensureLocalizedContent(product.category), language);
+            return productCategory.toLowerCase().includes(selectedCategory.toLowerCase());
+          });
+          setFilteredProducts(filtered);
+          setIsLoading(false);
+        }, 100);
+        return () => clearTimeout(timer);
+      } else {
+        setFilteredProducts([]);
+        return;
+      }
     }
 
     setIsLoading(true);
     const timer = setTimeout(() => {
-      const filtered = products.filter(product =>
-        getLocalizedString(ensureLocalizedContent(product.name), language).toLowerCase().includes(searchQuery.toLowerCase()) ||
-        getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase().includes(searchQuery.toLowerCase()) ||
-        getLocalizedString(ensureLocalizedContent(product.description || ''), language).toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredProducts(filtered.slice(0, 8));
+      const queryLower = searchQuery.toLowerCase();
+      
+      const filtered = products.filter(product => {
+        const name = getLocalizedString(ensureLocalizedContent(product.name), language).toLowerCase();
+        const category = getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase();
+        const description = getLocalizedString(ensureLocalizedContent(product.description || ''), language).toLowerCase();
+        
+        const matchesQuery = name.includes(queryLower) || 
+                           category.includes(queryLower) || 
+                           description.includes(queryLower);
+        
+        // Apply category filter if one is selected
+        if (selectedCategory) {
+          const productCategory = getLocalizedString(ensureLocalizedContent(product.category), language);
+          return matchesQuery && productCategory.toLowerCase().includes(selectedCategory.toLowerCase());
+        }
+        
+        return matchesQuery;
+      });
+      
+      setFilteredProducts(filtered);
       setIsLoading(false);
-    }, 300);
+    }, 150); // Reduced debounce time
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, selectedCategory, products, language]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -122,6 +169,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
     router.push(`/product/${productSlug}`);
     onClose();
     setSearchQuery('');
+    setSelectedCategory(''); // Reset category filter
   };
 
   const addToRecentSearches = (query: string) => {
@@ -190,7 +238,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
           </div>
 
           {/* Search Input */}
-          <form onSubmit={handleSearchSubmit} className="relative mb-6">
+          <form onSubmit={handleSearchSubmit} className="relative mb-4">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <span className="text-gray-400 text-xl">🔍</span>
             </div>
@@ -213,13 +261,79 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
             )}
           </form>
 
+          {/* Category Filter */}
+          {categories.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Browse by Category</h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedCategory('')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    selectedCategory === '' 
+                      ? 'bg-purple-100 text-purple-700 border border-purple-300' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
+                  }`}
+                >
+                  All Categories
+                </button>
+                {categories.map((category) => {
+                  const categoryName = language === 'ar' ? category.name_ar || category.name_en : category.name_en;
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(categoryName)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        selectedCategory === categoryName 
+                          ? 'bg-purple-100 text-purple-700 border border-purple-300' 
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
+                      }`}
+                    >
+                      {categoryName}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Results */}
           <div className="max-h-96 overflow-y-auto">
-            {searchQuery.trim() === '' ? (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">Start searching</h3>
-                <p className="text-gray-500">Type something to search for products</p>
+            {searchQuery.trim() === '' && !selectedCategory ? (
+              <div className="space-y-6">
+                {/* Recent Searches */}
+                {recentSearches.length > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900">Recent Searches</h3>
+                      <button
+                        onClick={clearRecentSearches}
+                        className="text-sm text-gray-500 hover:text-gray-700"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {recentSearches.map((search, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleRecentSearchClick(search)}
+                          className="px-3 py-1 bg-gray-100 hover:bg-purple-100 hover:text-purple-600 rounded-full text-sm transition-colors duration-200"
+                        >
+                          {search}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Empty State */}
+                {recentSearches.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">🔍</div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Start searching</h3>
+                    <p className="text-gray-500">Search for products or browse by category</p>
+                  </div>
+                )}
               </div>
             ) : isLoading ? (
               <div className="text-center py-12">
@@ -236,9 +350,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm text-gray-600">
-                    {filteredProducts.length} result{filteredProducts.length !== 1 ? 's' : ''} found
+                    {filteredProducts.length} result{filteredProducts.length !== 1 ? 's' : ''} found{selectedCategory && ` in ${selectedCategory}`}
                   </p>
-                  {filteredProducts.length === 8 && (
+                  {searchQuery.trim() && (
                     <button
                       onClick={handleViewAllResults}
                       className="text-sm text-purple-600 hover:text-purple-700 font-medium"

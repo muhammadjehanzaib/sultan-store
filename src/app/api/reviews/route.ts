@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ reviews });
   } catch (error) {
-    console.error('Error fetching reviews:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -136,7 +135,6 @@ export async function POST(request: NextRequest) {
       review 
     });
   } catch (error) {
-    console.error('Error creating review:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

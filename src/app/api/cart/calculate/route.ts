@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
       calculation
     });
   } catch (error) {
-    console.error('Error calculating cart totals:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

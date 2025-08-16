@@ -58,7 +58,6 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('[POST /api/inventory/sync]', error);
     return NextResponse.json(
       { error: 'Failed to sync product stocks' }, 
       { status: 500 }

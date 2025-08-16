@@ -130,7 +130,6 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
 
       onUserAdded();
     } catch (error) {
-      console.error('Error creating user:', error);
       setErrors({ general: 'An unexpected error occurred' });
     } finally {
       setIsSubmitting(false);

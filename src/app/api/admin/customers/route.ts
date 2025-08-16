@@ -98,7 +98,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error fetching customers:', error);
     return NextResponse.json(
       { error: 'Failed to fetch customers' },
       { status: 500 }
@@ -172,7 +171,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(customerResponse, { status: 201 });
 
   } catch (error) {
-    console.error('Error creating customer:', error);
     return NextResponse.json(
       { error: 'Failed to create customer' },
       { status: 500 }

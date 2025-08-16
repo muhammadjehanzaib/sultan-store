@@ -55,7 +55,6 @@ export async function GET(request: Request, context: { params: Promise<{ email: 
 
     return NextResponse.json({ orders: mappedOrders });
   } catch (err) {
-    console.error('[GET /orders/customer/[email]]', err);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }

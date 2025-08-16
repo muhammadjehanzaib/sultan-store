@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error submitting contact query:', error);
     return NextResponse.json(
       { error: 'Failed to submit contact query' },
       { status: 500 }
@@ -86,7 +85,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error fetching contact queries:', error);
     return NextResponse.json(
       { error: 'Failed to fetch contact queries' },
       { status: 500 }

@@ -5,7 +5,6 @@ const prisma = new PrismaClient();
 // Initialize stock quantities for all variants
 export async function initializeVariantStock(defaultQuantity: number = 10) {
   try {
-    console.log('🔧 Initializing variant stock quantities...');
     
     // Update all variants with 0 stock quantity to have the default quantity
     const result = await prisma.productVariant.updateMany({
@@ -20,11 +19,9 @@ export async function initializeVariantStock(defaultQuantity: number = 10) {
       }
     });
     
-    console.log(`✅ Updated ${result.count} variants with stock quantity ${defaultQuantity}`);
     
     return result;
   } catch (error) {
-    console.error('❌ Error initializing variant stock:', error);
     throw error;
   }
 }
@@ -49,7 +46,6 @@ export async function getVariantStockStatus(variantId: string) {
       inStock: variant.inStock && variant.stockQuantity > 0
     };
   } catch (error) {
-    console.error('❌ Error getting variant stock status:', error);
     return null;
   }
 }
@@ -76,10 +72,8 @@ export async function updateVariantStock(variantId: string, newQuantity: number,
       });
     }
     
-    console.log(`✅ Updated variant ${variantId} stock to ${newQuantity}`);
     return variant;
   } catch (error) {
-    console.error('❌ Error updating variant stock:', error);
     throw error;
   }
 }
@@ -125,7 +119,6 @@ export async function isVariantAvailable(productId: string, selectedAttributes: 
     
     return targetVariant.inStock && targetVariant.stockQuantity > 0;
   } catch (error) {
-    console.error('❌ Error checking variant availability:', error);
     return false;
   }
 }

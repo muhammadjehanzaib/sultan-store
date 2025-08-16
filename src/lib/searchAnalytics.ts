@@ -53,7 +53,6 @@ export class SearchAnalytics {
         this.popularSearches = JSON.parse(popular);
       }
     } catch (error) {
-      console.error('Error loading search analytics:', error);
     }
   }
 
@@ -71,7 +70,6 @@ export class SearchAnalytics {
         .slice(0, 20);
       localStorage.setItem('popular-searches', JSON.stringify(topPopular));
     } catch (error) {
-      console.error('Error saving search analytics:', error);
     }
   }
 

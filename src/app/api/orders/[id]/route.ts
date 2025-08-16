@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
+import { notificationService } from '@/lib/notificationService';
 
 const prisma = new PrismaClient();
 
@@ -36,7 +37,6 @@ export async function GET(
 
     return NextResponse.json({ order });
   } catch (err) {
-    console.error('[GET /orders/[id]]', err);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }
@@ -49,6 +49,22 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
     const { status, trackingNumber, trackingProvider } = body;
+
+    // Get the current order to check for status changes
+    const currentOrder = await prisma.order.findUnique({
+      where: { id },
+      select: { 
+        id: true, 
+        status: true, 
+        customerEmail: true, 
+        total: true,
+        trackingNumber: true
+      }
+    });
+
+    if (!currentOrder) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
 
     const updateData: any = {};
     if (status) updateData.status = status;
@@ -77,9 +93,85 @@ export async function PATCH(
       }
     });
 
+    // Send notifications if status changed
+    if (status && status !== currentOrder.status) {
+      
+      try {
+        // Find the customer user by email if they have an account
+        const customerUser = await prisma.user.findUnique({ 
+          where: { email: currentOrder.customerEmail } 
+        });
+
+        if (status === 'shipped') {
+          if (customerUser) {
+            await notificationService.notifyOrderShipped(
+              customerUser.id, 
+              order.id, 
+              order.trackingNumber || undefined
+            );
+          }
+        } else if (status === 'delivered') {
+          if (customerUser) {
+            await notificationService.create({
+              userId: customerUser.id,
+              type: 'order_delivered',
+              title: {
+                en: 'Order Delivered!',
+                ar: 'تم توصيل الطلب!'
+              },
+              message: {
+                en: `Your order #${order.id} has been delivered successfully!`,
+                ar: `تم توصيل طلبك #${order.id} بنجاح!`
+              },
+              actionUrl: `/orders/${order.id}`,
+              sendEmail: true,
+              sendInApp: true,
+              metadata: { orderId: order.id }
+            });
+            
+            // Send review request after delivery
+            
+            // Get product names from order items
+            const productNames = order.items.map(item => 
+              item.product.name_en || item.product.name_ar || 'Product'
+            );
+            
+            await notificationService.notifyReviewRequest(
+              customerUser.id,
+              order.id,
+              order.total,
+              productNames
+            );
+            
+          }
+        } else if (status === 'cancelled') {
+          if (customerUser) {
+            await notificationService.create({
+              userId: customerUser.id,
+              type: 'system_alert',
+              title: {
+                en: 'Order Cancelled',
+                ar: 'تم إلغاء الطلب'
+              },
+              message: {
+                en: `Your order #${order.id} has been cancelled.`,
+                ar: `تم إلغاء طلبك #${order.id}.`
+              },
+              actionUrl: `/orders/${order.id}`,
+              sendEmail: true,
+              sendInApp: true,
+              priority: 'high',
+              metadata: { orderId: order.id, type: 'order_cancelled' }
+            });
+          }
+        }
+      } catch (notificationError) {
+        // Don't fail the order update if notification fails
+      }
+    }
+
     return NextResponse.json({ order });
   } catch (err) {
-    console.error('[PATCH /orders/[id]]', err);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
-} 
+}

@@ -37,6 +37,11 @@ model Product {
   description_ar String?
   image          String
   price          Float
+  salePrice      Float?             // Sale price (direct override)
+  discountPercent Float?            // Percentage discount (0-100)
+  onSale         Boolean            @default(false)
+  saleStartDate  DateTime?
+  saleEndDate    DateTime?
   inStock        Boolean            @default(true)
   rating         Float?             @default(0)
   reviews        Int?               @default(0)
@@ -132,13 +137,40 @@ model OrderItem {
 }
 
 model Category {
-  id        String    @id @default(cuid())
-  slug      String    @unique
-  name_en   String
-  name_ar   String
-  icon      String?
-  createdAt DateTime  @default(now())
-  products  Product[]
+  id             String      @id @default(cuid())
+  slug           String      @unique
+  name_en        String
+  name_ar        String
+  description_en String?
+  description_ar String?
+  icon           String?
+  image          String?
+  isActive       Boolean     @default(true)
+  sortOrder      Int         @default(0)
+  
+  // Hierarchy fields
+  parentId       String?
+  level          Int         @default(0)
+  path           String?     // "electronics/smartphones/android"
+  
+  // SEO fields
+  metaTitle_en   String?
+  metaTitle_ar   String?
+  metaDesc_en    String?
+  metaDesc_ar    String?
+  
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  
+  // Relationships
+  parent         Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children       Category[]  @relation("CategoryHierarchy")
+  products       Product[]
+
+  @@index([parentId])
+  @@index([level])
+  @@index([path])
+  @@index([isActive, sortOrder])
 }
 
 model Account {

@@ -125,7 +125,7 @@ export async function POST(request: Request) {
             productId,
             success: true,
             inventory,
-            isLowStock: inventory.stock <= (inventory.stockThreshold || 5)
+            isLowStock: inventory.stock <= (inventory.stockThreshold ?? 5)
           });
 
         } catch (error) {
@@ -154,7 +154,6 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('[POST /api/inventory/bulk]', error);
     return NextResponse.json(
       { error: 'Failed to process bulk inventory update' },
       { status: 500 }

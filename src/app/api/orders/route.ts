@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     if (status) where.status = status;
     if (customerEmail) where.customerEmail = customerEmail;
 
-    const orders = await prisma.order.findMany({
+    const ordersRaw = await prisma.order.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -38,9 +38,31 @@ export async function GET(request: Request) {
       }
     });
 
+    // Transform the orders to match expected interface
+    const orders = ordersRaw.map(order => ({
+      ...order,
+      items: order.items.map(item => ({
+        ...item,
+        product: {
+          ...item.product,
+          name: {
+            en: item.product.name_en,
+            ar: item.product.name_ar
+          },
+          description: item.product.description_en || item.product.description_ar ? {
+            en: item.product.description_en || '',
+            ar: item.product.description_ar || ''
+          } : undefined,
+          category: item.product.category ? {
+            en: item.product.category.name_en,
+            ar: item.product.category.name_ar
+          } : undefined
+        }
+      }))
+    }));
+
     return NextResponse.json({ orders });
   } catch (err) {
-    console.error('[GET /orders]', err);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }
@@ -137,7 +159,6 @@ export async function POST(request: Request) {
           }
         });
       } catch (inventoryError) {
-        console.error(`Error updating inventory for product ${item.productId}:`, inventoryError);
         // Continue with other items but log the error
       }
     }
@@ -153,13 +174,11 @@ export async function POST(request: Request) {
         );
       }
     } catch (notificationError) {
-      console.error('Failed to send order notification:', notificationError);
       // Don't fail the order creation if notification fails
     }
 
     return NextResponse.json({ order }, { status: 201 });
   } catch (err) {
-    console.error('[POST /orders]', err);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 } 

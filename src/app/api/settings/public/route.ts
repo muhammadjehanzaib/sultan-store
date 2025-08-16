@@ -16,7 +16,6 @@ export async function GET() {
       codFee: codInfo.fee
     });
   } catch (error) {
-    console.error('Error fetching public settings:', error);
     
     // Return default values if there's an error
     return NextResponse.json({

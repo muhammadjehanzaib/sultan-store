@@ -38,28 +38,22 @@ export function QuickOverview() {
     try {
       const response = await fetch('/api/orders');
       
-      console.log('QuickOverview: API response status:', response.status);
       
       if (!response.ok) {
-        console.error('QuickOverview: API response not ok:', response.status, response.statusText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const ordersData = await response.json();
-      console.log('QuickOverview: Orders data received:', ordersData);
       
       const orders = ordersData.orders || [];
-      console.log('QuickOverview: Total orders:', orders.length);
       
       if (orders.length > 0) {
-        console.log('QuickOverview: Sample order:', orders[0]);
       }
       
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       
-      console.log('QuickOverview: Date filters - Today:', today.toISOString(), 'Week ago:', weekAgo.toISOString());
       
       // Filter orders for today and this week
       const todayOrders = orders.filter((order: any) => {
@@ -72,14 +66,10 @@ export function QuickOverview() {
         return orderDate >= weekAgo;
       });
       
-      console.log('QuickOverview: Today orders:', todayOrders.length);
-      console.log('QuickOverview: Week orders:', weekOrders.length);
       
       const todaySales = todayOrders.reduce((sum: number, order: any) => sum + (order.total || 0), 0);
       const weekSales = weekOrders.reduce((sum: number, order: any) => sum + (order.total || 0), 0);
       
-      console.log('QuickOverview: Today sales:', todaySales);
-      console.log('QuickOverview: Week sales:', weekSales);
       
       // Generate recent activities based on actual orders
       const recentActivities: Activity[] = [];
@@ -175,11 +165,9 @@ export function QuickOverview() {
         recentActivities
       };
       
-      console.log('QuickOverview: Final data:', finalData);
       setData(finalData);
       
     } catch (error) {
-      console.error('QuickOverview: Error fetching data:', error);
       
       // Set real zero data instead of fake data
       setData({

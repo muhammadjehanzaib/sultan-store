@@ -68,7 +68,7 @@ export default function OrderDetailsPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const { t, isRTL, language } = useLanguage();
-  
+
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,30 +91,29 @@ export default function OrderDetailsPage() {
       try {
         setLoading(true);
         const response = await fetch(`/api/orders/${orderId}`);
-        
+
         if (response.status === 404) {
           setError('Order not found');
           return;
         }
-        
+
         if (!response.ok) {
           setError('Failed to fetch order details');
           return;
         }
-        
+
         const data = await response.json();
-        
+
         // Check if the order belongs to the current user (basic security check)
         const isAdmin = user?.role === 'admin' || user?.role === 'manager';
         if (data.order.customerEmail !== user?.email && !isAdmin) {
           setError('Access denied - This order does not belong to you');
           return;
         }
-        
+
         setOrder(data.order);
         setError(null);
       } catch (err) {
-        console.error('Error fetching order:', err);
         setError('Failed to load order details');
       } finally {
         setLoading(false);
@@ -176,20 +175,19 @@ export default function OrderDetailsPage() {
   const handleReorder = () => {
     if (order) {
       // Implement reorder functionality
-      console.log('Reordering order:', order.id);
       alert('Reorder functionality will be implemented soon');
     }
   };
 
   const handleCancelOrder = async () => {
     if (!order) return;
-    
+
     const confirmCancel = confirm(
-      language === 'ar' 
+      language === 'ar'
         ? 'هل أنت متأكد من إلغاء هذا الطلب؟'
         : 'Are you sure you want to cancel this order?'
     );
-    
+
     if (!confirmCancel) return;
 
     try {
@@ -213,7 +211,6 @@ export default function OrderDetailsPage() {
         throw new Error('Failed to cancel order');
       }
     } catch (err) {
-      console.error('Error cancelling order:', err);
       alert(
         language === 'ar'
           ? 'فشل في إلغاء الطلب'
@@ -227,6 +224,20 @@ export default function OrderDetailsPage() {
       return isRTL ? (product.name_ar || product.name_en) : product.name_en;
     }
     return product.name || 'Unknown Product';
+  };
+
+  const getAttributeDisplayName = (attributeId: string, valueId: string, product: any) => {
+    if (!product.attributes) return { attributeName: attributeId, valueName: valueId };
+
+    const attribute = product.attributes.find((attr: any) => attr.id === attributeId);
+    if (!attribute) return { attributeName: attributeId, valueName: valueId };
+
+    const attributeName = isRTL ? (attribute.name_ar || attribute.name_en || attribute.name) : (attribute.name_en || attribute.name);
+
+    const value = attribute.values?.find((val: any) => val.id === valueId);
+    const valueName = value ? (isRTL ? (value.value_ar || value.value_en || value.value || value.label) : (value.value_en || value.value || value.label)) : valueId;
+
+    return { attributeName, valueName };
   };
 
   if (loading) {
@@ -275,8 +286,8 @@ export default function OrderDetailsPage() {
         <div className="mb-8">
           {/* Breadcrumb */}
           <div className="flex items-center gap-3 mb-6">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => router.back()}
               className="flex items-center gap-2 hover:bg-white hover:shadow-sm transition-all"
             >
@@ -284,8 +295,8 @@ export default function OrderDetailsPage() {
               {language === 'ar' ? 'العودة' : 'Back'}
             </Button>
             <span className="text-gray-400">/</span>
-            <Button 
-              variant="secondary" 
+            <Button
+              variant="secondary"
               onClick={() => router.push('/orders')}
               className="text-gray-600 hover:text-purple-600"
             >
@@ -296,7 +307,7 @@ export default function OrderDetailsPage() {
               {language === 'ar' ? 'تفاصيل الطلب' : 'Order Details'}
             </span>
           </div>
-          
+
           {/* Order Header Card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -335,7 +346,7 @@ export default function OrderDetailsPage() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div className="text-right">
                   <p className="text-sm text-gray-600 mb-1">{language === 'ar' ? 'المجموع' : 'Total Amount'}</p>
@@ -373,7 +384,7 @@ export default function OrderDetailsPage() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="p-6">
                 <div className="space-y-6">
                   {order.items.map((item, index) => {
@@ -412,24 +423,27 @@ export default function OrderDetailsPage() {
                               <div className="absolute bottom-0 left-0 w-3 h-3 bg-purple-500 rounded-full border-2 border-white"></div>
                             )}
                           </div>
-                          
+
                           {/* Product Details */}
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-gray-900 text-lg mb-1 group-hover:text-purple-700 transition-colors">
                               {productName}
                             </h4>
-                            
+
                             {/* Attributes */}
                             {item.selectedAttributes && Object.keys(item.selectedAttributes).length > 0 && (
                               <div className="flex flex-wrap gap-2 mb-2">
-                                {Object.entries(item.selectedAttributes).map(([key, value]) => (
-                                  <span key={key} className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-md">
-                                    {key}: {value}
-                                  </span>
-                                ))}
+                                {Object.entries(item.selectedAttributes).map(([key, value]) => {
+                                  const { attributeName, valueName } = getAttributeDisplayName(key, value, item.product);
+                                  return (
+                                    <span key={key} className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-md">
+                                      {attributeName}: {valueName}
+                                    </span>
+                                  );
+                                })}
                               </div>
                             )}
-                            
+
                             {/* Quantity and Unit Price */}
                             <div className="flex items-center gap-4 text-sm">
                               <div className="flex items-center gap-2 text-gray-600">
@@ -446,7 +460,7 @@ export default function OrderDetailsPage() {
                               </div>
                             </div>
                           </div>
-                          
+
                           {/* Item Total */}
                           <div className="flex flex-col items-end">
                             <div className="text-right">
@@ -457,7 +471,7 @@ export default function OrderDetailsPage() {
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Divider */}
                         {index < order.items.length - 1 && (
                           <div className="relative my-4">
@@ -485,7 +499,7 @@ export default function OrderDetailsPage() {
                   </h3>
                 </div>
               </div>
-              
+
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Customer Details */}
@@ -494,7 +508,7 @@ export default function OrderDetailsPage() {
                       <span>👤</span>
                       {language === 'ar' ? 'بيانات العميل' : 'Customer Details'}
                     </h4>
-                    
+
                     <div className="flex items-start gap-3">
                       <div className="p-2 bg-gray-100 rounded-lg flex-shrink-0">
                         <span className="text-sm">👤</span>
@@ -506,7 +520,7 @@ export default function OrderDetailsPage() {
                         <p className="text-gray-600">{order.customerName}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start gap-3">
                       <div className="p-2 bg-gray-100 rounded-lg flex-shrink-0">
                         <span className="text-sm">📧</span>
@@ -518,7 +532,7 @@ export default function OrderDetailsPage() {
                         <p className="text-gray-600 break-all">{order.customerEmail}</p>
                       </div>
                     </div>
-                    
+
                     {order.customerPhone && (
                       <div className="flex items-start gap-3">
                         <div className="p-2 bg-gray-100 rounded-lg flex-shrink-0">
@@ -540,7 +554,7 @@ export default function OrderDetailsPage() {
                       <span>📍</span>
                       {language === 'ar' ? 'العنوان والدفع' : 'Address & Payment'}
                     </h4>
-                    
+
                     <div className="flex items-start gap-3">
                       <div className="p-2 bg-gray-100 rounded-lg flex-shrink-0">
                         <span className="text-sm">📍</span>
@@ -556,7 +570,7 @@ export default function OrderDetailsPage() {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start gap-3">
                       <div className="p-2 bg-gray-100 rounded-lg flex-shrink-0">
                         <span className="text-sm">💳</span>
@@ -566,8 +580,8 @@ export default function OrderDetailsPage() {
                           {language === 'ar' ? 'طريقة الدفع' : 'Payment Method'}
                         </p>
                         <p className="text-gray-600">
-                          {typeof order.paymentMethod === 'string' 
-                            ? order.paymentMethod 
+                          {typeof order.paymentMethod === 'string'
+                            ? order.paymentMethod
                             : order.paymentMethod?.name || 'N/A'
                           }
                         </p>
@@ -575,7 +589,7 @@ export default function OrderDetailsPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Tracking Information - Full Width */}
                 {order.trackingNumber && (
                   <div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-200">
@@ -622,7 +636,7 @@ export default function OrderDetailsPage() {
                   </h3>
                 </div>
               </div>
-              
+
               <div className="p-6">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-2">
@@ -675,11 +689,11 @@ export default function OrderDetailsPage() {
                   </h3>
                 </div>
               </div>
-              
+
               <div className="p-6 space-y-3">
                 {order.trackingNumber && (
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={handleTrackOrder}
                     className="w-full flex items-center justify-center gap-2 py-3 hover:bg-blue-50 hover:border-blue-300 transition-all"
                   >
@@ -687,28 +701,41 @@ export default function OrderDetailsPage() {
                     {language === 'ar' ? 'تتبع الطلب' : 'Track Order'}
                   </Button>
                 )}
-                
-                <Button 
-                  variant="outline" 
+
+                <span title={order.status !== 'delivered' ? 'Invoice available after delivery' : ''}>
+                  <Button
+                    variant="outline"
+                    onClick={order.status === 'delivered' ? handleDownloadInvoice : undefined}
+                    disabled={order.status !== 'delivered'}
+                    className={`w-full flex items-center justify-center gap-2 py-3 hover:bg-purple-50 hover:border-purple-300 transition-all ${order.status !== 'delivered' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <span>📄</span>
+                    {language === 'ar' ? 'تحميل الفاتورة' : 'Download Invoice'}
+                  </Button>
+                </span>
+
+
+                {/* <Button
+                  variant="outline"
                   onClick={handleDownloadInvoice}
                   className="w-full flex items-center justify-center gap-2 py-3 hover:bg-purple-50 hover:border-purple-300 transition-all"
                 >
                   <span>📄</span>
                   {language === 'ar' ? 'تحميل الفاتورة' : 'Download Invoice'}
-                </Button>
-                
+                </Button> */}
+
                 {order.status === 'delivered' && (
                   <>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => router.push('/reviews')}
                       className="w-full flex items-center justify-center gap-2 py-3 hover:bg-yellow-50 hover:border-yellow-300 transition-all"
                     >
                       <span>⭐</span>
                       {language === 'ar' ? 'كتابة تقييم' : 'Write Review'}
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={handleReorder}
                       className="w-full flex items-center justify-center gap-2 py-3 hover:bg-green-50 hover:border-green-300 transition-all"
                     >
@@ -717,10 +744,10 @@ export default function OrderDetailsPage() {
                     </Button>
                   </>
                 )}
-                
-                {['pending', 'processing'].includes(order.status) && (
-                  <Button 
-                    variant="outline" 
+
+                {['pending'].includes(order.status) && (
+                  <Button
+                    variant="outline"
                     onClick={handleCancelOrder}
                     className="w-full flex items-center justify-center gap-2 py-3 text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-all"
                   >

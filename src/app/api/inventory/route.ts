@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
+import { notificationService } from '@/lib/notificationService';
 
 const prisma = new PrismaClient();
 
@@ -101,7 +102,6 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error('[GET /api/inventory]', error);
     return NextResponse.json(
       { error: 'Failed to fetch inventory data' }, 
       { status: 500 }
@@ -246,6 +246,22 @@ export async function POST(request: Request) {
       }
     });
 
+    // Check for low stock and send notification if needed
+    if (updatedProduct && updatedProduct.inventory) {
+      const { stock, stockThreshold } = updatedProduct.inventory;
+      const productName = updatedProduct.name_en || updatedProduct.name_ar || 'Unknown Product';
+      
+      // Use default threshold of 5 if stockThreshold is null
+      const threshold = stockThreshold ?? 5;
+      
+      if (stock <= threshold && stock > 0) {
+        try {
+          await notificationService.notifyLowStock(productName, stock, threshold);
+        } catch (notificationError) {
+        }
+      }
+    }
+
     return NextResponse.json({
       message: 'Inventory updated successfully',
       inventory: result,
@@ -253,7 +269,6 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('[POST /api/inventory]', error);
     return NextResponse.json(
       { error: 'Failed to update inventory' }, 
       { status: 500 }

@@ -76,7 +76,7 @@
 //         },
 //         variants: {
 //           create: variants?.map((variant: any) => {
-//             console.log('API: Creating variant:', variant);
+//             
 //             // Ensure attributeValues is properly serialized
 //             let attributeValuesJson = null;
 //             if (variant.attributeValues && typeof variant.attributeValues === 'object') {
@@ -92,7 +92,7 @@
 //               attributeValues: attributeValuesJson,
 //             };
             
-//             console.log('API: Final variant data:', variantData);
+//             
 //             return variantData;
 //           }) || []
 //         }
@@ -109,7 +109,7 @@
 //     });
 //     return NextResponse.json({ product }, { status: 200 });
 //   } catch (err) {
-//     console.error('[PATCH /products/:id]', err);
+//     
 //     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
 //   }
 // }
@@ -123,7 +123,7 @@
 //     await prisma.product.delete({ where: { id } });
 //     return NextResponse.json({ message: 'Product deleted' }, { status: 200 });
 //   } catch (err) {
-//     console.error('[DELETE /products/:id]', err);
+//     
 //     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
 //   }
 // } 
@@ -151,6 +151,8 @@ export async function PATCH(
     const {
       slug, name_en, name_ar, description_en, description_ar,
       image, price, categoryId, inStock = true, rating = 0, reviews = 0,
+      // Discount fields
+      salePrice, discountPercent, onSale = false, saleStartDate, saleEndDate,
       attributes = [], variants = []
     } = body as any;
 
@@ -173,7 +175,13 @@ export async function PATCH(
           slug, name_en, name_ar,
           description_en, description_ar,
           image, price, categoryId,
-          inStock, rating, reviews
+          inStock, rating, reviews,
+          // Include discount fields
+          salePrice: salePrice || null,
+          discountPercent: discountPercent || null,
+          onSale,
+          saleStartDate: saleStartDate ? new Date(saleStartDate) : null,
+          saleEndDate: saleEndDate ? new Date(saleEndDate) : null
         }
       });
 
@@ -238,7 +246,6 @@ export async function PATCH(
 
     return NextResponse.json({ message: 'Updated' });
   } catch (err) {
-    console.error('[PATCH /api/products/:id]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
@@ -255,7 +262,6 @@ export async function DELETE(
     await prisma.product.delete({ where: { id } });
     return NextResponse.json({ message: 'Deleted' });
   } catch (err) {
-    console.error('[DELETE /api/products/:id]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

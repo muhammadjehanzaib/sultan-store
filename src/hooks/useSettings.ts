@@ -62,8 +62,6 @@ export function useSettings(): UseSettingsReturn {
       };
       
       // Debug logging (remove in production)
-      console.log('Settings API Response:', data);
-      console.log('Transformed Settings:', settings);
       
       // Update cache
       cachedSettings = settings;
@@ -71,7 +69,6 @@ export function useSettings(): UseSettingsReturn {
       
       setSettings(settings);
     } catch (err) {
-      console.error('Error fetching settings:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch settings');
       
       // Fallback to default settings

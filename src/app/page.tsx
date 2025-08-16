@@ -1,6 +1,7 @@
 'use client';
 
-import { Hero, ProductGrid, Footer } from '@/components';
+import { CampaignSlider, ProductSlider, Footer } from '@/components';
+import { CategorySection } from '@/components/homepage/CategorySection';
 import { Product } from '@/types';
 import { scrollToElement } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
@@ -8,23 +9,46 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
+// Helper function to robustly convert various inStock values to boolean
+function convertToInStockBoolean(value: any): boolean {
+  // Handle explicit false values
+  if (value === false || value === 'false' || value === 0 || value === '0') {
+    return false;
+  }
+  
+  // Handle explicit true values  
+  if (value === true || value === 'true' || value === 1 || value === '1') {
+    return true;
+  }
+  
+  // Handle null/undefined - default to false (out of stock)
+  if (value === null || value === undefined) {
+    return false;
+  }
+  
+  // Fallback to Boolean conversion
+  return Boolean(value);
+}
+
 export default function Home() {
   const { dispatch } = useCart();
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch products from API
+  // Fetch products and categories from API
   useEffect(() => {
-    fetch('/api/products?includeRelations=true')
-      .then(res => res.json())
-      .then((data: any) => {
-        console.log('Main page API response:', data);
-        // The API now returns products directly as an array
-        const products = Array.isArray(data) ? data : [];
-        console.log('Products to process on main page:', products);
+    Promise.all([
+      fetch('/api/products?includeRelations=true'),
+      fetch('/api/categories')
+    ])
+      .then(async ([productsRes, categoriesRes]) => {
+        const productsData = await productsRes.json();
+        const categoriesData = await categoriesRes.json();
         
-        // Convert API format to frontend format
+        // Process products
+        const products = Array.isArray(productsData) ? productsData : [];
         const frontendProducts = products.map((apiProduct: any) => ({
           id: apiProduct.id,
           name: { en: apiProduct.name_en || '', ar: apiProduct.name_ar || '' },
@@ -35,18 +59,51 @@ export default function Home() {
             ? { en: apiProduct.category.name_en || '', ar: apiProduct.category.name_ar || '' }
             : { en: '', ar: '' },
           description: { en: apiProduct.description_en || '', ar: apiProduct.description_ar || '' },
-          inStock: apiProduct.inStock,
+          inStock: convertToInStockBoolean(apiProduct.inStock),
           rating: apiProduct.rating,
           reviews: apiProduct.reviews,
           attributes: apiProduct.attributes || [],
           variants: apiProduct.variants || [],
+          // Include discount fields
+          salePrice: apiProduct.salePrice,
+          discountPercent: apiProduct.discountPercent,
+          onSale: apiProduct.onSale || false,
+          saleStartDate: apiProduct.saleStartDate,
+          saleEndDate: apiProduct.saleEndDate,
         }));
-        console.log('Converted frontend products:', frontendProducts);
+        
+        // Process categories - API returns { categories: [...] }
+        const categoriesList = Array.isArray(categoriesData?.categories) ? categoriesData.categories : [];
+        
+        // Filter only main categories (those without parentId) for home page "Shop by Category" section
+        const mainCategories = categoriesList.filter((apiCategory: any) => !apiCategory.parentId);
+        
+        const frontendCategories = mainCategories.map((apiCategory: any) => ({
+          id: apiCategory.id,
+          name: { en: apiCategory.name_en || '', ar: apiCategory.name_ar || '' },
+          slug: apiCategory.slug,
+          path: apiCategory.path,
+          icon: apiCategory.icon || '📦', // Default icon
+          image: apiCategory.image,
+          productCount: apiCategory.productCount || 0,
+          isActive: apiCategory.isActive !== false,
+          children: apiCategory.children ? apiCategory.children.map((child: any) => ({
+            id: child.id,
+            name: { en: child.name_en || '', ar: child.name_ar || '' },
+            slug: child.slug,
+            path: child.path,
+            icon: child.icon,
+            image: child.image,
+            productCount: child.productCount || 0,
+            isActive: child.isActive !== false,
+          })) : [],
+        }));
+        
         setProducts(frontendProducts);
+        setCategories(frontendCategories);
         setLoading(false);
       })
       .catch((error) => {
-        console.error('Error fetching products on main page:', error);
         setLoading(false);
       });
   }, []);
@@ -59,9 +116,15 @@ export default function Home() {
     router.push(`/product/${product.slug}`);
   };
 
+  const handleViewAllItems = () => {
+    // Navigate to products page or category page to show all products
+    router.push('/search');
+  };
+
   const handleHeroButtonClick = () => {
     scrollToElement('featured-products');
   };
+
 
   if (loading) {
     return (
@@ -76,14 +139,20 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Hero 
-        onButtonClick={handleHeroButtonClick}
-      />
+      {/* Campaign Slider - Multiple slides with arrows */}
+      <CampaignSlider />
       
-      <ProductGrid 
+      <CategorySection categories={categories} />
+      
+      <ProductSlider 
         products={products}
         onAddToCart={handleAddToCart}
         onViewProduct={handleViewProduct}
+        onViewAllItems={handleViewAllItems}
+        title="All Products"
+        subtitle="Browse all our products in one line with horizontal scrolling"
+        showErrorButton={true}
+        showViewAllButton={true}
       />
       
       <Footer />

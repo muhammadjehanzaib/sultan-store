@@ -66,7 +66,6 @@ export const ProfileOverview: React.FC<ProfileOverviewProps> = ({ user }) => {
           });
         }
       } catch (error) {
-        console.error('Error fetching profile stats:', error);
         // Set default stats for development
         setStats({
           totalOrders: 0,

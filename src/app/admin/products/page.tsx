@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { ProductsTable } from '@/components/admin/ProductsTable';
+import { EnhancedProductsTable } from '@/components/admin/EnhancedProductsTable';
+import { ProductDashboard } from '@/components/admin/ProductDashboard';
 import { MultilingualProductModal } from '@/components/admin/MultilingualProductModal';
 import { Button } from '@/components/ui/Button';
 import { Product, MultilingualProduct, Category, ProductAttribute } from '@/types';
@@ -20,6 +22,7 @@ export default function AdminProducts() {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [viewMode, setViewMode] = useState<'dashboard' | 'table'>('dashboard');
 
   const handleAddProduct = () => {
     if (!Array.isArray(categories) || categories.length === 0) {
@@ -41,7 +44,7 @@ export default function AdminProducts() {
 
   // Fetch categories for use in product modal and mapping
   useEffect(() => {
-    fetch('/api/categories')
+    fetch('/api/categories?includeInactive=true')
       .then(res => res.json())
       .then((data: { categories: Category[] }) => setCategories(data.categories))
       .catch(() => setCategories([]));
@@ -50,24 +53,18 @@ export default function AdminProducts() {
   // Helper: Map API product to frontend format
   const apiToProduct = (apiProduct: any): Product => {
     if (!apiProduct || !apiProduct.id) {
-      console.error('Invalid API product data:', apiProduct);
       throw new Error('Invalid product data received from API');
     }
 
-    console.log('apiToProduct: Converting API product:', apiProduct.id, 'variants:', apiProduct.variants?.length || 0);
-    console.log('apiToProduct: Raw API product:', JSON.stringify(apiProduct, null, 2));
 
     // Process attributes properly
     const processedAttributes = (apiProduct.attributes || []).map((attr: any) => {
-      console.log('🔍 Processing attribute:', attr.name, 'type:', attr.type, 'values count:', attr.values?.length || 0);
-      console.log('🔍 Raw attribute data:', JSON.stringify(attr, null, 2));
       return {
         id: attr.id,
         name: attr.name,
         type: attr.type,
         required: attr.required || false,
         values: (attr.values || []).map((val: any) => {
-          console.log('🔍 Processing attribute value:', val.value, 'label:', val.label);
           return {
             id: val.id,
             value: val.value,
@@ -83,7 +80,6 @@ export default function AdminProducts() {
 
     // Process variants properly - handle new relational structure
     const processedVariants = (apiProduct.variants || []).map((variant: any) => {
-      console.log('Processing variant:', variant.id, 'attributeValues relation:', variant.attributeValues);
 
       // Convert relational attributeValues to simple object format for frontend compatibility
       let attributeValues: Record<string, string> = {};
@@ -96,14 +92,12 @@ export default function AdminProducts() {
             attributeValues[attributeId] = valueId;
           }
         });
-        console.log('Converted relational attributeValues to:', attributeValues);
       } else if (variant.attributeValues) {
         // Legacy structure: direct object or JSON string
         if (typeof variant.attributeValues === 'string') {
           try {
             attributeValues = JSON.parse(variant.attributeValues);
           } catch (e) {
-            console.error('Failed to parse attributeValues:', variant.attributeValues);
             attributeValues = {};
           }
         } else if (typeof variant.attributeValues === 'object') {
@@ -113,13 +107,11 @@ export default function AdminProducts() {
 
       // Initialize attributeValues with default values if empty and attributes exist
       if (Object.keys(attributeValues).length === 0 && processedAttributes.length > 0) {
-        console.log('Initializing empty attributeValues for variant:', variant.id);
         processedAttributes.forEach((attr: ProductAttribute) => {
           if (attr.values && attr.values.length > 0) {
             attributeValues[attr.id] = attr.values[0].id; // Use first available value as default
           }
         });
-        console.log('Initialized attributeValues:', attributeValues);
       }
 
       const processedVariant = {
@@ -132,7 +124,6 @@ export default function AdminProducts() {
         stockQuantity: variant.stockQuantity || 0
       };
 
-      console.log('Processed variant:', processedVariant);
       return processedVariant;
     });
 
@@ -148,6 +139,12 @@ export default function AdminProducts() {
       inStock: apiProduct.inStock,
       rating: apiProduct.rating,
       reviews: apiProduct.reviews,
+      // Include discount fields from API
+      salePrice: apiProduct.salePrice,
+      discountPercent: apiProduct.discountPercent,
+      onSale: apiProduct.onSale || false,
+      saleStartDate: apiProduct.saleStartDate,
+      saleEndDate: apiProduct.saleEndDate,
       // Properly preserve attributes with values
       attributes: processedAttributes,
       // Properly preserve variants
@@ -161,25 +158,6 @@ export default function AdminProducts() {
       category_ar: apiProduct.category ? apiProduct.category.name_ar : '',
     };
 
-    console.log('🔍 apiToProduct: Final converted product:', {
-      id: product.id,
-      name: product.name,
-      attributeCount: product.attributes?.length || 0
-    });
-    console.log('🔍 apiToProduct: Final product attributes:', product.attributes);
-    
-    // Validate attributes structure
-    if (product.attributes && product.attributes.length > 0) {
-      product.attributes.forEach((attr: any, index: number) => {
-        console.log(`🔍 Attribute ${index + 1}:`, {
-          id: attr.id,
-          name: attr.name,
-          type: attr.type,
-          valueCount: attr.values?.length || 0
-        });
-      });
-    }
-    
     return product as Product;
   };
 
@@ -202,6 +180,12 @@ export default function AdminProducts() {
       inStock: product.inStock,
       rating: product.rating,
       reviews: product.reviews,
+      // Include discount fields
+      salePrice: product.salePrice || null,
+      discountPercent: product.discountPercent || null,
+      onSale: product.onSale || false,
+      saleStartDate: product.saleStartDate || null,
+      saleEndDate: product.saleEndDate || null,
       variants: product.variants || [],
       attributes: product.attributes || [],
     };
@@ -212,18 +196,15 @@ export default function AdminProducts() {
   // Fetch products from API
   useEffect(() => {
     setLoading(true);
-    fetch('/api/products?includeRelations=true')
+    fetch('/api/products?includeRelations=true&includeInactiveCategories=true')
       .then(res => res.json())
       .then((data: any) => {
-        console.log('API Response:', data);
         // Handle both direct array and wrapped response
         const products = Array.isArray(data) ? data : (data.products || []);
-        console.log('Products to process:', products);
         setProductsData(products.map(apiToProduct));
         setLoading(false);
       })
       .catch((error) => {
-        console.error('Error fetching products:', error);
         setLoading(false);
       });
   }, []);
@@ -259,7 +240,7 @@ export default function AdminProducts() {
         data = await response.json();
         if (response.ok) {
           // For PATCH, the API returns just a message, so we need to refetch the product
-          const refreshResponse = await fetch(`/api/products?includeRelations=true`);
+          const refreshResponse = await fetch(`/api/products?includeRelations=true&includeInactiveCategories=true`);
           const refreshData = await refreshResponse.json();
           const products = Array.isArray(refreshData) ? refreshData : (refreshData.products || []);
           const updatedProduct = products.find((p: any) => p.id === selectedProduct!.id);
@@ -267,7 +248,6 @@ export default function AdminProducts() {
             setProductsData(prev => prev.map(p => p.id === selectedProduct!.id ? apiToProduct(updatedProduct) : p));
           }
         } else {
-          console.error('Update failed:', data);
           alert(`Failed to update product: ${data.error || 'Unknown error'}`);
           return;
         }
@@ -280,19 +260,17 @@ export default function AdminProducts() {
         data = await response.json();
         if (response.ok) {
           // For POST, the API returns just an ID, so we need to refetch all products
-          const refreshResponse = await fetch(`/api/products?includeRelations=true`);
+          const refreshResponse = await fetch(`/api/products?includeRelations=true&includeInactiveCategories=true`);
           const refreshData = await refreshResponse.json();
           const products = Array.isArray(refreshData) ? refreshData : (refreshData.products || []);
           setProductsData(products.map(apiToProduct));
         } else {
-          console.error('Create failed:', data);
           alert(`Failed to create product: ${data.error || 'Unknown error'}`);
           return;
         }
       }
       setIsModalOpen(false);
     } catch (error) {
-      console.error('Network error:', error);
       alert('Network error occurred. Please try again.');
     }
   };
@@ -345,6 +323,77 @@ export default function AdminProducts() {
     );
   };
 
+  // Handle individual product stock toggle
+  const handleToggleStock = async (productId: string, inStock: boolean) => {
+    try {
+      // Optimistically update UI
+      setProductsData(prev => prev.map(p => 
+        p.id === productId ? { ...p, inStock } : p
+      ));
+
+      // Call API to update the product
+      const product = productsData.find(p => p.id === productId);
+      if (!product) return;
+
+      const multilingualProduct = convertToMultilingualProduct(product);
+      const apiPayload = {
+        ...productToApi(multilingualProduct),
+        inStock
+      };
+
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(apiPayload),
+      });
+
+      if (!response.ok) {
+        // Revert UI change if API call failed
+        setProductsData(prev => prev.map(p => 
+          p.id === productId ? { ...p, inStock: !inStock } : p
+        ));
+        const error = await response.json();
+        alert(`Failed to update product stock: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      // Revert UI change
+      setProductsData(prev => prev.map(p => 
+        p.id === productId ? { ...p, inStock: !inStock } : p
+      ));
+      alert('Network error occurred. Please try again.');
+    }
+  };
+
+  const handleDuplicateProduct = (product: Product) => {
+    // Create a copy of the product with a new ID and modified name
+    const duplicatedProduct = {
+      ...product,
+      id: '', // Will be generated by the API
+      name: typeof product.name === 'string' 
+        ? `${product.name} (Copy)`
+        : {
+            en: `${product.name?.en || product.name_en || ''} (Copy)`,
+            ar: `${product.name?.ar || product.name_ar || ''} (نسخة)`
+          },
+      name_en: `${product.name_en || ''} (Copy)`,
+      name_ar: `${product.name_ar || ''} (نسخة)`,
+      slug: `${product.slug}-copy`
+    };
+    
+    setSelectedProduct(duplicatedProduct);
+    setIsModalOpen(true);
+  };
+
+  const handleImportProducts = () => {
+    // TODO: Implement product import functionality
+    alert('Product import feature will be implemented soon!');
+  };
+
+  const handleExportProducts = () => {
+    // TODO: Implement product export functionality  
+    alert('Product export feature will be implemented soon!');
+  };
+
   // Calculate statistics
   const totalProducts = productsData.length;
   const inStockProducts = productsData.filter(p => p.inStock).length;
@@ -359,7 +408,7 @@ export default function AdminProducts() {
     <AdminAuthGuard requiredRole={["admin", "manager"]}>
       <AdminLayout>
         <div className="space-y-6">
-          <div className={`flex justify-between items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {t('admin.products.title')}
@@ -368,9 +417,34 @@ export default function AdminProducts() {
                 {t('admin.products.subtitle')}
               </p>
             </div>
-            <Button onClick={handleAddProduct} className="bg-blue-600 hover:bg-blue-700">
-              {t('admin.products.addProduct')}
-            </Button>
+            <div className="flex items-center gap-4">
+              {/* View Toggle */}
+              <div className="bg-gray-100 dark:bg-gray-700 p-1 rounded-lg flex">
+                <button
+                  onClick={() => setViewMode('dashboard')}
+                  className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                    viewMode === 'dashboard'
+                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  }`}
+                >
+                  📊 Dashboard
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                    viewMode === 'table'
+                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  }`}
+                >
+                  📋 Table
+                </button>
+              </div>
+              <Button onClick={handleAddProduct} className="bg-blue-600 hover:bg-blue-700">
+                {t('admin.products.addProduct')}
+              </Button>
+            </div>
           </div>
 
           {/* Statistics */}
@@ -470,14 +544,28 @@ export default function AdminProducts() {
             </div>
           )}
 
-          <ProductsTable
-            products={productsData}
-            onEdit={handleEditProduct}
-            onDelete={handleDeleteProduct}
-            selectedProducts={selectedProducts}
-            onSelectProduct={handleSelectProduct}
-            onSelectAll={handleSelectAll}
-          />
+          {/* Conditional rendering based on view mode */}
+          {viewMode === 'dashboard' ? (
+            <ProductDashboard
+              products={productsData}
+              categories={categories}
+              onAddProduct={handleAddProduct}
+              onImportProducts={handleImportProducts}
+              onExportProducts={handleExportProducts}
+            />
+          ) : (
+            <EnhancedProductsTable
+              products={productsData}
+              categories={categories}
+              onEdit={handleEditProduct}
+              onDelete={handleDeleteProduct}
+              onToggleStock={handleToggleStock}
+              onDuplicate={handleDuplicateProduct}
+              selectedProducts={selectedProducts}
+              onSelectProduct={handleSelectProduct}
+              onSelectAll={handleSelectAll}
+            />
+          )}
 
           {/* Only render the modal if categories are loaded */}
           {Array.isArray(categories) && categories.length > 0 && (

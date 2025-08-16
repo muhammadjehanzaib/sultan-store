@@ -19,12 +19,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     
     // Defensive: check if products exist
     if (!products || products.length === 0) {
-      console.error('No products returned from API');
       notFound();
     }
-    // Debug logging
-    // console.log('Requested slug:', slug);
-    // console.log('Available slugs:', products.map((p: any) => p.slug));
     
     const apiProduct = products.find((p: any) => p.slug === slug);
     
@@ -38,7 +34,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
     return <ProductDetailClient product={product} allProducts={allProducts} />;
   } catch (error) {
-    console.error('Error fetching product:', error);
     notFound();
   }
 } 

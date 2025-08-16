@@ -27,7 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         setGuestUser(JSON.parse(savedGuestUser));
       } catch (error) {
-        console.error('Error parsing guest user from localStorage:', error);
         localStorage.removeItem('guest-user');
       }
     }

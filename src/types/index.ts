@@ -28,8 +28,15 @@ export interface Product {
   name_ar?: string;
   slug: string;
   price: number;
+  // Discount fields
+  salePrice?: number | null;
+  discountPercent?: number | null;
+  onSale?: boolean;
+  saleStartDate?: Date | string | null;
+  saleEndDate?: Date | string | null;
+  // End discount fields
   image: string;
-  category: string | LocalizedContent | { name_en: string; name_ar: string; slug: string };
+  category: string | LocalizedContent | { id?: string; name_en: string; name_ar: string; slug: string } | { en: string; ar: string; id?: string };
   categoryId?: string;
   description?: string | LocalizedContent;
   description_en?: string;
@@ -47,6 +54,13 @@ export interface MultilingualProduct {
   name: LocalizedContent;
   slug: string;
   price: number;
+  // Discount fields
+  salePrice?: number | null;
+  discountPercent?: number | null;
+  onSale?: boolean;
+  saleStartDate?: Date | string | null;
+  saleEndDate?: Date | string | null;
+  // End discount fields
   image: string;
   category: LocalizedContent;
   description?: LocalizedContent;

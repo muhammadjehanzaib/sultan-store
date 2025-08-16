@@ -16,7 +16,6 @@ export async function GET(
       }, { status: 400 });
     }
 
-    console.log(`Fetching history for variant: ${variantId}`);
 
     // Fetch variant-specific stock history with explicit where clause
     const history = await prisma.stockHistory.findMany({
@@ -60,7 +59,6 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('[GET /api/inventory/variants/[variantId]/history]', error);
     return NextResponse.json(
       { error: 'Failed to fetch variant history' }, 
       { status: 500 }

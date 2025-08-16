@@ -6,7 +6,6 @@ export async function seedSettings() {
     const existingSettings = await prisma.settings.findFirst();
     
     if (existingSettings) {
-      console.log('Settings already exist, skipping seed');
       return existingSettings;
     }
 
@@ -24,10 +23,8 @@ export async function seedSettings() {
       }
     });
 
-    console.log('Default settings created:', settings);
     return settings;
   } catch (error) {
-    console.error('Error seeding settings:', error);
     throw error;
   }
 }

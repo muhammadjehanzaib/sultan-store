@@ -8,6 +8,8 @@ import ProductAttributesSection from './ProductAttributesSection';
 import ProductVariantsSection from './ProductVariantsSection';
 import SEOSection from './SEOSection';
 import Image from 'next/image';
+import Price from '@/components/ui/Price';
+import { formatPercentage } from '@/lib/numberFormatter';
 
 interface MultilingualProductModalProps {
   isOpen: boolean;
@@ -28,6 +30,13 @@ type FormDataType = {
   inStock: boolean;
   rating: number;
   reviews: number;
+  // Discount fields
+  salePrice?: number | null;
+  discountPercent?: number | null;
+  onSale: boolean;
+  saleStartDate?: Date | string | null;
+  saleEndDate?: Date | string | null;
+  // End discount fields
   attributes: ProductAttribute[];
   variants: any[]; // Added for variants
   seo: { // Added for SEO
@@ -51,6 +60,13 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
     inStock: true,
     rating: 0,
     reviews: 0,
+    // Discount fields
+    salePrice: null,
+    discountPercent: null,
+    onSale: false,
+    saleStartDate: null,
+    saleEndDate: null,
+    // End discount fields
     attributes: [],
     variants: [],
     seo: {
@@ -106,6 +122,12 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
         inStock: product.inStock !== false,
         rating: product.rating || 0,
         reviews: product.reviews || 0,
+        // Discount fields
+        salePrice: product.salePrice || null,
+        discountPercent: product.discountPercent || null,
+        onSale: product.onSale || false,
+        saleStartDate: product.saleStartDate || null,
+        saleEndDate: product.saleEndDate || null,
         attributes: (product.attributes || []).map(attr => ({
           ...attr,
           values: (attr.values || []).map(val => ({
@@ -115,7 +137,6 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
         })),
         variants: (() => {
           const variants = Array.isArray((product as any).variants) && (product as any).variants.length > 0 ? (product as any).variants : [];
-          console.log('Modal: Loading variants for product:', product.id, 'variants count:', variants.length, 'variants:', variants);
           // Ensure variants have proper structure
           const processedVariants = variants.map((variant: any) => ({
             id: variant.id || `variant-${Date.now()}-${Math.random()}`,
@@ -126,7 +147,6 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
             inStock: variant.inStock !== false,
             stockQuantity: variant.stockQuantity || 0
           }));
-          console.log('Modal: Processed variants:', processedVariants);
           return processedVariants;
         })(),
         seo: {
@@ -148,6 +168,13 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
         inStock: true,
         rating: 0,
         reviews: 0,
+        // Discount fields for new products
+        salePrice: null,
+        discountPercent: null,
+        onSale: false,
+        saleStartDate: null,
+        saleEndDate: null,
+        // End discount fields
         attributes: [],
         variants: [],
         seo: {
@@ -194,14 +221,14 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
       reviews: formData.reviews,
       attributes: processedAttributes,
       variants: formData.variants,
-      seo: formData.seo
+      seo: formData.seo,
+      // Add discount fields
+      onSale: formData.onSale,
+      salePrice: formData.salePrice,
+      discountPercent: formData.discountPercent,
+      saleStartDate: formData.saleStartDate,
+      saleEndDate: formData.saleEndDate
     };
-
-    console.log('💾 Saving product with attributes:', {
-      productId: productData.id,
-      attributeCount: processedAttributes.length,
-      attributes: processedAttributes
-    });
     
     // Validate attributes before saving
     const validationErrors: string[] = [];
@@ -218,7 +245,6 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
     });
     
     if (validationErrors.length > 0) {
-      console.error('❌ Attribute validation errors:', validationErrors);
       alert('Please fix the following issues with attributes:\n\n' + validationErrors.join('\n'));
       return;
     }
@@ -638,6 +664,169 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
                     </label>
                   </div>
                 </div>
+              </div>
+
+              {/* Discount Settings */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Discount Settings
+                  </h4>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.onSale}
+                      onChange={(e) => {
+                        const onSale = e.target.checked;
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          onSale,
+                          // Reset discount fields if turning off sale
+                          ...(onSale ? {} : {
+                            salePrice: null,
+                            discountPercent: null,
+                            saleStartDate: null,
+                            saleEndDate: null
+                          })
+                        }));
+                      }}
+                      className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                      Enable Sale
+                    </span>
+                  </label>
+                </div>
+
+                {formData.onSale && (
+                  <div className="space-y-4">
+                    {/* Sale Price Input */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Sale Price
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                          <Image src="/icons/Saudi_Riyal_Symbo.svg" alt="Riyal" width={18} height={18} style={{ display: 'inline-block' }} />
+                        </span>
+                        <input
+                          type="number"
+                          value={formData.salePrice || ''}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              salePrice: isNaN(value) ? null : value
+                            }));
+                          }}
+                          step="0.01"
+                          min="0"
+                          max={formData.price - 0.01}
+                          className="w-full p-3 pl-8 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          placeholder={`Must be less than ${formData.price}`}
+                        />
+                      </div>
+                      {formData.salePrice && formData.salePrice >= formData.price && (
+                        <p className="text-red-500 text-xs mt-1">
+                          Sale price must be less than regular price
+                        </p>
+                      )}
+                      {formData.salePrice && formData.price > 0 && formData.salePrice < formData.price && (
+                        <p className="text-green-600 text-xs mt-1">
+                          Discount: {formatPercentage(Math.round(((formData.price - formData.salePrice) / formData.price) * 100), isRTL ? 'ar' : 'en')} {t('discount.off')}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Discount Percentage */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Discount Percentage
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={formData.discountPercent || ''}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              discountPercent: isNaN(value) ? null : Math.min(Math.max(value, 0), 99)
+                            }));
+                          }}
+                          step="1"
+                          min="0"
+                          max="99"
+                          className="w-full p-3 pr-8 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          placeholder="Enter percentage (1-99)"
+                        />
+                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                          %
+                        </span>
+                      </div>
+                      {formData.discountPercent && formData.price > 0 && (
+                        <p className="text-green-600 text-xs mt-1">
+                          Sale price will be: <Price amount={formData.price * (1 - formData.discountPercent / 100)} locale="en" className="font-semibold" />
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Sale Duration */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Sale Start Date
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={formData.saleStartDate ? 
+                            (typeof formData.saleStartDate === 'string' ? 
+                              formData.saleStartDate : 
+                              formData.saleStartDate.toISOString().slice(0, 16)
+                            ) : 
+                            ''
+                          }
+                          onChange={(e) => {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              saleStartDate: e.target.value ? e.target.value : null
+                            }));
+                          }}
+                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Sale End Date
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={formData.saleEndDate ? 
+                            (typeof formData.saleEndDate === 'string' ? 
+                              formData.saleEndDate : 
+                              formData.saleEndDate.toISOString().slice(0, 16)
+                            ) : 
+                            ''
+                          }
+                          onChange={(e) => {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              saleEndDate: e.target.value ? e.target.value : null
+                            }));
+                          }}
+                          min={formData.saleStartDate ? 
+                            (typeof formData.saleStartDate === 'string' ? 
+                              formData.saleStartDate : 
+                              formData.saleStartDate.toISOString().slice(0, 16)
+                            ) : 
+                            undefined
+                          }
+                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Attributes Section */}

@@ -16,7 +16,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { defaultQuantity = 10 } = body;
 
-    console.log(`🔧 Admin ${session.user.email} initializing variant stock with quantity: ${defaultQuantity}`);
 
     // Initialize stock for all variants
     const result = await initializeVariantStock(defaultQuantity);
@@ -28,7 +27,6 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('❌ Error in inventory initialization API:', error);
     return NextResponse.json({ 
       error: 'Failed to initialize inventory' 
     }, { status: 500 });

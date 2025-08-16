@@ -46,7 +46,6 @@ export function RecentOrders() {
       const recentOrders = (data.orders || []).slice(0, 5);
       setOrders(recentOrders);
     } catch (err) {
-      console.error('Error fetching recent orders:', err);
       setError('Failed to load recent orders');
     } finally {
       setLoading(false);
@@ -101,7 +100,6 @@ export function RecentOrders() {
 
   const handleViewOrder = (orderId: string) => {
     // This would open order details modal or navigate to order page
-    console.log('View order:', orderId);
   };
 
   if (loading) {

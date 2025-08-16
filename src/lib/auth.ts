@@ -12,10 +12,8 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        console.log('🔐 Auth attempt for:', credentials?.email);
         
         if (!credentials?.email || !credentials?.password) {
-          console.log('❌ Missing credentials');
           throw new Error('Email and password are required');
         }
 
@@ -24,18 +22,14 @@ export const authOptions: NextAuthOptions = {
             where: { email: credentials.email }
           });
           
-          console.log('👤 User found:', !!user, user ? user.role : 'none');
 
           if (!user || !user.password) {
-            console.log('❌ User not found or no password');
             throw new Error('Invalid credentials');
           }
 
           const isValid = await bcrypt.compare(credentials.password, user.password);
-          console.log('🔑 Password valid:', isValid);
           
           if (!isValid) {
-            console.log('❌ Invalid password');
             throw new Error('Invalid credentials');
           }
 
@@ -43,11 +37,9 @@ export const authOptions: NextAuthOptions = {
           // Admin-specific routes will be protected separately
           const allowedRoles = ['admin', 'manager', 'support', 'user', 'viewer'];
           if (!allowedRoles.includes(user.role)) {
-            console.log('❌ Role not allowed:', user.role);
             throw new Error('Access denied');
           }
 
-          console.log('✅ Login successful for:', user.email, 'Role:', user.role);
           return {
             id: user.id,
             name: user.name,
@@ -58,7 +50,6 @@ export const authOptions: NextAuthOptions = {
             role: user.role
           };
         } catch (error) {
-          console.log('💥 Auth error:', error instanceof Error ? error.message : 'Unknown error');
           throw error;
         }
       }
@@ -92,7 +83,6 @@ export const authOptions: NextAuthOptions = {
             session.user.image = user.image || undefined;
           }
         } catch (error) {
-          console.error('Error fetching user data in session callback:', error);
         }
       }
       return session;

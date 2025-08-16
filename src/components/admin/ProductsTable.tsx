@@ -12,6 +12,7 @@ interface ProductsTableProps {
   products: Product[];
   onEdit: (product: Product) => void;
   onDelete: (productId: string) => void;
+  onToggleStock?: (productId: string, inStock: boolean) => void;
   selectedProducts?: string[];
   onSelectProduct?: (productId: string) => void;
   onSelectAll?: () => void;
@@ -21,6 +22,7 @@ export function ProductsTable({
   products, 
   onEdit, 
   onDelete, 
+  onToggleStock,
   selectedProducts = [], 
   onSelectProduct, 
   onSelectAll 
@@ -238,6 +240,19 @@ export function ProductsTable({
                     >
                       {t('common.edit')}
                     </Button>
+                    {onToggleStock && (
+                      <Button
+                        onClick={() => onToggleStock(product.id, !product.inStock)}
+                        variant="outline"
+                        size="sm"
+                        className={product.inStock 
+                          ? "text-yellow-600 hover:text-yellow-700" 
+                          : "text-green-600 hover:text-green-700"
+                        }
+                      >
+                        {product.inStock ? t('admin.products.deactivate') || 'Deactivate' : t('admin.products.activate') || 'Activate'}
+                      </Button>
+                    )}
                     <Button
                       onClick={() => handleDelete(product.id)}
                       variant="outline"

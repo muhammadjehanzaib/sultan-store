@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import Price from '@/components/ui/Price';
 import { useSettings } from '@/hooks/useSettings';
 
 interface Settings {
@@ -20,7 +21,7 @@ interface Settings {
 }
 
 export const SettingsPage: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -65,7 +66,6 @@ export const SettingsPage: React.FC = () => {
       });
       
     } catch (error) {
-      console.error('Error fetching settings:', error);
       setError('Failed to load settings');
     } finally {
       setLoading(false);
@@ -114,7 +114,6 @@ export const SettingsPage: React.FC = () => {
       setTimeout(() => setSuccess(null), 3000);
       
     } catch (error: any) {
-      console.error('Error updating settings:', error);
       setError(error.message || 'Failed to update settings');
     } finally {
       setSaving(false);
@@ -184,7 +183,7 @@ export const SettingsPage: React.FC = () => {
             {/* Shipping Rate */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Shipping Rate (SAR)
+                Shipping Rate
               </label>
               <input
                 type="number"
@@ -195,13 +194,13 @@ export const SettingsPage: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Standard delivery cost</p>
+              <p className="text-xs text-gray-500 mt-1">Standard delivery cost: <Price amount={formData.shippingRate} locale={isRTL ? 'ar' : 'en'} className="text-xs" /></p>
             </div>
             
             {/* Free Shipping Threshold */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Free Shipping Over (SAR)
+                Free Shipping Threshold
               </label>
               <input
                 type="number"
@@ -212,13 +211,13 @@ export const SettingsPage: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Orders above this amount get free shipping</p>
+              <p className="text-xs text-gray-500 mt-1">Orders above <Price amount={formData.freeShippingThreshold} locale={isRTL ? 'ar' : 'en'} className="text-xs" /> get free shipping</p>
             </div>
             
             {/* COD Fee */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                COD Fee (SAR)
+                COD Fee
               </label>
               <input
                 type="number"
@@ -229,7 +228,7 @@ export const SettingsPage: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Fee charged for Cash on Delivery orders</p>
+              <p className="text-xs text-gray-500 mt-1">Fee charged for Cash on Delivery orders: <Price amount={formData.codFee} locale={isRTL ? 'ar' : 'en'} className="text-xs" /></p>
             </div>
           </div>
         </div>

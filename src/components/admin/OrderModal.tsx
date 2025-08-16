@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
 import { getProviderDisplayName, getTrackingUrl, TrackingProvider, generateTrackingNumber, shouldGenerateTrackingNumber } from '@/lib/trackingUtils';
 import { RiyalSymbol } from '@/components/ui/RiyalSymbol';
+import Price from '@/components/ui/Price';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -134,7 +135,6 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
       }
 
     } catch (error) {
-      console.error('Error updating tracking number:', error);
       setTrackingError('Failed to update tracking number. Please try again.');
     } finally {
       setIsUpdatingTracking(false);
@@ -176,7 +176,6 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
           }
         }
       } catch (error) {
-        console.error('Error auto-generating tracking number:', error);
         // Fallback to just updating status
         onUpdateStatus(order.id, newStatus);
       }
@@ -405,7 +404,7 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
               </h4>
               <div className="space-y-2 text-sm">
                 <p><strong>{t('admin.orders.date')}:</strong> {formatDate(order.createdAt)}</p>
-                <p><strong>{t('admin.orders.total')}:</strong> <RiyalSymbol />{order.total.toFixed(2)}</p>
+                <p><strong>{t('admin.orders.total')}:</strong> <Price amount={order.total} locale={isRTL ? 'ar' : 'en'} /></p>
                 <p><strong>{t('admin.orders.paymentMethod')}:</strong> {order.paymentMethod.toString()}</p>
                 {order.trackingNumber && (
                   <p><strong>{t('admin.orders.trackingNumber')}:</strong> {order.trackingNumber}</p>
@@ -477,7 +476,7 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
                         </p>
                         <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
                           <p>{t('cart.quantity')}: {item.quantity}</p>
-                          <p>{t('product.price')}: <RiyalSymbol />{item.price.toFixed(2)} {t('common.each')}</p>
+                          <p>{t('product.price')}: <Price amount={item.price} locale={isRTL ? 'ar' : 'en'} /> {t('common.each')}</p>
                         </div>
                         
                         {/* Selected Attributes (from real order item) */}
@@ -521,7 +520,7 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        <RiyalSymbol />{item.total.toFixed(2)}
+                        <Price amount={item.total} locale={isRTL ? 'ar' : 'en'} />
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
                         {t('admin.orders.lineTotal')}
@@ -541,25 +540,25 @@ export function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModa
             <div className="space-y-2 text-sm">
               <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('admin.orders.subtotal')}</span>
-                <span><RiyalSymbol />{order.subtotal.toFixed(2)}</span>
+                <span><Price amount={order.subtotal} locale={isRTL ? 'ar' : 'en'} /></span>
               </div>
               <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('admin.orders.tax')}</span>
-                <span><RiyalSymbol />{order.tax.toFixed(2)}</span>
+                <span><Price amount={order.tax} locale={isRTL ? 'ar' : 'en'} /></span>
               </div>
               <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('admin.orders.shipping')}</span>
-                <span><RiyalSymbol />{order.shipping.toFixed(2)}</span>
+                <span><Price amount={order.shipping} locale={isRTL ? 'ar' : 'en'} /></span>
               </div>
               {order.codFee > 0 && (
                 <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <span>{t('payment.codFee')}</span>
-                  <span><RiyalSymbol />{order.codFee.toFixed(2)}</span>
+                  <span><Price amount={order.codFee} locale={isRTL ? 'ar' : 'en'} /></span>
                 </div>
               )}
               <div className={`flex justify-between font-medium text-base pt-2 border-t border-gray-200 dark:border-gray-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('admin.orders.grandTotal')}</span>
-                <span><RiyalSymbol />{order.total.toFixed(2)}</span>
+                <span><Price amount={order.total} locale={isRTL ? 'ar' : 'en'} /></span>
               </div>
             </div>
           </div>

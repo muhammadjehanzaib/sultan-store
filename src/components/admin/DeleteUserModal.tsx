@@ -41,7 +41,6 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
 
       onUserDeleted();
     } catch (error) {
-      console.error('Error deleting user:', error);
       setError('An unexpected error occurred');
     } finally {
       setIsDeleting(false);

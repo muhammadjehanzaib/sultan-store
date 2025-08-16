@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ProductCard } from '@/components/product/ProductCard';
+import { ProductGrid } from '@/components/product/ProductGrid';
+import { ProductFilters } from '@/components/product/ProductFilters';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { searchUtils } from '@/lib/utils';
@@ -14,6 +16,8 @@ import Price from '@/components/ui/Price';
 
 interface FilterState {
   category: string;
+  subcategory: string;
+  subsubcategory: string; // Level 3 category
   priceRange: [number, number];
   inStock: boolean | null;
   rating: number | null;
@@ -41,6 +45,8 @@ function SearchPageContent() {
   const [categories, setCategories] = useState<any[]>([]);
   const [filters, setFilters] = useState<FilterState>({
     category: '',
+    subcategory: '',
+    subsubcategory: '', // Level 3 category
     priceRange: [0, 1000],
     inStock: null,
     rating: null
@@ -49,11 +55,15 @@ function SearchPageContent() {
   // Fetch products and categories from API
   useEffect(() => {
     setIsLoading(true);
-    fetch('/api/products?includeRelations=true')
-      .then(res => res.json())
-      .then((data: any) => {
-        console.log('Search page API response:', data);
-        const apiProducts = Array.isArray(data) ? data : [];
+    Promise.all([
+      fetch('/api/products?includeRelations=true'),
+      fetch('/api/categories/tree')
+    ])
+      .then(async ([productsRes, categoriesRes]) => {
+        const productsData = await productsRes.json();
+        const categoriesData = await categoriesRes.json();
+        
+        const apiProducts = Array.isArray(productsData) ? productsData : [];
         
         // Convert API format to frontend format
         const frontendProducts = apiProducts.map((apiProduct: any) => ({
@@ -62,33 +72,75 @@ function SearchPageContent() {
           slug: apiProduct.slug,
           price: apiProduct.price,
           image: apiProduct.image,
+          categoryId: apiProduct.categoryId, // Include the categoryId for filtering
           category: apiProduct.category
-            ? { en: apiProduct.category.name_en || '', ar: apiProduct.category.name_ar || '' }
+            ? { 
+                id: apiProduct.category.id,
+                en: apiProduct.category.name_en || '', 
+                ar: apiProduct.category.name_ar || '',
+                slug: apiProduct.category.slug
+              }
             : { en: '', ar: '' },
           description: { en: apiProduct.description_en || '', ar: apiProduct.description_ar || '' },
-          inStock: apiProduct.inStock,
+          inStock: Boolean(apiProduct.inStock), // Convert to proper boolean: null/undefined/false -> false, true -> true
           rating: apiProduct.rating,
           reviews: apiProduct.reviews,
           attributes: apiProduct.attributes || [],
           variants: apiProduct.variants || [],
+          // Include discount fields
+          salePrice: apiProduct.salePrice,
+          discountPercent: apiProduct.discountPercent,
+          onSale: apiProduct.onSale || false,
+          saleStartDate: apiProduct.saleStartDate,
+          saleEndDate: apiProduct.saleEndDate,
         }));
         
         setProducts(frontendProducts);
-        console.log('Frontend products:', frontendProducts);
         
-        // Extract unique categories
-        const uniqueCategories = apiProducts
-          .map((product: any) => product.category)
-          .filter((category: any) => category && category.id)
-          .filter((value: any, index: number, self: any[]) => 
-            index === self.findIndex((t: any) => t.id === value.id)
-          );
-        setCategories(uniqueCategories);
+        // Process categories - tree endpoint returns { tree: [...] }
+        const categoriesList = Array.isArray(categoriesData?.tree) ? categoriesData.tree : [];
+        const processedCategories = categoriesList.map((apiCategory: any) => ({
+          id: apiCategory.id,
+          name_en: apiCategory.name_en || '',
+          name_ar: apiCategory.name_ar || '',
+          slug: apiCategory.slug,
+          path: apiCategory.path,
+          parentId: apiCategory.parentId,
+          children: apiCategory.children ? apiCategory.children.map((child: any) => ({
+            id: child.id,
+            name_en: child.name_en || '',
+            name_ar: child.name_ar || '',
+            slug: child.slug,
+            path: child.path,
+            parentId: child.parentId,
+            // Include nested children (grandchildren)
+            children: child.children ? child.children.map((grandChild: any) => ({
+              id: grandChild.id,
+              name_en: grandChild.name_en || '',
+              name_ar: grandChild.name_ar || '',
+              slug: grandChild.slug,
+              path: grandChild.path,
+              parentId: grandChild.parentId,
+            })) : [],
+          })) : [],
+        }));
+        
+        setCategories(processedCategories);
+        
+        // Set dynamic price range based on actual product prices
+        if (frontendProducts.length > 0) {
+          const prices = frontendProducts.map((p: any) => p.price);
+          const minPrice = Math.floor(Math.min(...prices));
+          const maxPrice = Math.ceil(Math.max(...prices));
+          setFilters(prev => ({
+            ...prev,
+            priceRange: [minPrice, maxPrice]
+          }));
+        }
         
         setIsLoading(false);
       })
       .catch(error => {
-        console.error('Error fetching products and categories:', error);
         setIsLoading(false);
       });
   }, []);
@@ -102,11 +154,9 @@ function SearchPageContent() {
 
   // Generate search suggestions
   useEffect(() => {
-    console.log('Generating suggestions for:', searchQuery, 'Products count:', products.length);
     if (searchQuery.trim() && searchQuery.length > 1 && products.length > 0) {
       const suggestions = new Set<string>();
       const queryLower = searchQuery.toLowerCase();
-      console.log('Query for suggestions:', queryLower);
       
       products.forEach(product => {
         // Get localized strings
@@ -136,10 +186,8 @@ function SearchPageContent() {
       });
       
       const suggestionArray = Array.from(suggestions).slice(0, 5);
-      console.log('Setting suggestions:', suggestionArray);
       setSuggestions(suggestionArray);
     } else {
-      console.log('Clearing suggestions');
       setSuggestions([]);
     }
   }, [searchQuery, products, language]);
@@ -153,13 +201,51 @@ function SearchPageContent() {
     { key: 'newest', label: t('search.sortNewest'), value: 'newest' },
   ];
 
+  // Helper function to calculate relevance score
+  const calculateRelevanceScore = (product: Product, query: string): number => {
+    let score = 0;
+    const name = getLocalizedString(ensureLocalizedContent(product.name), language).toLowerCase();
+    let category = '';
+    if (typeof product.category === 'object' && 'name_en' in product.category) {
+      category = (language === 'ar' ? (product.category as any).name_ar : product.category.name_en).toLowerCase();
+    } else {
+      category = getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase();
+    }
+    const description = getLocalizedString(ensureLocalizedContent(product.description || ''), language).toLowerCase();
+    
+    // Exact name match gets highest score
+    if (name === query) score += 100;
+    else if (name.includes(query)) score += 50;
+    
+    // Category matches
+    if (category === query) score += 30;
+    else if (category.includes(query)) score += 15;
+    
+    // Description matches
+    if (description.includes(query)) score += 10;
+    
+    // Boost score for products with higher ratings
+    score += (product.rating || 0) * 2;
+    
+    // Boost score for in-stock products
+    if (product.inStock) score += 5;
+    
+    // Word-based scoring
+    const words = query.split(' ').filter(word => word.length > 1);
+    words.forEach(word => {
+      if (name.includes(word)) score += 20;
+      if (category.includes(word)) score += 10;
+      if (description.includes(word)) score += 5;
+    });
+    
+    return score;
+  };
+
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = products;
 
     // Enhanced text search with fuzzy matching
-    console.log('Initial products count:', products.length);
-    console.log('Search query:', searchQuery);
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(product => {
@@ -184,25 +270,180 @@ function SearchPageContent() {
         );
         
         const match = exactNameMatch || exactCategoryMatch || exactDescMatch || wordMatches;
-        console.log(`Product "${name}" matching "${query}": ${match}`, {
-          name, category, description,
-          exactNameMatch, exactCategoryMatch, exactDescMatch, wordMatches
-        });
         return match;
       });
     }
 
-    // Category filter
-    if (filters.category) {
-      filtered = filtered.filter(product => {
-        let categoryName = '';
-        if (typeof product.category === 'object' && 'name_en' in product.category) {
-          categoryName = (language === 'ar' ? (product.category as any).name_ar : product.category.name_en).toLowerCase();
-        } else {
-          categoryName = getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase();
+    // Helper function to get all category IDs in a hierarchy (category + all its children/descendants)
+    const getAllCategoryIds = (categoryId: string): string[] => {
+      const allIds = [categoryId];
+      
+      // Find the category and get all its descendants
+      const findChildrenRecursively = (categories: any[]): void => {
+        categories.forEach(cat => {
+          if (cat.parentId === categoryId || allIds.includes(cat.parentId)) {
+            if (!allIds.includes(cat.id)) {
+              allIds.push(cat.id);
+            }
+          }
+          if (cat.children && cat.children.length > 0) {
+            findChildrenRecursively(cat.children);
+          }
+        });
+      };
+      
+      // Also check nested children in the main categories
+      categories.forEach(mainCat => {
+        if (mainCat.id === categoryId) {
+          if (mainCat.children) {
+            const addChildrenRecursively = (children: any[]) => {
+              children.forEach(child => {
+                if (!allIds.includes(child.id)) {
+                  allIds.push(child.id);
+                }
+                if (child.children && child.children.length > 0) {
+                  addChildrenRecursively(child.children);
+                }
+              });
+            };
+            addChildrenRecursively(mainCat.children);
+          }
+        } else if (mainCat.children) {
+          const searchInChildren = (children: any[]): void => {
+            children.forEach(child => {
+              if (child.id === categoryId) {
+                if (child.children && child.children.length > 0) {
+                  const addChildrenRecursively = (nestedChildren: any[]) => {
+                    nestedChildren.forEach(nestedChild => {
+                      if (!allIds.includes(nestedChild.id)) {
+                        allIds.push(nestedChild.id);
+                      }
+                      if (nestedChild.children && nestedChild.children.length > 0) {
+                        addChildrenRecursively(nestedChild.children);
+                      }
+                    });
+                  };
+                  addChildrenRecursively(child.children);
+                }
+              } else if (child.children && child.children.length > 0) {
+                searchInChildren(child.children);
+              }
+            });
+          };
+          searchInChildren(mainCat.children);
         }
-        return categoryName === filters.category.toLowerCase();
       });
+      
+      return allIds;
+    };
+
+    // Category filter (main category - shows category + all subcategories)
+    if (filters.category) {
+      
+      // Find the main category ID by name
+      const mainCategory = categories.find(cat => {
+        const categoryName = language === 'ar' ? cat.name_ar : cat.name_en;
+        return categoryName.toLowerCase() === filters.category.toLowerCase();
+      });
+      
+      if (mainCategory) {
+        const allCategoryIds = getAllCategoryIds(mainCategory.id);
+        
+        filtered = filtered.filter(product => {
+          const productCategoryId = typeof product.category === 'object' && 'id' in product.category 
+            ? product.category.id 
+            : product.categoryId;
+          if (!productCategoryId) return false;
+          const matches = allCategoryIds.includes(productCategoryId);
+          return matches;
+        });
+      } else {
+        filtered = [];
+      }
+      
+    }
+
+    // Subcategory filter (specific subcategory - shows only that subcategory + its children)
+    if (filters.subcategory) {
+      
+      // Find the subcategory in the category hierarchy
+      let subcategoryId = null;
+      let subcategoryWithChildren = null;
+      
+      for (const mainCategory of categories) {
+        if (mainCategory.children) {
+          for (const subCategory of mainCategory.children) {
+            const subCategoryName = language === 'ar' ? subCategory.name_ar : subCategory.name_en;
+            if (subCategoryName === filters.subcategory) {
+              subcategoryId = subCategory.id;
+              subcategoryWithChildren = subCategory;
+              break;
+            }
+          }
+        }
+        if (subcategoryId) break;
+      }
+      
+      
+      if (subcategoryId) {
+        // Get all category IDs for this subcategory (subcategory + its children)
+        const relevantCategoryIds = getAllCategoryIds(subcategoryId);
+        
+        filtered = filtered.filter(product => {
+          const productCategoryId = typeof product.category === 'object' && 'id' in product.category 
+            ? product.category.id 
+            : product.categoryId;
+          if (!productCategoryId) return false;
+          const matches = relevantCategoryIds.includes(productCategoryId);
+          return matches;
+        });
+      } else {
+        filtered = [];
+      }
+      
+    }
+
+    // Level 3 category filter (specific level 3 category - shows only that category + its children)
+    if (filters.subsubcategory) {
+      
+      // Find the level 3 category in the category hierarchy
+      let level3CategoryId = null;
+      
+      for (const mainCategory of categories) {
+        if (mainCategory.children) {
+          for (const subCategory of mainCategory.children) {
+            if (subCategory.children) {
+              for (const level3Category of subCategory.children) {
+                const level3CategoryName = language === 'ar' ? level3Category.name_ar : level3Category.name_en;
+                if (level3CategoryName === filters.subsubcategory) {
+                  level3CategoryId = level3Category.id;
+                  break;
+                }
+              }
+            }
+            if (level3CategoryId) break;
+          }
+        }
+        if (level3CategoryId) break;
+      }
+      
+      
+      if (level3CategoryId) {
+        // Get all category IDs for this level 3 category (level 3 + its children if any)
+        const relevantCategoryIds = getAllCategoryIds(level3CategoryId);
+        
+        filtered = filtered.filter(product => {
+          const productCategoryId = typeof product.category === 'object' && 'id' in product.category 
+            ? product.category.id 
+            : product.categoryId;
+          if (!productCategoryId) return false;
+          const matches = relevantCategoryIds.includes(productCategoryId);
+          return matches;
+        });
+      } else {
+        filtered = [];
+      }
+      
     }
 
     // Price range filter
@@ -254,46 +495,6 @@ function SearchPageContent() {
     return sorted;
   }, [searchQuery, filters, sortBy, products, language]);
 
-  // Helper function to calculate relevance score
-  const calculateRelevanceScore = (product: Product, query: string): number => {
-    let score = 0;
-    const name = getLocalizedString(ensureLocalizedContent(product.name), language).toLowerCase();
-    let category = '';
-    if (typeof product.category === 'object' && 'name_en' in product.category) {
-      category = (language === 'ar' ? (product.category as any).name_ar : product.category.name_en).toLowerCase();
-    } else {
-      category = getLocalizedString(ensureLocalizedContent(product.category), language).toLowerCase();
-    }
-    const description = getLocalizedString(ensureLocalizedContent(product.description || ''), language).toLowerCase();
-    
-    // Exact name match gets highest score
-    if (name === query) score += 100;
-    else if (name.includes(query)) score += 50;
-    
-    // Category matches
-    if (category === query) score += 30;
-    else if (category.includes(query)) score += 15;
-    
-    // Description matches
-    if (description.includes(query)) score += 10;
-    
-    // Boost score for products with higher ratings
-    score += (product.rating || 0) * 2;
-    
-    // Boost score for in-stock products
-    if (product.inStock) score += 5;
-    
-    // Word-based scoring
-    const words = query.split(' ').filter(word => word.length > 1);
-    words.forEach(word => {
-      if (name.includes(word)) score += 20;
-      if (category.includes(word)) score += 10;
-      if (description.includes(word)) score += 5;
-    });
-    
-    return score;
-  };
-
   const handleAddToCart = (product: Product, selectedAttributes?: { [attributeId: string]: string }) => {
     dispatch({ type: 'ADD_ITEM', payload: { product, selectedAttributes } });
   };
@@ -308,10 +509,9 @@ function SearchPageContent() {
       params.set('q', query.trim());
       router.push(`/search?${params.toString()}`);
     }
-  }, 500);
+  }, 300); // Reduced debounce time for better responsiveness
 
-const handleSearch = (query: string) => {
-    console.log('Search query:', query);
+  const handleSearch = (query: string) => {
     setSearchQuery(query);
     setShowSuggestions(false);
     if (query.trim()) {
@@ -328,17 +528,31 @@ const handleSearch = (query: string) => {
   };
 
   const clearFilters = () => {
+    // Get current price range from products
+    const prices = products.map(p => p.price);
+    const minPrice = prices.length > 0 ? Math.floor(Math.min(...prices)) : 0;
+    const maxPrice = prices.length > 0 ? Math.ceil(Math.max(...prices)) : 1000;
+    
     setFilters({
       category: '',
-      priceRange: [0, 1000],
+      subcategory: '',
+      subsubcategory: '',
+      priceRange: [minPrice, maxPrice],
       inStock: null,
       rating: null
     });
   };
 
-  const updatePriceRange = (min: number, max: number) => {
-    setFilters(prev => ({ ...prev, priceRange: [min, max] }));
-  };
+  // Calculate min and max price from products
+  const { minPrice, maxPrice } = useMemo(() => {
+    if (products.length === 0) return { minPrice: 0, maxPrice: 1000 };
+    const prices = products.map(p => p.price);
+    return {
+      minPrice: Math.floor(Math.min(...prices)),
+      maxPrice: Math.ceil(Math.max(...prices))
+    };
+  }, [products]);
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -448,147 +662,14 @@ const handleSearch = (query: string) => {
         <div className="lg:grid lg:grid-cols-4 lg:gap-8">
           {/* Filters Sidebar */}
           <div className={`lg:col-span-1 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-            <div className="bg-white p-6 rounded-lg shadow-sm space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">{t('search.filters')}</h3>
-                <button
-                  onClick={clearFilters}
-                  className="text-sm text-purple-600 hover:text-purple-700"
-                >
-                  {t('search.clearAll')}
-                </button>
-              </div>
-
-              {/* Category Filter */}
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">{t('search.category')}</h4>
-                <div className="space-y-2">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="category"
-                      value=""
-                      checked={filters.category === ''}
-                      onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
-                      className="text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">{t('search.allCategories')}</span>
-                  </label>
-                  {categories.map(category => (
-                    <label key={category.id} className="flex items-center">
-                        <input
-                          type="radio"
-                          name="category"
-                          value={category.name_en}
-                          checked={filters.category === category.name_en}
-                          onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
-                          className="text-purple-600 focus:ring-purple-500"
-                        />
-                        <span className="ml-2 text-sm text-gray-600">
-                          {language === 'ar' ? category.name_ar : category.name_en}
-                        </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Price Range Filter */}
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">{t('search.priceRange')}</h4>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="number"
-                      value={filters.priceRange[0]}
-                      onChange={(e) => updatePriceRange(Number(e.target.value), filters.priceRange[1])}
-                      placeholder="Min"
-                      className="px-3 py-2 border text-gray-500 border-gray-300 rounded text-sm"
-                    />
-                    <input
-                      type="number"
-                      value={filters.priceRange[1]}
-                      onChange={(e) => updatePriceRange(filters.priceRange[0], Number(e.target.value))}
-                      placeholder="Max"
-                      className="px-3 py-2 border text-gray-500 border border-gray-300 rounded text-sm"
-                    />
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    <Price amount={filters.priceRange[0]}/>  -  <Price amount={filters.priceRange[1]}></Price>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stock Filter */}
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">{t('search.availability')}</h4>
-                <div className="space-y-2">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="stock"
-                      checked={filters.inStock === null}
-                      onChange={() => setFilters(prev => ({ ...prev, inStock: null }))}
-                      className="text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">{t('search.all')}</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="stock"
-                      checked={filters.inStock === true}
-                      onChange={() => setFilters(prev => ({ ...prev, inStock: true }))}
-                      className="text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">{t('product.stock')}</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="stock"
-                      checked={filters.inStock === false}
-                      onChange={() => setFilters(prev => ({ ...prev, inStock: false }))}
-                      className="text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">{t('product.outOfStock')}</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Rating Filter */}
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">{t('search.rating')}</h4>
-                <div className="space-y-2">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="rating"
-                      checked={filters.rating === null}
-                      onChange={() => setFilters(prev => ({ ...prev, rating: null }))}
-                      className="text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">{t('search.all')}</span>
-                  </label>
-                  {[4, 3, 2, 1].map(rating => (
-                    <label key={rating} className="flex items-center">
-                      <input
-                        type="radio"
-                        name="rating"
-                        checked={filters.rating === rating}
-                        onChange={() => setFilters(prev => ({ ...prev, rating }))}
-                        className="text-purple-600 focus:ring-purple-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700 flex items-center">
-                        {[...Array(rating)].map((_, i) => (
-                          <span key={i} className="text-yellow-400">⭐</span>
-                        ))}
-                        <span className="ml-1">& up</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <ProductFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+              categories={categories}
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              onClearFilters={clearFilters}
+            />
           </div>
 
           {/* Products Grid */}
@@ -610,16 +691,17 @@ const handleSearch = (query: string) => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredAndSortedProducts.map(product => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAddToCart={handleAddToCart}
-                    onViewProduct={handleViewProduct}
-                  />
-                ))}
-              </div>
+              <ProductGrid
+                products={filteredAndSortedProducts}
+                title=""
+                subtitle=""
+                onAddToCart={handleAddToCart}
+                onViewProduct={handleViewProduct}
+                viewMode="grid"
+                showHeader={false}
+                showViewAllButton={false}
+                className="w-full"
+              />
             )}
           </div>
         </div>

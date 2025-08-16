@@ -40,7 +40,6 @@ class NotificationService {
    */
   async create(input: NotificationInput): Promise<string> {
     try {
-      console.log('📧 Creating notification:', input.type, 'for user:', input.userId);
       
       // Get user preferences if userId provided
       let sendEmail = input.sendEmail || false;
@@ -48,20 +47,17 @@ class NotificationService {
 
       if (input.userId) {
         const preferences = await this.getUserPreferences(input.userId);
-        console.log('⚙️ User preferences:', preferences);
         
         if (preferences) {
           sendEmail = this.shouldSendEmail(input.type, preferences) && sendEmail;
           sendInApp = this.shouldSendInApp(input.type, preferences) && sendInApp;
         } else {
           // Create default preferences if they don't exist
-          console.log('📝 Creating default preferences for user:', input.userId);
           await this.createDefaultPreferences(input.userId);
           // Use defaults: sendEmail as provided, sendInApp true
         }
       }
       
-      console.log('📬 Final delivery settings - Email:', sendEmail, 'InApp:', sendInApp);
 
       // Create notification record
       const notification = await prisma.notification.create({
@@ -92,7 +88,6 @@ class NotificationService {
 
       return notification.id;
     } catch (error) {
-      console.error('Failed to create notification:', error);
       throw error;
     }
   }
@@ -102,7 +97,6 @@ class NotificationService {
    */
   private async sendEmailNotification(notificationId: string): Promise<void> {
     try {
-      console.log('📧 Attempting to send email for notification:', notificationId);
       
       const notification = await prisma.notification.findUnique({
         where: { id: notificationId },
@@ -110,22 +104,17 @@ class NotificationService {
       });
 
       if (!notification) {
-        console.log('❌ Notification not found:', notificationId);
         return;
       }
       
       if (!notification.user) {
-        console.log('❌ User not found for notification:', notificationId);
         return;
       }
       
       if (notification.emailSent) {
-        console.log('⚠️ Email already sent for notification:', notificationId);
         return;
       }
 
-      console.log('📧 Sending email to:', notification.user.email);
-      console.log('🔑 Using Resend API key:', process.env.RESEND_API_KEY ? 'Present' : 'Missing');
 
       // Simple email template (can be enhanced later)
       const emailHtml = `
@@ -157,7 +146,6 @@ class NotificationService {
         html: emailHtml,
       });
       
-      console.log('✅ Email sent successfully:', emailResponse);
 
       // Mark as sent
       await prisma.notification.update({
@@ -168,15 +156,11 @@ class NotificationService {
         }
       });
       
-      console.log('✅ Email status updated in database');
 
     } catch (error) {
-      console.error('❌ Failed to send email notification:');
-      console.error('Error details:', error);
       
       // Log specific Resend errors
       if (error && typeof error === 'object' && 'message' in error) {
-        console.error('Error message:', error.message);
       }
       
       // Don't throw - we don't want to break the notification creation
@@ -189,7 +173,6 @@ class NotificationService {
   private async broadcastToApp(notificationId: string): Promise<void> {
     // For now, this is just a placeholder
     // In Phase 4, we'll implement WebSocket/SSE broadcasting
-    console.log(`Broadcasting notification ${notificationId} to app`);
   }
 
   /**
@@ -220,7 +203,6 @@ class NotificationService {
       });
     } catch (error) {
       // Ignore if preferences already exist (race condition)
-      console.log('Preferences might already exist for user:', userId);
     }
   }
 
@@ -232,6 +214,7 @@ class NotificationService {
       case 'order_created':
       case 'order_shipped':
       case 'order_delivered':
+      case 'review_request':
         return preferences.emailOrders;
       case 'promotion':
         return preferences.emailPromotions;
@@ -251,6 +234,7 @@ class NotificationService {
       case 'order_created':
       case 'order_shipped':
       case 'order_delivered':
+      case 'review_request':
         return preferences.inAppOrders;
       case 'promotion':
         return preferences.inAppPromotions;
@@ -412,6 +396,38 @@ class NotificationService {
   }
 
   /**
+   * Request review for delivered order
+   */
+  async notifyReviewRequest(userId: string, orderId: string, orderTotal: number, productNames: string[] = []) {
+    const productList = productNames.length > 0 
+      ? productNames.slice(0, 3).join(', ') + (productNames.length > 3 ? '...' : '')
+      : 'your recent purchase';
+    
+    return this.create({
+      userId,
+      type: 'review_request',
+      title: {
+        en: 'How was your experience?',
+        ar: 'كيف كانت تجربتك؟'
+      },
+      message: {
+        en: `We'd love to hear your feedback about ${productList}. Your review helps other customers make informed decisions!`,
+        ar: `نود سماع رأيك حول ${productList}. مراجعتك تساعد العملاء الآخرين على اتخاذ قرارات مدروسة!`
+      },
+      actionUrl: `/reviews`,
+      sendEmail: true,
+      sendInApp: true,
+      priority: 'normal',
+      metadata: { 
+        orderId, 
+        orderTotal, 
+        productNames,
+        type: 'review_request'
+      }
+    });
+  }
+
+  /**
    * Notify admin users about new orders
    */
   async notifyAdminNewOrder(orderId: string, customerEmail: string, orderTotal: number) {
@@ -425,11 +441,9 @@ class NotificationService {
         }
       });
 
-      console.log('👨‍💼 Found admin users:', adminUsers.length);
 
       // Create notification for each admin
       for (const admin of adminUsers) {
-        console.log('📧 Creating admin notification for:', admin.email);
         
         await this.create({
           userId: admin.id,
@@ -450,9 +464,7 @@ class NotificationService {
         });
       }
 
-      console.log('✅ Admin notifications created successfully');
     } catch (error) {
-      console.error('❌ Failed to notify admins:', error);
       throw error;
     }
   }

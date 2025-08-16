@@ -16,16 +16,8 @@ export function ProductAttributeSelector({
   onAttributeChange,
   variants = []
 }: ProductAttributeSelectorProps) {
-  // Debug logging
-  console.log('🎯 ProductAttributeSelector render:', {
-    attributeCount: attributes?.length || 0,
-    attributes: attributes,
-    selectedValues,
-    variantCount: variants?.length || 0
-  });
-  
+
   if (!attributes || attributes.length === 0) {
-    console.log('🚫 No attributes to display - returning null');
     return null;
   }
   

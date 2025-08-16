@@ -9,6 +9,26 @@ import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { NotificationBell } from '@/components/layout/NotificationBell';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { Logo } from '@/components/ui/Logo';
+import { CategoryMegaMenu } from '@/components/navigation/CategoryMegaMenu';
+import { CategoryWithChildren } from '@/lib/categoryUtils';
+import { 
+  IoSearch, 
+  IoCart, 
+  IoMenu, 
+  IoClose, 
+  IoChevronDown,
+  IoHome,
+  IoStorefront,
+  IoCall,
+  IoInformationCircle
+} from 'react-icons/io5';
+import { 
+  HiUser, 
+  HiCog, 
+  HiLocationMarker, 
+  HiLogout,
+  HiShoppingBag
+} from 'react-icons/hi';
 
 interface HeaderProps {
   cartItemCount?: number;
@@ -35,23 +55,19 @@ export const Header: React.FC<HeaderProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const productsDropdownRef = useRef<HTMLDivElement>(null);
   const tabletProductsDropdownRef = useRef<HTMLDivElement>(null);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<CategoryWithChildren[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   useEffect(() => {
     async function fetchCategories() {
       setCategoriesLoading(true);
       try {
-        const response = await fetch('/api/categories');
+        const response = await fetch('/api/categories/tree');
         if (!response.ok) throw new Error('Failed to fetch categories');
         const data = await response.json();
-        const categories = data.categories.map((cat: any) => ({
-          ...cat,
-          name: { en: cat.name_en, ar: cat.name_ar }
-        }));
+        const categories = data.tree || [];
         setCategories(categories);
       } catch (error) {
-        // Optionally show an error toast or fallback
       } finally {
         setCategoriesLoading(false);
       }
@@ -119,7 +135,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4 md:py-6">
+        <div className="flex justify-between items-center py-3 md:py-2">
           {/* Logo */}
           <div className="flex items-center">
             <Logo
@@ -140,37 +156,22 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             <div className="relative flex items-center bg-gray-50 rounded-lg border border-gray-200 w-[500px]">
-              {/* All Products Dropdown */}
-              <div className="relative z-50 flex-shrink-0" ref={productsDropdownRef}>
-                <button
-                  onClick={() => setIsProductsDropdownOpen(!isProductsDropdownOpen)}
-                  className={`w-[140px] px-4 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors flex items-center border-r border-gray-200 whitespace-nowrap ${isRTL ? 'space-x-reverse space-x-1' : 'space-x-1'}`}
-                >
-                  <span>{t('nav.allProducts')}</span>
-                  <span className="text-xs">▼</span>
-                </button>
-
-                {/* Dropdown Menu */}
-                {isProductsDropdownOpen && (
-                  <div className={`absolute top-full mt-2 w-56 bg-white rounded-lg shadow-xl border py-2 z-[100] ${isRTL ? 'right-0' : 'left-0'}`}>
-                    {categoriesLoading ? (
-                      <div className="px-4 py-2 text-gray-400 text-sm">Loading...</div>
-                    ) : categories.length === 0 ? (
-                      <div className="px-4 py-2 text-gray-400 text-sm">No categories</div>
-                    ) : categories.map((category) => (
-                      <button
-                        key={category.id}
-                        onClick={() => {
-                          handleCategoryNavigation(category.slug);
-                          setIsProductsDropdownOpen(false);
-                        }}
-                        className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
-                      >
-                        <span className="text-lg">{category.icon}</span>
-                        <span>{language === 'ar' ? category.name.ar : category.name.en}</span>
-                      </button>
-                    ))}
-                  </div>
+              {/* CategoryMegaMenu */}
+              <div className="flex-shrink-0">
+                {!categoriesLoading && categories.length > 0 ? (
+                  <CategoryMegaMenu 
+                    categories={categories}
+                    className="border-r border-gray-200 rounded-l-lg"
+                  />
+                ) : (
+                  <button
+                    className={`w-[140px] px-4 py-2 text-gray-600 bg-gray-100 border-r border-gray-200 rounded-l-lg ${isRTL ? 'space-x-reverse' : ''}`}
+                    disabled
+                  >
+                    <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
+                      <span>{categoriesLoading ? 'Loading...' : 'No Categories'}</span>
+                    </div>
+                  </button>
                 )}
               </div>
 
@@ -179,7 +180,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={onSearchClick}
                 className="flex items-center px-4 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors w-full"
               >
-                <span className="text-lg mr-2">🔍</span>
+                <IoSearch className="text-lg mr-2 text-gray-500" />
                 <span className="text-sm truncate">{t('search.placeholder')}</span>
               </button>
             </div>
@@ -197,10 +198,13 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <button
                   onClick={() => setIsTabletProductsDropdownOpen(!isTabletProductsDropdownOpen)}
-                  className={`px-3 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors flex items-center border-r border-gray-200 whitespace-nowrap ${isRTL ? 'space-x-reverse space-x-1' : 'space-x-1'}`}
+                  className={`px-3 py-2 text-gray-600 hover:text-purple-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 transition-all duration-300 ease-in-out flex items-center justify-between border-r border-gray-200 whitespace-nowrap font-medium shadow-sm hover:shadow-md rounded-l-lg ${isRTL ? 'space-x-reverse' : ''}`}
                 >
-                  <span className="text-sm">{t('nav.allProducts')}</span>
-                  <span className="text-xs">▼</span>
+                  <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
+                    <span className="text-lg">🏷️</span>
+                    <span className="text-sm">{t('nav.allCategories')}</span>
+                  </div>
+                  <IoChevronDown className={`text-sm transition-transform duration-200 ${isTabletProductsDropdownOpen ? 'rotate-180' : ''} flex-shrink-0`} />
                 </button>
 
                 {/* Dropdown Menu */}
@@ -214,13 +218,13 @@ export const Header: React.FC<HeaderProps> = ({
                       <button
                         key={category.id}
                         onClick={() => {
-                          handleCategoryNavigation(category.slug);
+                          handleCategoryNavigation(category.path || category.slug);
                           setIsTabletProductsDropdownOpen(false);
                         }}
                         className={`w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center ${isRTL ? 'text-right space-x-reverse space-x-3' : 'text-left space-x-3'}`}
                       >
                         <span className="text-lg">{category.icon}</span>
-                        <span>{language === 'ar' ? category.name.ar : category.name.en}</span>
+                        <span>{language === 'ar' ? category.name_ar : category.name_en}</span>
                       </button>
                     ))}
                   </div>
@@ -232,7 +236,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={onSearchClick}
                 className="flex items-center px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors min-w-0 flex-1"
               >
-                <span className="text-lg mr-2">🔍</span>
+                <IoSearch className="text-lg mr-2 text-gray-500" />
                 <span className="text-sm truncate">{t('search.placeholder')}</span>
               </button>
             </div>
@@ -247,7 +251,7 @@ export const Header: React.FC<HeaderProps> = ({
               aria-label="Search"
               title="Search (Ctrl+K)"
             >
-              <span className="text-lg">🔍</span>
+              <IoSearch className="text-lg" />
             </button>
 
             {/* Language Switcher - Desktop Only */}
@@ -265,7 +269,7 @@ export const Header: React.FC<HeaderProps> = ({
               aria-label="Shopping Cart"
             >
               <span className="sr-only">Cart</span>
-              <span className="text-lg">🛒</span>
+              <IoCart className="text-lg" />
               {cartItemCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
                   {cartItemCount > 99 ? '99+' : cartItemCount}
@@ -281,9 +285,9 @@ export const Header: React.FC<HeaderProps> = ({
                     onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                     className={`flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}
                   >
-                    <span className="text-lg">👤</span>
+                    <HiUser className="text-lg" />
                     <span>{user.firstName || user.name}</span>
-                    <span className="text-xs">▼</span>
+                    <IoChevronDown className="text-sm" />
                   </button>
 
                   {/* Profile Dropdown */}
@@ -398,7 +402,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="lg:hidden flex items-center justify-center w-10 h-10 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
               aria-label={t('nav.menu')}
             >
-              <span className="text-lg">☰</span>
+              <IoMenu className="text-lg" />
             </button>
           </div>
         </div>
@@ -463,18 +467,40 @@ export const Header: React.FC<HeaderProps> = ({
                   ) : categories.length === 0 ? (
                     <div className="px-4 py-2 text-gray-400 text-sm">No categories</div>
                   ) : categories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() =>
-                        handleMobileNavClick(() =>
-                          handleCategoryNavigation(category.slug)
-                        )
-                      }
-                      className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center gap-3"
-                    >
-                      <span className="text-lg">{category.icon}</span>
-                      <span className="font-medium">{language === 'ar' ? category.name.ar : category.name.en}</span>
-                    </button>
+                    <div key={category.id}>
+                      {/* Main Category */}
+                      <button
+                        onClick={() =>
+                          handleMobileNavClick(() =>
+                            handleCategoryNavigation(category.path || category.slug)
+                          )
+                        }
+                        className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center gap-3"
+                      >
+                        <span className="text-lg">{category.icon}</span>
+                        <span className="font-medium">{language === 'ar' ? category.name_ar : category.name_en}</span>
+                      </button>
+                      
+                      {/* Subcategories */}
+                      {category.children && category.children.length > 0 && (
+                        <div className="ml-8 mt-1 space-y-1">
+                          {category.children.map((subcategory: CategoryWithChildren) => (
+                            <button
+                              key={subcategory.id}
+                              onClick={() =>
+                                handleMobileNavClick(() =>
+                                  handleCategoryNavigation(subcategory.path || subcategory.slug)
+                                )
+                              }
+                              className="w-full text-left px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center gap-2"
+                            >
+                              <span className="text-sm">{subcategory.icon}</span>
+                              <span>{language === 'ar' ? subcategory.name_ar : subcategory.name_en}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>

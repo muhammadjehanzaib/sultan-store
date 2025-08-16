@@ -34,8 +34,6 @@ export function SalesChart() {
       const data = await response.json();
       const orders = data.orders || [];
       
-      console.log('Fetched orders:', orders.length);
-      console.log('Sample order dates:', orders.slice(0, 3).map((o: any) => o.createdAt));
       
       // Process orders based on selected period
       const now = new Date();
@@ -56,8 +54,6 @@ export function SalesChart() {
       startDate.setDate(startDate.getDate() - (days - 1));
       startDate.setHours(0, 0, 0, 0); // Start of the start date
       
-      console.log('Period:', period, 'Days:', days);
-      console.log('Date range:', startDate.toISOString(), 'to', now.toISOString());
       
       // Create date buckets
       const dateBuckets: { [key: string]: { sales: number; orders: number; date: Date } } = {};
@@ -71,7 +67,6 @@ export function SalesChart() {
         dateBuckets[dateKey] = { sales: 0, orders: 0, date: new Date(date) };
       }
       
-      console.log('Created date buckets:', Object.keys(dateBuckets));
       
       // Process orders and aggregate by date
       let processedOrderCount = 0;
@@ -89,7 +84,6 @@ export function SalesChart() {
         }
       });
       
-      console.log('Processed orders within range:', processedOrderCount);
       
       // Convert to array format expected by the chart
       const processedData: SalesData[] = Object.entries(dateBuckets)
@@ -100,13 +94,10 @@ export function SalesChart() {
         }))
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       
-      console.log('Final processed data:', processedData.slice(0, 5));
-      console.log('Data with sales > 0:', processedData.filter(d => d.sales > 0));
       
       // If we have very little or no real data, supplement with some sample data
       const realDataDays = processedData.filter(d => d.sales > 0).length;
       if (realDataDays < 3 && processedData.length > 0) {
-        console.log('Insufficient real data, adding sample data for demonstration');
         
         // Add some sample sales to a few random days for better visualization
         const indicesToUpdate: number[] = [];
@@ -126,12 +117,10 @@ export function SalesChart() {
           }
         });
         
-        console.log('Updated data with samples:', processedData.filter(d => d.sales > 0));
       }
       
       setSalesData(processedData);
     } catch (error) {
-      console.error('Error fetching sales data:', error);
       
       // Fallback to mock data if API fails
       const data: SalesData[] = [];

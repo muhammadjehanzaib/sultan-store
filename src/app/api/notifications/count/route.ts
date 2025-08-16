@@ -16,7 +16,6 @@ export async function GET() {
 
     return NextResponse.json({ count });
   } catch (error) {
-    console.error('[GET /api/notifications/count]', error);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }
@@ -34,7 +33,6 @@ export async function POST() {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[POST /api/notifications/count]', error);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }

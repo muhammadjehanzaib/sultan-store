@@ -56,7 +56,6 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Admin products API error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch products' },
       { status: 500 }
@@ -82,7 +81,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(product, { status: 201 });
 
   } catch (error) {
-    console.error('Admin create product API error:', error);
     return NextResponse.json(
       { error: 'Failed to create product' },
       { status: 500 }

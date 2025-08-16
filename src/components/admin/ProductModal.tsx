@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Product, LocalizedContent } from '@/types';
 import { Button } from '@/components/ui/Button';
+import Price from '@/components/ui/Price';
+import { formatPercentage } from '@/lib/numberFormatter';
 
 interface Category {
   id: string;
@@ -32,7 +34,13 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
     description: '',
     inStock: true,
     rating: 0,
-    reviews: 0
+    reviews: 0,
+    // Discount fields
+    salePrice: null,
+    discountPercent: null,
+    onSale: false,
+    saleStartDate: null,
+    saleEndDate: null
   });
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -42,12 +50,11 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
     async function fetchCategories() {
       setCategoriesLoading(true);
       try {
-        const response = await fetch('/api/categories');
+        const response = await fetch('/api/categories?includeInactive=true'); // Allow admins to assign to inactive categories too
         if (!response.ok) throw new Error('Failed to fetch categories');
         const data = await response.json();
         setCategories(data.categories || []);
       } catch (error) {
-        console.error('Error fetching categories:', error);
         setCategories([]);
       } finally {
         setCategoriesLoading(false);
@@ -208,6 +215,119 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
               rows={3}
               className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
+          </div>
+
+          {/* Discount Section */}
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+            <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">Discount Settings</h4>
+            
+            {/* On Sale Toggle */}
+            <div className="mb-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="onSale"
+                  checked={formData.onSale || false}
+                  onChange={handleInputChange}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Product is on sale
+                </span>
+              </label>
+            </div>
+
+            {/* Discount Fields - Only show when onSale is true */}
+            {formData.onSale && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Sale Price (SAR)
+                    </label>
+                    <input
+                      type="number"
+                      name="salePrice"
+                      value={formData.salePrice || ''}
+                      onChange={handleInputChange}
+                      step="0.01"
+                      min="0"
+                      placeholder="Override price (optional)"
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Leave empty to use percentage discount</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Discount Percentage (%)
+                    </label>
+                    <input
+                      type="number"
+                      name="discountPercent"
+                      value={formData.discountPercent || ''}
+                      onChange={handleInputChange}
+                      step="1"
+                      min="0"
+                      max="100"
+                      placeholder="e.g., 20 for 20% off"
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Used if sale price is empty</p>
+                  </div>
+                </div>
+
+                {/* Sale Date Range */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Sale Start Date (optional)
+                    </label>
+                    <input
+                      type="datetime-local"
+                      name="saleStartDate"
+                      value={formData.saleStartDate ? new Date(formData.saleStartDate).toISOString().slice(0, 16) : ''}
+                      onChange={handleInputChange}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Sale End Date (optional)
+                    </label>
+                    <input
+                      type="datetime-local"
+                      name="saleEndDate"
+                      value={formData.saleEndDate ? new Date(formData.saleEndDate).toISOString().slice(0, 16) : ''}
+                      onChange={handleInputChange}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preview:</h5>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="flex items-center gap-1">Original Price: <Price amount={formData.price || 0} locale={isRTL ? 'ar' : 'en'} /></div>
+                    {formData.salePrice ? (
+                      <div className="text-green-600 flex items-center gap-1">
+                        Sale Price: <Price amount={formData.salePrice} locale={isRTL ? 'ar' : 'en'} /> 
+                        ({t('discount.save')} <Price amount={(formData.price || 0) - (formData.salePrice || 0)} locale={isRTL ? 'ar' : 'en'} />)
+                      </div>
+                    ) : formData.discountPercent ? (
+                      <div className="text-green-600 flex items-center gap-1">
+                        Discounted Price: <Price amount={(formData.price || 0) * (1 - (formData.discountPercent || 0) / 100)} locale={isRTL ? 'ar' : 'en'} /> 
+                        ({formatPercentage(formData.discountPercent, isRTL ? 'ar' : 'en')} {t('discount.off')})
+                      </div>
+                    ) : (
+                      <div className="text-gray-500">No discount applied - set either sale price or discount percentage</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

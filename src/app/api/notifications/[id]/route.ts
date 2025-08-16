@@ -20,7 +20,6 @@ export async function PATCH(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[PATCH /api/notifications/[id]]', error);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }

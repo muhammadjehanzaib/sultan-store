@@ -9,9 +9,7 @@ const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
-    console.log('🔍 Checkout API: Starting POST request');
     const body = await request.json();
-    console.log('🔍 Checkout API: Request body:', JSON.stringify(body, null, 2));
     
     const { 
       customerEmail, 
@@ -23,14 +21,6 @@ export async function POST(request: Request) {
       codFee = 0
     } = body;
     
-    console.log('🔍 Checkout API: Extracted values:', {
-      customerEmail,
-      customerName,
-      itemsCount: items?.length,
-      paymentMethod,
-      codFee
-    });
-
     // Validate required fields
     if (!customerEmail || !customerName || !items) {
       return NextResponse.json({ 
@@ -114,12 +104,10 @@ export async function POST(request: Request) {
     // Update inventory for each item (both product-level and variant-specific)
     for (const item of orderData.items) {
       try {
-        console.log(`📦 Processing inventory for product ${item.productId}, quantity: ${item.quantity}`);
         
         // Find the specific variant based on selected attributes
         let targetVariant = null;
         if (item.selectedAttributes) {
-          console.log('🔍 Finding variant with attributes:', item.selectedAttributes);
           
           // Get all variants for this product with their attribute values
           const productVariants = await prisma.productVariant.findMany({
@@ -154,9 +142,7 @@ export async function POST(request: Request) {
           });
           
           if (targetVariant) {
-            console.log(`✅ Found matching variant: ${targetVariant.id}`);
           } else {
-            console.log('❌ No matching variant found for selected attributes');
           }
         }
         
@@ -165,7 +151,6 @@ export async function POST(request: Request) {
           const newStockQuantity = Math.max(0, targetVariant.stockQuantity - item.quantity);
           const shouldMarkOutOfStock = newStockQuantity === 0;
           
-          console.log(`📉 Updating variant ${targetVariant.id}: ${targetVariant.stockQuantity} -> ${newStockQuantity}`);
           
           await prisma.productVariant.update({
             where: { id: targetVariant.id },
@@ -176,7 +161,6 @@ export async function POST(request: Request) {
           });
           
           if (shouldMarkOutOfStock) {
-            console.log(`🚫 Variant ${targetVariant.id} is now out of stock`);
           }
         }
         
@@ -214,10 +198,39 @@ export async function POST(request: Request) {
           }
         });
         
-        console.log(`✅ Inventory updated successfully for product ${item.productId}`);
+        
+        // Check for low stock after purchase and send notification if needed
+        try {
+          const updatedInventory = await prisma.inventory.findUnique({
+            where: { productId: item.productId },
+            include: {
+              product: {
+                select: {
+                  name_en: true,
+                  name_ar: true
+                }
+              }
+            }
+          });
+          
+          if (updatedInventory) {
+            const { stock, stockThreshold, product } = updatedInventory;
+            const productName = product?.name_en || product?.name_ar || `Product ${item.productId}`;
+            
+            // Use default threshold of 10 if stockThreshold is null
+            const threshold = stockThreshold ?? 10;
+            
+            if (stock <= threshold && stock > 0) {
+              await notificationService.notifyLowStock(productName, stock, threshold);
+            } else if (stock === 0) {
+              // Could add out-of-stock notification here if needed
+            }
+          }
+        } catch (lowStockError) {
+          // Don't fail the order creation if low stock notification fails
+        }
         
       } catch (inventoryError) {
-        console.error(`❌ Error updating inventory for product ${item.productId}:`, inventoryError);
         // Continue with other items but log the error
       }
     }
@@ -225,10 +238,8 @@ export async function POST(request: Request) {
     // Send order confirmation notification
     try {
       const session = await getServerSession(authOptions);
-      console.log('🔔 Session for notification:', session?.user?.id, session?.user?.email);
       
       if (session?.user?.id) {
-        console.log('🔔 Sending customer notification for order:', order.id, 'to user:', session.user.id);
         
         await notificationService.notifyOrderCreated(
           session.user.id, 
@@ -236,22 +247,17 @@ export async function POST(request: Request) {
           orderData.total
         );
         
-        console.log('✅ Customer notification sent successfully');
       } else {
-        console.log('❌ No session user ID found for customer notification');
       }
       
       // Always notify admin users about new orders
-      console.log('🔔 Sending admin notifications for new order:', order.id);
       await notificationService.notifyAdminNewOrder(
         order.id,
         orderData.customerEmail,
         orderData.total
       );
-      console.log('✅ Admin notifications sent successfully');
       
     } catch (notificationError) {
-      console.error('❌ Failed to send notifications:', notificationError);
       // Don't fail the order creation if notification fails
     }
 
@@ -268,7 +274,6 @@ export async function POST(request: Request) {
     });
 
   } catch (err) {
-    console.error('[POST /checkout]', err);
     return NextResponse.json({ 
       error: 'Server Error' 
     }, { status: 500 });

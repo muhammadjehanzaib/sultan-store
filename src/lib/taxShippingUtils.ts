@@ -29,7 +29,6 @@ async function getSettings() {
     
     return settings;
   } catch (error) {
-    console.error('Error fetching settings:', error);
     
     // Return default values if database fails
     return {
@@ -120,7 +119,6 @@ export async function getShippingInfo() {
   const settings = await getSettings();
   
   // Debug logging (remove in production)
-  console.log('Database settings in getShippingInfo:', settings);
   
   return {
     rate: settings.shippingRate,

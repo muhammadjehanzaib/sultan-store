@@ -68,14 +68,12 @@ export async function POST(req: NextRequest) {
     });
 
     // Log security event (optional - you can implement logging)
-    console.log(`Password changed for user: ${session.user.email} at ${new Date().toISOString()}`);
 
     return NextResponse.json({ 
       message: 'Password changed successfully' 
     });
 
   } catch (error) {
-    console.error('Password change error:', error);
     return NextResponse.json({ 
       error: 'Internal server error' 
     }, { status: 500 });

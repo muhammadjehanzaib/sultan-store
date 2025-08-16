@@ -40,7 +40,6 @@ export async function GET(
     return NextResponse.json({ user });
 
   } catch (error) {
-    console.error('[GET /api/admin/users/[id]]', error);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }
@@ -129,7 +128,6 @@ export async function PUT(
     });
 
   } catch (error) {
-    console.error('[PUT /api/admin/users/[id]]', error);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }
@@ -172,7 +170,6 @@ export async function DELETE(
     });
 
   } catch (error) {
-    console.error('[DELETE /api/admin/users/[id]]', error);
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }

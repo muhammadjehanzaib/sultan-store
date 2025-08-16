@@ -23,18 +23,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   const { t, isRTL } = useLanguage();
   const { updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  
-  // Debug user data
-  console.log('PersonalInfo user data:', {
-    firstName: user.firstName,
-    lastName: user.lastName,
-    email: user.email,
-    phone: user.phone,
-    avatar: user.avatar,
-    name: user.name,
-    id: user.id
-  });
-  
+    
   const [formData, setFormData] = useState<PersonalInfoForm>({
     firstName: user.firstName || '',
     lastName: user.lastName || '',
@@ -143,7 +132,6 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
         throw new Error('Failed to update profile');
       }
     } catch (error) {
-      console.error('Error updating user info:', error);
       setErrors({ general: t('profile.errors.updateFailed') });
     } finally {
       setIsLoading(false);

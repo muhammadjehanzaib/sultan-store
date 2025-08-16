@@ -27,7 +27,6 @@ export async function GET() {
 
     return NextResponse.json({ settings });
   } catch (error) {
-    console.error('Error fetching settings:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -115,7 +114,6 @@ export async function PUT(request: NextRequest) {
       settings 
     });
   } catch (error) {
-    console.error('Error updating settings:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

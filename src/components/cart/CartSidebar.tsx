@@ -30,7 +30,9 @@ export const CartSidebar: React.FC = () => {
     dispatch({ type: 'TOGGLE_CART' });
   };
 
-  if (!state.isOpen) return null;
+  if (!state.isOpen) {
+    return null;
+  }
 
   return (
     <>
@@ -41,7 +43,7 @@ export const CartSidebar: React.FC = () => {
       />
       
       {/* Cart Sidebar */}
-      <div className={`fixed ${isRTL ? 'left-0' : 'right-0'} top-0 h-full w-105 bg-gradient-to-b from-gray-50 to-white shadow-2xl z-50 flex flex-col`}>
+      <div className={`fixed ${isRTL ? 'left-0' : 'right-0'} top-0 h-full w-96 bg-gradient-to-b from-gray-50 to-white shadow-2xl z-50 flex flex-col`}>
         {/* Header */}
         <div className={`flex items-center justify-between p-6 bg-white border-b border-gray-200 shadow-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
           <h2 className="text-xl font-bold text-gray-800">{t('cart.title')}</h2>

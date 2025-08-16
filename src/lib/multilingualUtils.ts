@@ -39,18 +39,16 @@ export function getLocalizedString(content: string | LocalizedContent | null | u
  * Converts legacy product data to multilingual format
  */
 export function convertToMultilingualProduct(product: Product | any): MultilingualProduct {
-  console.log('convertToMultilingualProduct: Converting product:', product.id, 'variants:', product.variants?.length || 0);
   
   // Handle products with separate language fields (from API)
   if (product.name_en && product.name_ar) {
-    // Calculate proper stock status based on variants or inventory
+    // Calculate stock quantities for reference, but respect database inStock value
     const variants = product.variants || [];
     const inventoryStock = product.inventory?.stock || 0;
     const totalVariantStock = variants.reduce((sum: number, variant: any) => sum + (variant.stockQuantity || 0), 0);
     
     // For products with variants, use variant stock total; otherwise use inventory stock
     const actualStock = variants.length > 0 ? totalVariantStock : inventoryStock;
-    const isInStock = actualStock > 0;
     
     const converted = {
       ...product,
@@ -61,8 +59,8 @@ export function convertToMultilingualProduct(product: Product | any): Multilingu
       description: product.description_en && product.description_ar
         ? { en: product.description_en, ar: product.description_ar }
         : ensureLocalizedContent(product.description || ''),
-      // Override inStock with calculated value
-      inStock: isInStock,
+      // Respect the database inStock value (don't override it)
+      inStock: Boolean(product.inStock),
       stockQuantity: actualStock,
       // Ensure variants are properly preserved and structured
       variants: variants.map((variant: any) => {
@@ -98,7 +96,6 @@ export function convertToMultilingualProduct(product: Product | any): Multilingu
         values: attr.values || []
       })),
     };
-    console.log('convertToMultilingualProduct: Converted variants:', converted.variants);
     return converted;
   }
   
@@ -124,7 +121,6 @@ export function convertToMultilingualProduct(product: Product | any): Multilingu
       values: attr.values || []
     })),
   };
-  console.log('convertToMultilingualProduct: Converted variants (legacy):', converted.variants);
   return converted;
 }
 

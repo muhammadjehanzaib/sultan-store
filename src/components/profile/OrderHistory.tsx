@@ -20,7 +20,7 @@ interface OrderWithDetails extends Order {
 }
 
 export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
   const router = useRouter();
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,8 +33,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
         const response = await fetch(`/api/orders/customer/${user.email}`);
         if (response.ok) {
           const orderData = await response.json();
-          console.log('Order data received:', orderData);
-          
+
           // Handle different response formats
           let ordersArray = [];
           if (Array.isArray(orderData)) {
@@ -44,24 +43,21 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
           } else if (orderData && orderData.data && Array.isArray(orderData.data)) {
             ordersArray = orderData.data;
           } else {
-            console.warn('Unexpected order data format:', orderData);
             ordersArray = [];
           }
-          
+
           const processedOrders = ordersArray.map((order: any) => ({
             ...order,
             itemsCount: order.items?.length || 0,
             trackingUrl: order.trackingNumber ? `/track/${order.trackingNumber}` : undefined
           }));
-          
+
           setOrders(processedOrders);
         } else {
           // API might not exist yet, so show empty state
-          console.log('Orders API not available or returned error:', response.status);
           setOrders([]);
         }
       } catch (error) {
-        console.error('Error fetching orders:', error);
         // For development, show empty state instead of error
         setOrders([]);
       } finally {
@@ -89,8 +85,8 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
     }
   };
 
-  const filteredOrders = filter === 'all' 
-    ? orders 
+  const filteredOrders = filter === 'all'
+    ? orders
     : orders.filter(order => order.status === filter);
 
   const toggleOrderDetails = (orderId: string) => {
@@ -106,7 +102,6 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
     if (trackingUrl && typeof window !== 'undefined') {
       window.open(trackingUrl, '_blank');
     } else {
-      console.log('Tracking functionality not implemented yet');
     }
   };
 
@@ -117,7 +112,6 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
 
   const handleReorder = (orderId: string) => {
     // For now, just log - implement reorder functionality later
-    console.log(`Reordering order ${orderId}`);
     // When reorder system is ready: router.push(`/orders/${orderId}/reorder`);
   };
 
@@ -132,7 +126,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
           },
           body: JSON.stringify({ status: 'cancelled' }),
         });
-        
+
         if (response.ok) {
           // Refresh orders after cancellation
           const fetchOrders = async () => {
@@ -148,26 +142,23 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
                 } else if (orderData && orderData.data && Array.isArray(orderData.data)) {
                   ordersArray = orderData.data;
                 }
-                
+
                 const processedOrders = ordersArray.map((order: any) => ({
                   ...order,
                   itemsCount: order.items?.length || 0,
                   trackingUrl: order.trackingNumber ? `/track/${order.trackingNumber}` : undefined
                 }));
-                
+
                 setOrders(processedOrders);
               }
             } catch (error) {
-              console.error('Error refreshing orders:', error);
             }
           };
-          
+
           await fetchOrders();
         } else {
-          console.error('Failed to cancel order');
         }
       } catch (error) {
-        console.error('Error canceling order:', error);
       }
     }
   };
@@ -191,18 +182,17 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h2 className="text-2xl font-bold text-gray-900">{t('profile.orderHistory')}</h2>
-        
+
         {/* Order Status Filter */}
         <div className="flex flex-wrap gap-2">
           {['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => (
             <button
               key={status}
               onClick={() => setFilter(status as OrderStatus | 'all')}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                filter === status
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filter === status
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               {t(`profile.status.${status}`)}
             </button>
@@ -217,8 +207,8 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
             {filter === 'all' ? t('profile.noOrders') : t('profile.noOrdersWithFilter')}
           </h3>
           <p className="text-gray-600 mb-6">
-            {filter === 'all' 
-              ? t('profile.noOrdersDescription') 
+            {filter === 'all'
+              ? t('profile.noOrdersDescription')
               : t('profile.noOrdersWithFilterDescription')
             }
           </p>
@@ -274,8 +264,8 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
                   <div>
                     <p className="text-sm font-medium text-gray-500">{t('profile.paymentMethod')}</p>
                     <p className="text-sm text-gray-900">
-                      {typeof order.paymentMethod === 'string' 
-                        ? order.paymentMethod 
+                      {typeof order.paymentMethod === 'string'
+                        ? order.paymentMethod
                         : order.paymentMethod?.name || 'N/A'
                       }
                     </p>
@@ -303,11 +293,18 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
                   )}
                   <Button
                     variant="outline"
-                    size="sm"
-                    onClick={() => handleDownloadInvoice(order.id)}
+                    onClick={
+                      order.status === 'delivered'
+                        ? () => handleDownloadInvoice(order.id)
+                        : undefined
+                    }
+                    disabled={order.status !== 'delivered'}
+                    className={`flex items-center gap-2 ${order.status !== 'delivered' ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    {t('profile.downloadInvoice')}
+                    <span>📄</span>
+                    {language === 'ar' ? 'تحميل الفاتورة' : 'Download Invoice'}
                   </Button>
+
                   {order.status === 'delivered' && (
                     <>
                       <Button
@@ -315,7 +312,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
                         size="sm"
                         onClick={() => router.push('/reviews')}
                       >
-                        Write Review
+                        {t('profile.writereviews')}
                       </Button>
                       <Button
                         variant="outline"
@@ -326,7 +323,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
                       </Button>
                     </>
                   )}
-                  {(['pending', 'processing'].includes(order.status)) && (
+                  {(['pending'].includes(order.status)) && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -364,13 +361,6 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
                         // Use variant image if available, otherwise fallback to product image
                         const productImage = (item as any).variantImage || item.product?.image || '/placeholder-product.jpg';
                         const itemTotal = item.total || (item.price * item.quantity) || 0;
-                        
-                        console.log('Order item debug:', {
-                          product: item.product,
-                          productName,
-                          productImage: productImage ? 'Image exists' : 'No image',
-                          selectedAttributes: item.selectedAttributes
-                        });
 
                         return (
                           <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
@@ -383,7 +373,6 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
                                   height={60}
                                   className="rounded-lg object-cover"
                                   onError={(e) => {
-                                    console.log('Image failed to load:', productImage);
                                     e.currentTarget.style.display = 'none';
                                   }}
                                 />
@@ -417,10 +406,10 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ user }) => {
                           </div>
                         );
                       }) || (
-                        <p className="text-gray-500 text-center py-4">
-                          {t('profile.noItemDetails')}
-                        </p>
-                      )}
+                          <p className="text-gray-500 text-center py-4">
+                            {t('profile.noItemDetails')}
+                          </p>
+                        )}
                     </div>
 
                     {/* Order Breakdown */}
