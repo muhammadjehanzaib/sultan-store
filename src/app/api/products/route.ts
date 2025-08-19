@@ -115,14 +115,18 @@
 
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
-
-/** GET /api/products  – optional ?includeRelations=true, ?includeInactiveCategories=true */
+/** GET /api/products  – optional ?includeRelations=true, ?includeInactiveCategories=true, ?limit=number, ?onSale=true, ?newArrivals=true */
 export async function GET(req: NextRequest) {
   const include = req.nextUrl.searchParams.get('includeRelations') === 'true';
   const includeInactiveCategories = req.nextUrl.searchParams.get('includeInactiveCategories') === 'true';
+  const limitParam = req.nextUrl.searchParams.get('limit');
+  const onSale = req.nextUrl.searchParams.get('onSale') === 'true';
+  const newArrivals = req.nextUrl.searchParams.get('newArrivals') === 'true';
+  
+  const limit = limitParam ? parseInt(limitParam, 10) : undefined;
 
   // Build the where clause to filter by active categories unless explicitly requested
   const whereClause: any = {};
@@ -131,9 +135,29 @@ export async function GET(req: NextRequest) {
       isActive: true
     };
   }
+  
+  // Filter for sale products
+  if (onSale) {
+    whereClause.onSale = true;
+  }
+  
+  // Filter for new arrivals (last 30 days)
+  if (newArrivals) {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    whereClause.createdAt = {
+      gte: thirtyDaysAgo
+    };
+  }
 
   const products = await prisma.product.findMany({
     where: whereClause,
+    orderBy: newArrivals 
+      ? { createdAt: 'desc' } 
+      : onSale 
+      ? { saleStartDate: 'desc' }
+      : { createdAt: 'desc' },
+    ...(limit && { take: limit }),
     select: {
       id: true,
       slug: true,

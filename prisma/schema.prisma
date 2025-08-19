@@ -29,31 +29,31 @@ model StockHistory {
 }
 
 model Product {
-  id             String             @id @default(cuid())
-  slug           String             @unique
-  name_en        String
-  name_ar        String
-  description_en String?
-  description_ar String?
-  image          String
-  price          Float
-  salePrice      Float?             // Sale price (direct override)
-  discountPercent Float?            // Percentage discount (0-100)
-  onSale         Boolean            @default(false)
-  saleStartDate  DateTime?
-  saleEndDate    DateTime?
-  inStock        Boolean            @default(true)
-  rating         Float?             @default(0)
-  reviews        Int?               @default(0)
-  categoryId     String
-  createdAt      DateTime           @default(now())
-  inventory      Inventory?
-  orderItems     OrderItem[]
-  category       Category           @relation(fields: [categoryId], references: [id])
-  attributes     ProductAttribute[]
-  variants       ProductVariant[]
-  productReviews Review[]
-  stockHistory   StockHistory[]
+  id              String             @id @default(cuid())
+  slug            String             @unique
+  name_en         String
+  name_ar         String
+  description_en  String?
+  description_ar  String?
+  image           String
+  price           Float
+  inStock         Boolean            @default(true)
+  rating          Float?             @default(0)
+  reviews         Int?               @default(0)
+  categoryId      String
+  createdAt       DateTime           @default(now())
+  discountPercent Float?
+  onSale          Boolean            @default(false)
+  saleEndDate     DateTime?
+  salePrice       Float?
+  saleStartDate   DateTime?
+  inventory       Inventory?
+  orderItems      OrderItem[]
+  category        Category           @relation(fields: [categoryId], references: [id])
+  attributes      ProductAttribute[]
+  variants        ProductVariant[]
+  productReviews  Review[]
+  stockHistory    StockHistory[]
 }
 
 model ProductVariant {
@@ -137,34 +137,27 @@ model OrderItem {
 }
 
 model Category {
-  id             String      @id @default(cuid())
-  slug           String      @unique
+  id             String     @id @default(cuid())
+  slug           String     @unique
   name_en        String
   name_ar        String
-  description_en String?
-  description_ar String?
   icon           String?
+  createdAt      DateTime   @default(now())
+  isActive       Boolean    @default(true)
+  description_ar String?
+  description_en String?
   image          String?
-  isActive       Boolean     @default(true)
-  sortOrder      Int         @default(0)
-  
-  // Hierarchy fields
-  parentId       String?
-  level          Int         @default(0)
-  path           String?     // "electronics/smartphones/android"
-  
-  // SEO fields
-  metaTitle_en   String?
-  metaTitle_ar   String?
-  metaDesc_en    String?
+  level          Int        @default(0)
   metaDesc_ar    String?
-  
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  
-  // Relationships
-  parent         Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children       Category[]  @relation("CategoryHierarchy")
+  metaDesc_en    String?
+  metaTitle_ar   String?
+  metaTitle_en   String?
+  parentId       String?
+  path           String?
+  sortOrder      Int        @default(0)
+  updatedAt      DateTime   @updatedAt
+  parent         Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children       Category[] @relation("CategoryHierarchy")
   products       Product[]
 
   @@index([parentId])
@@ -248,7 +241,14 @@ model Review {
   orderId   String
   rating    Int
   comment   String
+  status    String?  @default("pending") // pending, approved, rejected - made optional for migration
   createdAt DateTime @default(now())
+  updatedAt DateTime? @updatedAt // made optional for migration
+  deletedAt DateTime? // for soft delete
+  // Admin reply fields
+  adminReply String? // Admin's reply message
+  adminReplyBy String? // Admin user ID who replied
+  adminReplyAt DateTime? // When the reply was created
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -296,15 +296,20 @@ model NotificationPreferences {
 }
 
 model ContactQuery {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  subject   String
-  message   String
-  status    String   @default("new")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  email          String
+  mobileNumber   String   @default("")
+  region         String   @default("")
+  messageType    String   @default("general")
+  description    String   @default("")
+  attachmentUrl  String?
+  attachmentName String?
+  status         String   @default("new")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([status, createdAt])
   @@index([email])
+  @@index([messageType])
+  @@index([region])
 }

@@ -134,7 +134,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="header-container">
         <div className="flex justify-between items-center py-3 md:py-2">
           {/* Logo */}
           <div className="flex items-center">

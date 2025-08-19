@@ -30,10 +30,13 @@ export default function AdminReviews() {
       
       const response = await fetch(`/api/admin/reviews?status=${statusFilter}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch reviews');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('API Error:', errorData);
+        throw new Error(errorData.error || `Failed to fetch reviews (${response.status})`);
       }
       
       const data = await response.json();
+      console.log('Reviews data:', data); // Debug log
       setReviewsData(data.reviews || []);
     } catch (error) {
       setError('Failed to load reviews');
@@ -47,35 +50,123 @@ export default function AdminReviews() {
     setIsModalOpen(true);
   };
 
-  const handleUpdateReviewStatus = (reviewId: string, status: Review['status']) => {
+  const handleReplySubmitted = async (reviewId: string, reply: string) => {
+    // Update the local state to reflect the new reply
     setReviewsData(prev => 
       prev.map(review => 
         review.id === reviewId 
-          ? { ...review, status, updatedAt: new Date() }
+          ? { ...review, adminReply: reply, adminReplyAt: new Date() }
           : review
       )
     );
+    
+    // Also update the selected review if it's the same one
+    setSelectedReview(prev => 
+      prev && prev.id === reviewId 
+        ? { ...prev, adminReply: reply, adminReplyAt: new Date() }
+        : prev
+    );
   };
 
-  const handleDeleteReview = (reviewId: string) => {
-    if (confirm(t('admin.reviews.deleteConfirm'))) {
-      setReviewsData(prev => prev.filter(r => r.id !== reviewId));
-    }
-  };
+  const handleUpdateReviewStatus = async (reviewId: string, status: Review['status']) => {
+    try {
+      const response = await fetch(`/api/admin/reviews/${reviewId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      });
 
-  const handleBulkAction = (action: 'approve' | 'reject' | 'delete', reviewIds: string[]) => {
-    if (action === 'delete') {
-      if (confirm(t('admin.reviews.bulkDeleteConfirm'))) {
-        setReviewsData(prev => prev.filter(r => !reviewIds.includes(r.id)));
+      if (!response.ok) {
+        throw new Error('Failed to update review status');
       }
-    } else {
+
+      const data = await response.json();
+      
+      // Update local state with the updated review
       setReviewsData(prev => 
         prev.map(review => 
-          reviewIds.includes(review.id)
-            ? { ...review, status: action === 'approve' ? 'approved' : 'rejected', updatedAt: new Date() }
+          review.id === reviewId 
+            ? { ...review, status, updatedAt: new Date() }
             : review
         )
       );
+    } catch (error) {
+      console.error('Error updating review status:', error);
+      setError('Failed to update review status');
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (confirm(t('admin.reviews.deleteConfirm'))) {
+      try {
+        const response = await fetch(`/api/admin/reviews/${reviewId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete review');
+        }
+
+        // Remove from local state
+        setReviewsData(prev => prev.filter(r => r.id !== reviewId));
+      } catch (error) {
+        console.error('Error deleting review:', error);
+        setError('Failed to delete review');
+      }
+    }
+  };
+
+  const handleBulkAction = async (action: 'approve' | 'reject' | 'delete', reviewIds: string[]) => {
+    if (action === 'delete') {
+      if (confirm(t('admin.reviews.bulkDeleteConfirm'))) {
+        try {
+          const response = await fetch('/api/admin/reviews', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action: 'delete', reviewIds }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to delete reviews');
+          }
+
+          // Remove from local state
+          setReviewsData(prev => prev.filter(r => !reviewIds.includes(r.id)));
+        } catch (error) {
+          console.error('Error deleting reviews:', error);
+          setError('Failed to delete reviews');
+        }
+      }
+    } else {
+      try {
+        const response = await fetch('/api/admin/reviews', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ action, reviewIds }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to ${action} reviews`);
+        }
+
+        // Update local state
+        setReviewsData(prev => 
+          prev.map(review => 
+            reviewIds.includes(review.id)
+              ? { ...review, status: action === 'approve' ? 'approved' : 'rejected', updatedAt: new Date() }
+              : review
+          )
+        );
+      } catch (error) {
+        console.error(`Error ${action}ing reviews:`, error);
+        setError(`Failed to ${action} reviews`);
+      }
     }
   };
 
@@ -137,6 +228,7 @@ export default function AdminReviews() {
             onClose={() => setIsModalOpen(false)}
             review={selectedReview}
             onUpdateStatus={handleUpdateReviewStatus}
+            onReplySubmitted={handleReplySubmitted}
           />
         </div>
       </AdminLayout>

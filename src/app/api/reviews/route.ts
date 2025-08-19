@@ -14,7 +14,11 @@ export async function GET(request: NextRequest) {
     }
 
     const reviews = await prisma.review.findMany({
-      where: { productId },
+      where: { 
+        productId,
+        status: 'approved', // Only show approved reviews to public
+        deletedAt: null // Only show non-deleted reviews
+      },
       include: {
         user: {
           select: {
@@ -27,7 +31,23 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     });
 
-    return NextResponse.json({ reviews });
+    // Transform reviews to include admin replies
+    const transformedReviews = reviews.map(review => ({
+      id: review.id,
+      rating: review.rating,
+      comment: review.comment,
+      createdAt: review.createdAt,
+      user: {
+        firstName: review.user.firstName,
+        lastName: review.user.lastName,
+        name: review.user.name,
+      },
+      // Include admin reply if it exists
+      adminReply: review.adminReply,
+      adminReplyAt: review.adminReplyAt,
+    }));
+
+    return NextResponse.json({ reviews: transformedReviews });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

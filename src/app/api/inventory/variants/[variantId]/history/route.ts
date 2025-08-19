@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ variantId: string }> }
 ) {
-  const prisma = new PrismaClient();
   
   try {
     const { variantId } = await params;
@@ -63,7 +62,5 @@ export async function GET(
       { error: 'Failed to fetch variant history' }, 
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

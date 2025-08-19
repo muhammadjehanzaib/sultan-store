@@ -6,10 +6,13 @@ export type ContactQueryStatus = 'new' | 'in progress' | 'resolved' | 'closed';
 
 export interface ContactQuery {
   id: string;
-  name: string;
   email: string;
-  subject: string;
-  message: string;
+  mobileNumber: string;
+  region: string;
+  messageType: string;
+  description: string;
+  attachmentUrl?: string | null;
+  attachmentName?: string | null;
   status: ContactQueryStatus;
   createdAt: string;
   updatedAt: string;
@@ -34,6 +37,11 @@ export default function ContactQueriesTable({ onQueryUpdate }: ContactQueriesTab
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalStatus, setModalStatus] = useState<ContactQueryStatus>('new');
   const [updating, setUpdating] = useState(false);
+  
+  // Image popup state
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
+  const [selectedImageName, setSelectedImageName] = useState<string>('');
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -74,6 +82,26 @@ export default function ContactQueriesTable({ onQueryUpdate }: ContactQueriesTab
   useEffect(() => {
     fetchQueries(currentPage, statusFilter);
   }, [currentPage, statusFilter]);
+
+  // Handle ESC key to close image modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isImageModalOpen) {
+        setIsImageModalOpen(false);
+      }
+    };
+
+    if (isImageModalOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isImageModalOpen]);
 
   const handleView = (query: ContactQuery) => {
     setSelectedQuery(query);
@@ -144,6 +172,12 @@ export default function ContactQueriesTable({ onQueryUpdate }: ContactQueriesTab
     }
   };
 
+  const handleImageClick = (imageUrl: string, imageName: string) => {
+    setSelectedImageUrl(imageUrl);
+    setSelectedImageName(imageName);
+    setIsImageModalOpen(true);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -202,10 +236,11 @@ export default function ContactQueriesTable({ onQueryUpdate }: ContactQueriesTab
         <table className="min-w-full text-sm bg-white dark:bg-gray-800 rounded-lg shadow">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-700">
-              <th className="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Name</th>
               <th className="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Email</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Subject</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Message</th>
+              <th className="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Mobile</th>
+              <th className="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Region</th>
+              <th className="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Type</th>
+              <th className="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Description</th>
               <th className="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Status</th>
               <th className="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Date</th>
               <th className="px-4 py-3 text-center font-medium text-gray-700 dark:text-gray-300">Actions</th>
@@ -214,18 +249,23 @@ export default function ContactQueriesTable({ onQueryUpdate }: ContactQueriesTab
           <tbody>
             {queries.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                   No contact queries found
                 </td>
               </tr>
             ) : (
               queries.map((query) => (
                 <tr key={query.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-4 py-3 text-gray-900 dark:text-white">{query.name}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{query.email}</td>
-                  <td className="px-4 py-3 text-gray-900 dark:text-white">{query.subject}</td>
-                  <td className="px-4 py-3 max-w-xs truncate text-gray-600 dark:text-gray-300" title={query.message}>
-                    {query.message}
+                  <td className="px-4 py-3 text-gray-900 dark:text-white">{query.mobileNumber}</td>
+                  <td className="px-4 py-3 text-gray-900 dark:text-white">{query.region}</td>
+                  <td className="px-4 py-3 text-gray-900 dark:text-white">
+                    <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
+                      {query.messageType}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 max-w-xs truncate text-gray-600 dark:text-gray-300" title={query.description}>
+                    {query.description}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[query.status]}`}>
@@ -296,23 +336,75 @@ export default function ContactQueriesTable({ onQueryUpdate }: ContactQueriesTab
             </div>
             <div className="space-y-4">
               <div>
-                <span className="font-semibold text-gray-900 dark:text-white">Name:</span>
-                <p className="text-gray-600 dark:text-gray-300">{selectedQuery.name}</p>
-              </div>
-              <div>
                 <span className="font-semibold text-gray-900 dark:text-white">Email:</span>
                 <p className="text-gray-600 dark:text-gray-300">{selectedQuery.email}</p>
               </div>
               <div>
-                <span className="font-semibold text-gray-900 dark:text-white">Subject:</span>
-                <p className="text-gray-600 dark:text-gray-300">{selectedQuery.subject}</p>
+                <span className="font-semibold text-gray-900 dark:text-white">Mobile Number:</span>
+                <p className="text-gray-600 dark:text-gray-300">{selectedQuery.mobileNumber}</p>
               </div>
               <div>
-                <span className="font-semibold text-gray-900 dark:text-white">Message:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">Region:</span>
+                <p className="text-gray-600 dark:text-gray-300">{selectedQuery.region}</p>
+              </div>
+              <div>
+                <span className="font-semibold text-gray-900 dark:text-white">Message Type:</span>
+                <p className="text-gray-600 dark:text-gray-300">
+                  <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
+                    {selectedQuery.messageType}
+                  </span>
+                </p>
+              </div>
+              <div>
+                <span className="font-semibold text-gray-900 dark:text-white">Description:</span>
                 <div className="bg-gray-100 dark:bg-gray-700 rounded p-3 mt-1 whitespace-pre-line text-gray-700 dark:text-gray-300">
-                  {selectedQuery.message}
+                  {selectedQuery.description}
                 </div>
               </div>
+              {selectedQuery.attachmentUrl && (
+                <div>
+                  <span className="font-semibold text-gray-900 dark:text-white">Attachment:</span>
+                  <div className="mt-1">
+                    {selectedQuery.attachmentUrl.startsWith('data:image/') ? (
+                      // Show image preview for base64 images
+                      <div className="space-y-2">
+                        <img
+                          src={selectedQuery.attachmentUrl}
+                          alt="Attachment preview"
+                          className="w-32 h-32 object-cover border border-gray-300 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => handleImageClick(selectedQuery.attachmentUrl!, selectedQuery.attachmentName || 'Image attachment')}
+                          title="Click to view full size"
+                        />
+                        <div className="text-sm text-gray-600">
+                          {selectedQuery.attachmentName || 'Image attachment'}
+                          <span className="block text-xs text-blue-600">Click image to view full size</span>
+                        </div>
+                      </div>
+                    ) : selectedQuery.attachmentUrl.startsWith('data:') ? (
+                      // Show download link for other base64 files
+                      <a 
+                        href={selectedQuery.attachmentUrl} 
+                        download={selectedQuery.attachmentName || 'attachment'}
+                        className="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                      >
+                        <span className="mr-2">📎</span>
+                        {selectedQuery.attachmentName || 'Download Attachment'}
+                      </a>
+                    ) : (
+                      // Show external link for URL attachments
+                      <a 
+                        href={selectedQuery.attachmentUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                      >
+                        <span className="mr-2">📎</span>
+                        {selectedQuery.attachmentName || 'View Attachment'}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
               <div>
                 <span className="font-semibold text-gray-900 dark:text-white">Created:</span>
                 <p className="text-gray-600 dark:text-gray-300">{formatDate(selectedQuery.createdAt)}</p>
@@ -351,6 +443,46 @@ export default function ContactQueriesTable({ onQueryUpdate }: ContactQueriesTab
               >
                 {updating ? 'Saving...' : 'Save'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-screen Image Modal */}
+      {isImageModalOpen && selectedImageUrl && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[60]">
+          <div className="relative max-w-[95vw] max-h-[95vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center mb-4 px-4">
+              <h3 className="text-white text-lg font-semibold truncate">
+                {selectedImageName}
+              </h3>
+              <button 
+                className="text-white hover:text-gray-300 text-3xl font-bold ml-4 bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center" 
+                onClick={() => setIsImageModalOpen(false)}
+                title="Close"
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* Image Container */}
+            <div className="flex-1 flex items-center justify-center overflow-hidden">
+              <img
+                src={selectedImageUrl}
+                alt={selectedImageName}
+                className="max-w-full max-h-full object-contain border-2 border-white rounded-lg shadow-2xl"
+                onClick={() => setIsImageModalOpen(false)}
+                style={{ cursor: 'zoom-out' }}
+                title="Click to close"
+              />
+            </div>
+            
+            {/* Footer with instructions */}
+            <div className="mt-4 text-center">
+              <p className="text-white text-sm opacity-75">
+                Click anywhere to close • Press ESC to close
+              </p>
             </div>
           </div>
         </div>

@@ -42,6 +42,9 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
 }) => {
   const { t, language } = useLanguage();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  
+  console.log('ProductFilters - categories prop:', categories);
+  console.log('ProductFilters - categories length:', categories?.length);
 
   // Get main categories (those without parentId)
   const mainCategories = categories.filter(cat => !cat.parentId);
@@ -72,10 +75,12 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
     setExpandedCategories(newExpanded);
   };
 
+
   const handleCategoryChange = (categoryName: string) => {
     updateFilters({ 
       category: categoryName, 
-      subcategory: '' // Clear subcategory when main category changes
+      subcategory: '', // Clear subcategory when main category changes
+      subsubcategory: '' // Clear sub-subcategory as well
     });
   };
 
@@ -159,97 +164,35 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
                   )}
                 </div>
 
-                {/* Recursive function to render category levels */}
+                {/* Subcategories */}
                 {hasChildren && (isExpanded || isSelected) && (
                   <div className="ml-6 space-y-1 border-l-2 border-gray-100 pl-3">
                     {category.children?.map(subcategory => {
                       const subcategoryName = language === 'ar' ? subcategory.name_ar : subcategory.name_en;
                       const isSubSelected = filters.subcategory === subcategoryName;
-                      const hasSubChildren = subcategory.children && subcategory.children.length > 0;
                       
                       return (
-                        <div key={subcategory.id} className="space-y-1">
-                          <label className="flex items-center">
-                            <input
-                              type="radio"
-                              name="subcategory"
-                              value={subcategoryName}
-                              checked={isSubSelected}
-                              onChange={(e) => {
-                                updateFilters({ subcategory: e.target.value });
-                              }}
-                              className="text-purple-600 focus:ring-purple-500"
-                              disabled={!isSelected} // Only enable if parent category is selected
-                            />
-                            <span className={`ml-2 text-sm ${
-                              isSubSelected ? 'text-purple-600 font-medium' : 
-                              !isSelected ? 'text-gray-400' : 'text-gray-600'
-                            }`}>
-                              {subcategoryName}
-                            </span>
-                          </label>
-                          
-                          {/* Level 3 categories */}
-                          {hasSubChildren && isSubSelected && (
-                            <div className="ml-6 space-y-1 border-l border-gray-200 pl-2">
-                              {subcategory.children?.slice(0, 5).map(level3Category => {
-                                const level3Name = language === 'ar' ? level3Category.name_ar : level3Category.name_en;
-                                const isLevel3Selected = filters.subsubcategory === level3Name;
-                                return (
-                                  <label key={level3Category.id} className="flex items-center">
-                                    <input
-                                      type="radio"
-                                      name="subsubcategory"
-                                      value={level3Name}
-                                      checked={isLevel3Selected}
-                                      onChange={(e) => {
-                                        updateFilters({ subsubcategory: e.target.value });
-                                      }}
-                                      className="text-purple-600 focus:ring-purple-500 mr-1 w-3 h-3"
-                                      disabled={!isSubSelected} // Only enable if parent subcategory is selected
-                                    />
-                                    <span className={`text-xs ${
-                                      isLevel3Selected ? 'text-purple-600 font-medium' : 
-                                      !isSubSelected ? 'text-gray-400' : 'text-gray-600'
-                                    }`}>
-                                      {level3Name}
-                                    </span>
-                                    {level3Category.children && level3Category.children.length > 0 && (
-                                      <span className="ml-1 text-xs text-gray-400">({level3Category.children.length})</span>
-                                    )}
-                                  </label>
-                                );
-                              })}
-                              {subcategory.children && subcategory.children.length > 5 && (
-                                <div className="text-xs text-purple-600 italic">
-                                  +{subcategory.children.length - 5} more categories
-                                </div>
-                              )}
-                              
-                              {/* Clear Level 3 category option */}
-                              {isSubSelected && filters.subsubcategory && (
-                                <button
-                                  onClick={() => updateFilters({ subsubcategory: '' })}
-                                  className="text-xs text-purple-600 hover:text-purple-700 ml-4"
-                                >
-                                  Clear level 3 filter
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        <label key={subcategory.id} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="subcategory"
+                            value={subcategoryName}
+                            checked={isSubSelected}
+                            onChange={(e) => {
+                              updateFilters({ subcategory: e.target.value });
+                            }}
+                            className="text-purple-600 focus:ring-purple-500"
+                            disabled={!isSelected}
+                          />
+                          <span className={`ml-2 text-sm ${
+                            isSubSelected ? 'text-purple-600 font-medium' : 
+                            !isSelected ? 'text-gray-400' : 'text-gray-600'
+                          }`}>
+                            {subcategoryName}
+                          </span>
+                        </label>
                       );
                     })}
-                    
-                    {/* Clear subcategory option */}
-                    {isSelected && filters.subcategory && (
-                      <button
-                        onClick={() => updateFilters({ subcategory: '' })}
-                        className="text-xs text-purple-600 hover:text-purple-700 ml-5"
-                      >
-                        Clear subcategory
-                      </button>
-                    )}
                   </div>
                 )}
               </div>

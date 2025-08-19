@@ -24,6 +24,7 @@
   "products.noProducts": "لا توجد منتجات",
   "products.loading": "جاري تحميل المنتجات...",
   "product.addToCart": "إضافة إلى السلة",
+  "product.add": "إضافة",
   "product.price": "السعر",
   "product.category": "التصنيف",
   "product.description": "الوصف",
@@ -86,7 +87,8 @@
   "search.availability": "التوفر",
   "search.rating": "تقييم العملاء",
   "search.all": "الكل",
-  "search.resultsFound": "نتيجة موجودة",
+  "search.resultsFound": "النتائج الموجودة",
+  "search.showing": "عرض",
   "search.for": "لـ",
   "search.noResultsDesc": "جرب تعديل البحث أو المرشح للعثور على ما تبحث عنه.",
   "categories.electronics": "الإلكترونيات",
@@ -131,6 +133,8 @@
   "common.back": "رجوع",
   "common.next": "التالي",
   "common.previous": "السابق",
+  "common.product": "منتج",
+  "common.products": "منتجات",
   "language": "اللغة",
   "language.english": "English",
   "language.arabic": "العربية",
@@ -612,6 +616,13 @@
   "common.off": "خصم",
   "homepage.shopByCategory": "تسوق حسب الفئة",
   "homepage.categoryDescription": "تصفح مجموعتنا الواسعة من المنتجات المنظمة حسب الفئات",
+  "homepage.saleProducts": "🔥 منتجات مخفضة",
+  "homepage.saleProductsSubtitle": "لا تفوت هذه العروض المذهلة - عروض محدودة الوقت!",
+  "homepage.newArrivals": "✨ وصل حديثاً",
+  "homepage.newArrivalsSubtitle": "اكتشف أحدث المنتجات في مجموعتنا",
+  "homepage.featuredProducts": "المنتجات المميزة",
+  "homepage.featuredProductsSubtitle": "اكتشف مجموعتنا المختارة بعناية من المنتجات الشائعة",
+  "homepage.loadingProducts": "جاري تحميل المنتجات...",
   "category.filters": "الفلاتر",
   "category.clearFilters": "مسح الفلاتر",
   "category.showingResults": "عرض {{start}}-{{end}} من {{total}} نتيجة",

@@ -2,10 +2,8 @@ import { NextResponse } from 'next/server';
 import { calculateCartTotals } from '@/lib/taxShippingUtils';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { PrismaClient } from '@prisma/client';
 import { notificationService } from '@/lib/notificationService';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
@@ -240,14 +238,23 @@ export async function POST(request: Request) {
       const session = await getServerSession(authOptions);
       
       if (session?.user?.id) {
+        // Validate that the user exists in the database before creating notification
+        const userExists = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { id: true }
+        });
         
-        await notificationService.notifyOrderCreated(
-          session.user.id, 
-          order.id, 
-          orderData.total
-        );
-        
+        if (userExists) {
+          await notificationService.notifyOrderCreated(
+            session.user.id, 
+            order.id, 
+            orderData.total
+          );
+        } else {
+          console.warn(`Checkout: User ${session.user.id} not found in database, skipping user notification`);
+        }
       } else {
+        console.info('Checkout: No authenticated user session, skipping user notification');
       }
       
       // Always notify admin users about new orders
@@ -258,6 +265,7 @@ export async function POST(request: Request) {
       );
       
     } catch (notificationError) {
+      console.error('Checkout notification error:', notificationError);
       // Don't fail the order creation if notification fails
     }
 

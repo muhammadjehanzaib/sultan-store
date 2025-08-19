@@ -41,6 +41,8 @@ export function ReviewsTable({
     setLoadingActions(prev => ({ ...prev, [`status-${reviewId}`]: true }));
     try {
       await onUpdateStatus(reviewId, status);
+    } catch (error) {
+      console.error('Error updating status:', error);
     } finally {
       setLoadingActions(prev => ({ ...prev, [`status-${reviewId}`]: false }));
     }
@@ -50,6 +52,8 @@ export function ReviewsTable({
     setLoadingActions(prev => ({ ...prev, [`delete-${reviewId}`]: true }));
     try {
       await onDelete(reviewId);
+    } catch (error) {
+      console.error('Error deleting review:', error);
     } finally {
       setLoadingActions(prev => ({ ...prev, [`delete-${reviewId}`]: false }));
     }
@@ -62,6 +66,8 @@ export function ReviewsTable({
     try {
       await onBulkAction(action, selectedReviews);
       setSelectedReviews([]);
+    } catch (error) {
+      console.error(`Error with bulk ${action}:`, error);
     } finally {
       setLoadingActions(prev => ({ ...prev, [`bulk-${action}`]: false }));
     }

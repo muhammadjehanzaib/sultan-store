@@ -1,10 +1,8 @@
-import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { notificationService } from '@/lib/notificationService';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {

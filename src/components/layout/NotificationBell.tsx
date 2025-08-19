@@ -45,13 +45,18 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className = 
 
   // Fetch notification count
   const fetchUnreadCount = async () => {
-    if (!isAuthenticated || !user?.id) return;
+    if (!isAuthenticated || !user?.id) {
+      return;
+    }
     
     try {
       const response = await fetch('/api/notifications/count');
+      
       if (response.ok) {
         const data = await response.json();
         setUnreadCount(data.count);
+      } else {
+        const errorText = await response.text();
       }
     } catch (error) {
     }
@@ -59,14 +64,19 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className = 
 
   // Fetch notifications list
   const fetchNotifications = async () => {
-    if (!isAuthenticated || !user?.id) return;
+    if (!isAuthenticated || !user?.id) {
+      return;
+    }
     
     setIsLoading(true);
     try {
       const response = await fetch('/api/notifications?limit=10');
+      
       if (response.ok) {
         const data = await response.json();
         setNotifications(data.notifications);
+      } else {
+        const errorText = await response.text();
       }
     } catch (error) {
     } finally {

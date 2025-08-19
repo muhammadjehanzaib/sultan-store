@@ -16,7 +16,7 @@ import { PriceDisplay } from '@/components/ui/PriceDisplay';
 
 interface ProductCardProps {
   product: Product;
-  onAddToCart?: (product: Product, selectedAttributes?: { [attributeId: string]: string }) => void;
+  onAddToCart?: (product: Product, selectedAttributes?: { [attributeId: string]: string }, variantPrice?: number) => void;
   onViewProduct?: (product: Product) => void;
   viewMode?: 'grid' | 'list';
 }
@@ -80,7 +80,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       }
     }
     
-    onAddToCart(product, selectedAttributes);
+    onAddToCart(product, selectedAttributes, discountInfo.discountedPrice);
   };
 
   // Render different layouts based on viewMode
@@ -218,14 +218,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   // Grid view (default)
   return (
-    <div className="group relative bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 flex flex-col h-full overflow-hidden border-2 border-transparent hover:border-purple-200 w-full">
-      {/* Gradient Background Effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-      
+    <div className="group relative bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-200 flex flex-col h-full overflow-hidden w-full">
       {/* Product Image */}
       <Link
         href={`/product/${product.slug}`}
-        className="block relative h-56 bg-gradient-to-br from-gray-50 to-gray-100 cursor-pointer overflow-hidden rounded-t-3xl"
+        className="block relative h-48 bg-gray-50 cursor-pointer overflow-hidden rounded-t-lg"
         onClick={handleViewProduct}
       >
         <Image
@@ -391,36 +388,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <button
             onClick={handleViewProduct}
             disabled={!product.inStock}
-            className={`flex-1 py-3 px-4 font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 ${
+            className={`flex-1 py-2.5 px-4 text-sm font-medium rounded-md transition-all duration-200 ${
               product.inStock
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:shadow-xl hover:from-purple-700 hover:to-pink-700'
-                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 hover:border-slate-300'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
             }`}
           >
-            <span className="flex items-center justify-center space-x-2">
-              <span>{product.inStock ? t('product.viewDetails') : t('product.outOfStock')}</span>
-              {product.inStock && (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              )}
-            </span>
+            {product.inStock ? t('product.viewDetails') : t('product.outOfStock')}
           </button>
           
-          {/* Add to Cart Button - Rounded with Cart Icon */}
+          {/* Add to Cart Button */}
           <button
             onClick={handleAddToCart}
             disabled={!product.inStock || !onAddToCart}
-            className={`w-12 h-12 rounded-full transition-all duration-300 transform hover:scale-110 flex items-center justify-center shadow-lg ${
+            className={`px-4 py-2.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center space-x-1 ${
               product.inStock && onAddToCart
-                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 hover:shadow-xl'
+                ? 'bg-slate-800 text-white hover:bg-slate-900 shadow-sm hover:shadow-md'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
             title={product.inStock ? t('product.addToCart') : t('product.outOfStock')}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5-5M7 13l-2.5 5M16 16a1 1 0 100 2 1 1 0 000-2zm-6 0a1 1 0 100 2 1 1 0 000-2z" />
             </svg>
+            <span>{t('product.add')}</span>
           </button>
         </div>
       </div>

@@ -19,7 +19,7 @@ export const Hero: React.FC<HeroProps> = ({
         <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-white/10"></div>
       </div>
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 relative z-10">
+      <div className="container-ecommerce py-16 lg:py-24 relative z-10">
         <div className={`text-center ${isRTL ? 'rtl' : 'ltr'}`}>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
             {t('hero.title')}

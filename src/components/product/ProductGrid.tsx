@@ -77,12 +77,12 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         {/* Section Header */}
         <div className={`text-center mb-16 ${isRTL ? 'rtl' : 'ltr'}`}>
           <div className="inline-block">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 relative">
+            <h2 className={`text-4xl md:text-5xl font-bold text-gray-900 relative leading-tight ${isRTL ? 'mb-8' : 'mb-6'}`}>
               {displayTitle}
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-20 h-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full"></div>
+              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-20 h-1 bg-gradient-to-r from-gray-800 to-gray-600 rounded-full"></div>
             </h2>
           </div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">{displaySubtitle}</p>
+          <p className={`text-lg text-gray-600 max-w-2xl mx-auto ${isRTL ? 'mt-6' : 'mt-4'}`}>{displaySubtitle}</p>
         </div>
 
         {/* Products Grid/List */}
@@ -104,7 +104,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         {/* View All Products Button */}
         {showViewAllButton && (
           <div className="text-center mt-16">
-            <button className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+            <button className="inline-flex items-center px-8 py-4 bg-gray-600 text-white font-semibold rounded-xl hover:bg-gray-700 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
               {t('products.viewAll')}
               <svg className={`w-5 h-5 ${isRTL ? 'mr-2' : 'ml-2'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isRTL ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />

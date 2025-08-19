@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { ProductGrid } from '@/components/product/ProductGrid';
 import { Product } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCart } from '@/contexts/CartContext';
 import { getLocalizedString, ensureLocalizedContent } from '@/lib/multilingualUtils';
+import { CategoryWithChildren, buildCategoryTree } from '@/lib/categoryUtils';
 import { 
   Bars3Icon, 
   Squares2X2Icon, 
@@ -13,7 +15,10 @@ import {
   FunnelIcon,
   XMarkIcon,
   ChevronDownIcon,
-  AdjustmentsHorizontalIcon
+  ChevronRightIcon,
+  AdjustmentsHorizontalIcon,
+  FolderIcon,
+  FolderOpenIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/24/solid';
 
@@ -38,10 +43,12 @@ export default function CategoryPageClient({ slug, products: initialProducts }: 
   const [sortBy, setSortBy] = useState<SortOption>('popularity');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [categories, setCategories] = useState<any[]>([]);
+  const [categoryTree, setCategoryTree] = useState<CategoryWithChildren[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [productsLoading, setProductsLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<{[key: string]: boolean}>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [productsPerPage] = useState(12);
   
@@ -61,13 +68,29 @@ export default function CategoryPageClient({ slug, products: initialProducts }: 
         if (!response.ok) throw new Error('Failed to fetch categories');
         const data = await response.json();
         setCategories(data.categories);
+        
+        // Build category tree for navigation
+        const tree = buildCategoryTree(data.categories);
+        setCategoryTree(tree);
+        
+        // Auto-expand the path to current category
+        const currentCategory = data.categories.find((cat: any) => cat.slug === slug);
+        if (currentCategory) {
+          const pathToExpand: {[key: string]: boolean} = {};
+          let parent = currentCategory;
+          while (parent) {
+            pathToExpand[parent.id] = true;
+            parent = data.categories.find((cat: any) => cat.id === parent.parentId);
+          }
+          setExpandedCategories(pathToExpand);
+        }
       } catch (error) {
       } finally {
         setCategoriesLoading(false);
       }
     }
     fetchCategories();
-  }, []);
+  }, [slug]);
 
   // Find the category by slug
   const category = categories.find(cat => cat.slug === slug);
@@ -206,8 +229,8 @@ export default function CategoryPageClient({ slug, products: initialProducts }: 
     return normalized;
   }, [paginatedProducts, category]);
 
-  const handleAddToCart = (product: Product, selectedAttributes?: { [attributeId: string]: string }) => {
-    dispatch({ type: 'ADD_ITEM', payload: { product, selectedAttributes } });
+  const handleAddToCart = (product: Product, selectedAttributes?: { [attributeId: string]: string }, variantPrice?: number) => {
+    dispatch({ type: 'ADD_ITEM', payload: { product, selectedAttributes, variantPrice } });
   };
 
   const handleViewProduct = (product: Product) => {
@@ -227,6 +250,13 @@ export default function CategoryPageClient({ slug, products: initialProducts }: 
       onSale: null
     });
     setCurrentPage(1);
+  };
+
+  const toggleCategoryExpansion = (categoryId: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
   };
 
   // Early return after all hooks are called
@@ -343,16 +373,34 @@ export default function CategoryPageClient({ slug, products: initialProducts }: 
         <div className={`flex ${isRTL ? 'flex-row-reverse' : ''} gap-8`}>
           {/* Sidebar Filters */}
           <div className={`${showFilters ? 'block' : 'hidden'} lg:block w-full lg:w-80 flex-shrink-0`}>
-            <div className="bg-white rounded-lg shadow-sm p-6 space-y-6">
-              <div className={`flex ${isRTL ? 'flex-row-reverse' : ''} items-center justify-between`}>
-                <h3 className="font-semibold text-gray-900">{t('search.filters')}</h3>
-                <button
-                  onClick={clearFilters}
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                >
-                  {t('search.clearAll')}
-                </button>
+            <div className="bg-white rounded-lg shadow-sm space-y-6">
+              {/* Category Tree Navigation */}
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-4">Browse Categories</h3>
+                <div className="max-h-64 overflow-y-auto">
+                  <CategoryTreeNavigation
+                    categories={categoryTree}
+                    expandedCategories={expandedCategories}
+                    currentCategorySlug={slug}
+                    onToggleExpansion={toggleCategoryExpansion}
+                    language={language}
+                    isRTL={isRTL}
+                    level={0}
+                  />
+                </div>
               </div>
+              
+              {/* Filters Section */}
+              <div className="p-6">
+                <div className={`flex ${isRTL ? 'flex-row-reverse' : ''} items-center justify-between mb-6`}>
+                  <h3 className="font-semibold text-gray-900">{t('search.filters')}</h3>
+                  <button
+                    onClick={clearFilters}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    {t('search.clearAll')}
+                  </button>
+                </div>
 
               {/* Price Range */}
               <div className="space-y-3">
@@ -469,6 +517,7 @@ export default function CategoryPageClient({ slug, products: initialProducts }: 
                     <span className="text-sm">On Sale</span>
                   </label>
                 </div>
+              </div>
               </div>
             </div>
           </div>
@@ -613,3 +662,100 @@ export default function CategoryPageClient({ slug, products: initialProducts }: 
     </div>
   );
 }
+
+// CategoryTreeNavigation Component
+interface CategoryTreeNavigationProps {
+  categories: CategoryWithChildren[];
+  expandedCategories: {[key: string]: boolean};
+  currentCategorySlug: string;
+  onToggleExpansion: (categoryId: string) => void;
+  language: string;
+  isRTL: boolean;
+  level: number;
+}
+
+const CategoryTreeNavigation: React.FC<CategoryTreeNavigationProps> = ({
+  categories,
+  expandedCategories,
+  currentCategorySlug,
+  onToggleExpansion,
+  language,
+  isRTL,
+  level
+}) => {
+  return (
+    <ul className={`space-y-1 ${level > 0 ? (isRTL ? 'mr-4' : 'ml-4') : ''}`}>
+      {categories.map(category => {
+        const categoryName = language === 'ar' ? category.name_ar : category.name_en;
+        const hasChildren = category.children && category.children.length > 0;
+        const isExpanded = expandedCategories[category.id];
+        const isCurrentCategory = category.slug === currentCategorySlug;
+        
+        return (
+          <li key={category.id}>
+            <div className="flex items-center">
+              {/* Expand/Collapse Button */}
+              {hasChildren ? (
+                <button
+                  onClick={() => onToggleExpansion(category.id)}
+                  className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors mr-1"
+                >
+                  {isExpanded ? (
+                    <ChevronDownIcon className="w-3 h-3 text-gray-500" />
+                  ) : (
+                    <ChevronRightIcon className="w-3 h-3 text-gray-500" />
+                  )}
+                </button>
+              ) : (
+                <div className="w-5 flex-shrink-0" />
+              )}
+              
+              {/* Category Icon */}
+              <div className={`flex-shrink-0 ${isRTL ? 'ml-2' : 'mr-2'}`}>
+                {isExpanded && hasChildren ? (
+                  <FolderOpenIcon className="w-4 h-4 text-purple-600" />
+                ) : (
+                  <FolderIcon className="w-4 h-4 text-gray-500" />
+                )}
+              </div>
+              
+              {/* Category Link */}
+              <Link
+                href={`/category/${category.slug}`}
+                className={`flex-1 flex items-center py-1.5 px-2 text-sm rounded-md transition-all duration-200 ${
+                  isCurrentCategory
+                    ? 'bg-purple-100 text-purple-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-purple-600'
+                }`}
+              >
+                <span className="flex-1 truncate">{categoryName}</span>
+                
+                {/* Product Count */}
+                {category.productCount !== undefined && category.productCount > 0 && (
+                  <span className="flex-shrink-0 text-xs text-gray-400 ml-2">
+                    ({category.productCount})
+                  </span>
+                )}
+              </Link>
+            </div>
+            
+            {/* Children */}
+            {hasChildren && isExpanded && (
+              <div className="mt-1">
+                <CategoryTreeNavigation
+                  categories={category.children || []}
+                  expandedCategories={expandedCategories}
+                  currentCategorySlug={currentCategorySlug}
+                  onToggleExpansion={onToggleExpansion}
+                  language={language}
+                  isRTL={isRTL}
+                  level={level + 1}
+                />
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+};

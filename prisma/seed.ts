@@ -76,58 +76,234 @@ async function main() {
 
   }
 
-  // 3. Create Categories
-  const categories = [
+  // 3. Create Categories (Main Categories)
+  const mainCategories = [
     {
       slug: 'electronics',
       name_en: 'Electronics',
       name_ar: 'الإلكترونيات',
-      icon: '📱'
+      icon: '📱',
+      level: 0,
+      sortOrder: 1
     },
     {
       slug: 'fashion',
       name_en: 'Fashion',
       name_ar: 'الأزياء',
-      icon: '👕'
+      icon: '👕',
+      level: 0,
+      sortOrder: 2
     },
     {
       slug: 'home-kitchen',
       name_en: 'Home & Kitchen',
       name_ar: 'المنزل والمطبخ',
-      icon: '🏠'
+      icon: '🏠',
+      level: 0,
+      sortOrder: 3
     },
     {
       slug: 'sports',
       name_en: 'Sports & Outdoors',
       name_ar: 'الرياضة والهواء الطلق',
-      icon: '⚽'
+      icon: '⚽',
+      level: 0,
+      sortOrder: 4
     },
     {
       slug: 'beauty',
       name_en: 'Beauty & Personal Care',
       name_ar: 'الجمال والعناية الشخصية',
-      icon: '💄'
+      icon: '💄',
+      level: 0,
+      sortOrder: 5
     },
     {
       slug: 'automotive',
       name_en: 'Automotive',
       name_ar: 'السيارات',
-      icon: '🚗'
+      icon: '🚗',
+      level: 0,
+      sortOrder: 6
     }
   ];
 
   const createdCategories: any[] = [];
-  for (const categoryData of categories) {
+  for (const categoryData of mainCategories) {
     const category = await prisma.category.upsert({
       where: { slug: categoryData.slug },
       update: {
         name_en: categoryData.name_en,
         name_ar: categoryData.name_ar,
         icon: categoryData.icon,
+        level: categoryData.level,
+        sortOrder: categoryData.sortOrder,
+        path: categoryData.slug,
       },
-      create: categoryData,
+      create: {
+        ...categoryData,
+        path: categoryData.slug,
+      },
     });
     createdCategories.push(category);
+  }
+
+  // Create Subcategories
+  const subcategories = [
+    // Electronics Subcategories
+    {
+      slug: 'smartphones',
+      name_en: 'Smartphones',
+      name_ar: 'الهواتف الذكية',
+      parentSlug: 'electronics',
+      level: 1,
+      sortOrder: 1
+    },
+    {
+      slug: 'laptops',
+      name_en: 'Laptops & Computers',
+      name_ar: 'أجهزة الكمبيوتر المحمولة',
+      parentSlug: 'electronics',
+      level: 1,
+      sortOrder: 2
+    },
+    {
+      slug: 'tv-audio',
+      name_en: 'TV & Audio',
+      name_ar: 'التلفزيون والصوت',
+      parentSlug: 'electronics',
+      level: 1,
+      sortOrder: 3
+    },
+    {
+      slug: 'accessories',
+      name_en: 'Electronics Accessories',
+      name_ar: 'إكسسوارات الإلكترونيات',
+      parentSlug: 'electronics',
+      level: 1,
+      sortOrder: 4
+    },
+    
+    // Fashion Subcategories
+    {
+      slug: 'mens-clothing',
+      name_en: "Men's Clothing",
+      name_ar: 'ملابس الرجال',
+      parentSlug: 'fashion',
+      level: 1,
+      sortOrder: 1
+    },
+    {
+      slug: 'womens-clothing',
+      name_en: "Women's Clothing",
+      name_ar: 'ملابس النساء',
+      parentSlug: 'fashion',
+      level: 1,
+      sortOrder: 2
+    },
+    {
+      slug: 'shoes',
+      name_en: 'Shoes',
+      name_ar: 'الأحذية',
+      parentSlug: 'fashion',
+      level: 1,
+      sortOrder: 3
+    },
+    {
+      slug: 'bags-accessories',
+      name_en: 'Bags & Accessories',
+      name_ar: 'الحقائب والإكسسوارات',
+      parentSlug: 'fashion',
+      level: 1,
+      sortOrder: 4
+    },
+    
+    // Home & Kitchen Subcategories
+    {
+      slug: 'kitchen-appliances',
+      name_en: 'Kitchen Appliances',
+      name_ar: 'أجهزة المطبخ',
+      parentSlug: 'home-kitchen',
+      level: 1,
+      sortOrder: 1
+    },
+    {
+      slug: 'furniture',
+      name_en: 'Furniture',
+      name_ar: 'الأثاث',
+      parentSlug: 'home-kitchen',
+      level: 1,
+      sortOrder: 2
+    },
+    {
+      slug: 'home-decor',
+      name_en: 'Home Decor',
+      name_ar: 'ديكور المنزل',
+      parentSlug: 'home-kitchen',
+      level: 1,
+      sortOrder: 3
+    },
+    {
+      slug: 'bedding-bath',
+      name_en: 'Bedding & Bath',
+      name_ar: 'أغطية السرير والحمام',
+      parentSlug: 'home-kitchen',
+      level: 1,
+      sortOrder: 4
+    },
+    
+    // Sports Subcategories
+    {
+      slug: 'fitness-equipment',
+      name_en: 'Fitness Equipment',
+      name_ar: 'معدات اللياقة البدنية',
+      parentSlug: 'sports',
+      level: 1,
+      sortOrder: 1
+    },
+    {
+      slug: 'outdoor-sports',
+      name_en: 'Outdoor Sports',
+      name_ar: 'الرياضات الخارجية',
+      parentSlug: 'sports',
+      level: 1,
+      sortOrder: 2
+    },
+    {
+      slug: 'activewear',
+      name_en: 'Activewear',
+      name_ar: 'الملابس الرياضية',
+      parentSlug: 'sports',
+      level: 1,
+      sortOrder: 3
+    }
+  ];
+
+  for (const subcatData of subcategories) {
+    const parentCategory = createdCategories.find(cat => cat.slug === subcatData.parentSlug);
+    if (parentCategory) {
+      const subcat = await prisma.category.upsert({
+        where: { slug: subcatData.slug },
+        update: {
+          name_en: subcatData.name_en,
+          name_ar: subcatData.name_ar,
+          level: subcatData.level,
+          sortOrder: subcatData.sortOrder,
+          parentId: parentCategory.id,
+          path: `${parentCategory.path}/${subcatData.slug}`,
+        },
+        create: {
+          slug: subcatData.slug,
+          name_en: subcatData.name_en,
+          name_ar: subcatData.name_ar,
+          level: subcatData.level,
+          sortOrder: subcatData.sortOrder,
+          parentId: parentCategory.id,
+          path: `${parentCategory.path}/${subcatData.slug}`,
+        },
+      });
+      createdCategories.push(subcat);
+    }
   }
 
   // 4. Create Products

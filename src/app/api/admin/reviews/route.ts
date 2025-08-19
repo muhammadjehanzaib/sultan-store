@@ -19,7 +19,9 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: any = {
+      deletedAt: null // Only show non-deleted reviews
+    };
     
     if (status && status !== 'all') {
       where.status = status;
@@ -68,12 +70,16 @@ export async function GET(request: NextRequest) {
       rating: review.rating,
       title: `Review for ${review.product?.name_en || 'Product'}`,
       comment: review.comment,
-      status: 'approved', // Default status since our schema doesn't have status field
+      status: review.status || 'approved', // Default to approved for existing reviews
       createdAt: review.createdAt,
-      updatedAt: review.createdAt, // Use createdAt since updatedAt doesn't exist in schema
+      updatedAt: review.updatedAt || review.createdAt,
       helpful: 0, // Default value
       verified: true, // Since reviews are only from verified orders
       product: review.product,
+      // Admin reply fields
+      adminReply: review.adminReply,
+      adminReplyBy: review.adminReplyBy,
+      adminReplyAt: review.adminReplyAt,
     }));
 
     return NextResponse.json({
@@ -86,11 +92,15 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error fetching admin reviews:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+    }, { status: 500 });
   }
 }
 
-// POST - Create admin response to a review
+// POST - Create admin response to a review or handle bulk operations
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -99,33 +109,89 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { reviewId, response } = await request.json();
+    const body = await request.json();
 
-    if (!reviewId || !response) {
-      return NextResponse.json({ error: 'Review ID and response are required' }, { status: 400 });
-    }
+    // Handle admin response
+    if (body.reviewId && body.response) {
+      const { reviewId, response } = body;
 
-    // Check if review exists
-    const review = await prisma.review.findUnique({
-      where: { id: reviewId }
-    });
+      // Check if review exists
+      const review = await prisma.review.findUnique({
+        where: { id: reviewId }
+      });
 
-    if (!review) {
-      return NextResponse.json({ error: 'Review not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({
-      message: 'Admin response saved successfully',
-      response: {
-        id: `resp-${Date.now()}`,
-        reviewId,
-        adminId: session.user.id,
-        adminName: session.user.name || 'Admin',
-        message: response,
-        createdAt: new Date(),
+      if (!review) {
+        return NextResponse.json({ error: 'Review not found' }, { status: 404 });
       }
-    });
+
+      return NextResponse.json({
+        message: 'Admin response saved successfully',
+        response: {
+          id: `resp-${Date.now()}`,
+          reviewId,
+          adminId: session.user.id,
+          adminName: session.user.name || 'Admin',
+          message: response,
+          createdAt: new Date(),
+        }
+      });
+    }
+
+    // Handle bulk operations
+    if (body.action && body.reviewIds) {
+      const { action, reviewIds } = body;
+
+      if (!Array.isArray(reviewIds) || reviewIds.length === 0) {
+        return NextResponse.json({ error: 'Review IDs array is required' }, { status: 400 });
+      }
+
+      // Check authorization for delete operations
+      if (action === 'delete' && !['admin', 'manager'].includes(session.user.role)) {
+        return NextResponse.json({ error: 'Insufficient permissions for delete operation' }, { status: 403 });
+      }
+
+      if (action === 'delete') {
+        // Bulk soft delete
+        await prisma.review.updateMany({
+          where: {
+            id: { in: reviewIds },
+            deletedAt: null
+          },
+          data: {
+            deletedAt: new Date(),
+            updatedAt: new Date()
+          }
+        });
+
+        return NextResponse.json({
+          message: `${reviewIds.length} reviews deleted successfully`
+        });
+      } else if (['approve', 'reject'].includes(action)) {
+        // Bulk status update
+        const status = action === 'approve' ? 'approved' : 'rejected';
+        
+        await prisma.review.updateMany({
+          where: {
+            id: { in: reviewIds },
+            deletedAt: null
+          },
+          data: {
+            status,
+            updatedAt: new Date()
+          }
+        });
+
+        return NextResponse.json({
+          message: `${reviewIds.length} reviews ${action}d successfully`
+        });
+      } else {
+        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+      }
+    }
+
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   } catch (error) {
+    console.error('Error in POST /api/admin/reviews:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

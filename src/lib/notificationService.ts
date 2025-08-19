@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { render } from '@react-email/render';
 import { User } from '@/types';
 
@@ -40,6 +40,19 @@ class NotificationService {
    */
   async create(input: NotificationInput): Promise<string> {
     try {
+      // Validate userId exists in database if provided
+      if (input.userId) {
+        const userExists = await prisma.user.findUnique({
+          where: { id: input.userId },
+          select: { id: true }
+        });
+        
+        if (!userExists) {
+          console.error(`NotificationService.create: User with ID ${input.userId} not found`);
+          // For non-user notifications, set userId to null
+          input.userId = undefined;
+        }
+      }
       
       // Get user preferences if userId provided
       let sendEmail = input.sendEmail || false;
@@ -88,6 +101,7 @@ class NotificationService {
 
       return notification.id;
     } catch (error) {
+      console.error('NotificationService.create error:', error);
       throw error;
     }
   }
@@ -158,9 +172,10 @@ class NotificationService {
       
 
     } catch (error) {
-      
+      console.error('NotificationService.sendEmailNotification error:', error);
       // Log specific Resend errors
       if (error && typeof error === 'object' && 'message' in error) {
+        console.error('Resend error details:', error.message);
       }
       
       // Don't throw - we don't want to break the notification creation
@@ -438,33 +453,47 @@ class NotificationService {
           role: {
             in: ['admin', 'manager']
           }
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true
         }
       });
 
+      if (adminUsers.length === 0) {
+        console.warn('notifyAdminNewOrder: No admin users found');
+        return;
+      }
 
       // Create notification for each admin
       for (const admin of adminUsers) {
-        
-        await this.create({
-          userId: admin.id,
-          type: 'order_created',
-          title: {
-            en: 'New Order Received!',
-            ar: 'تم استلام طلب جديد!'
-          },
-          message: {
-            en: `New order #${orderId} from ${customerEmail} for ${orderTotal} SAR`,
-            ar: `طلب جديد #${orderId} من ${customerEmail} بقيمة ${orderTotal} ريال سعودي`
-          },
-          actionUrl: `/admin/orders`,
-          sendEmail: true,
-          sendInApp: true,
-          priority: 'high',
-          metadata: { orderId, customerEmail, orderTotal, type: 'admin_new_order' }
-        });
+        try {
+          await this.create({
+            userId: admin.id,
+            type: 'order_created',
+            title: {
+              en: 'New Order Received!',
+              ar: 'تم استلام طلب جديد!'
+            },
+            message: {
+              en: `New order #${orderId} from ${customerEmail} for ${orderTotal} SAR`,
+              ar: `طلب جديد #${orderId} من ${customerEmail} بقيمة ${orderTotal} ريال سعودي`
+            },
+            actionUrl: `/admin/orders`,
+            sendEmail: true,
+            sendInApp: true,
+            priority: 'high',
+            metadata: { orderId, customerEmail, orderTotal, type: 'admin_new_order' }
+          });
+        } catch (adminNotificationError) {
+          console.error(`Failed to create notification for admin ${admin.id}:`, adminNotificationError);
+          // Continue with other admins
+        }
       }
 
     } catch (error) {
+      console.error('NotificationService.notifyAdminNewOrder error:', error);
       throw error;
     }
   }

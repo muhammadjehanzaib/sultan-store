@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getAllCategoriesWithHierarchy, buildCategoryTree } from '@/lib/categoryUtils';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function GET(req: Request) {
   try {
@@ -26,6 +24,10 @@ export async function GET(req: Request) {
     });
     
   } catch (err) {
-    return NextResponse.json({ error: 'Server Error' }, { status: 500 });
+    console.error('Categories tree API error:', err);
+    return NextResponse.json({ 
+      error: 'Server Error', 
+      details: process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : undefined 
+    }, { status: 500 });
   }
 }

@@ -19,6 +19,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SaudiSafety - Your Online Store",
   description: "Discover amazing products at great prices. Shop electronics, fashion, home goods and more.",
+  other: {
+    'format-detection': 'telephone=no',
+  },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({

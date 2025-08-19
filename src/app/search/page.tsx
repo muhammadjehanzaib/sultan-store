@@ -495,8 +495,8 @@ function SearchPageContent() {
     return sorted;
   }, [searchQuery, filters, sortBy, products, language]);
 
-  const handleAddToCart = (product: Product, selectedAttributes?: { [attributeId: string]: string }) => {
-    dispatch({ type: 'ADD_ITEM', payload: { product, selectedAttributes } });
+  const handleAddToCart = (product: Product, selectedAttributes?: { [attributeId: string]: string }, variantPrice?: number) => {
+    dispatch({ type: 'ADD_ITEM', payload: { product, selectedAttributes, variantPrice } });
   };
 
   const handleViewProduct = (product: Product) => {

@@ -132,9 +132,7 @@
 
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 /** PATCH /api/products/:id  – full-replace update */
 export async function PATCH(

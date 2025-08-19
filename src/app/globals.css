@@ -333,6 +333,24 @@ body {
   @apply px-4 sm:px-6 lg:px-8;
 }
 
+/* E-commerce responsive containers - matches Jarir standards */
+.container-ecommerce {
+  @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.container-content {
+  @apply max-w-5xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.container-narrow {
+  @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* Header and navigation specific */
+.header-container {
+  @apply max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
 /* Modern borders */
 .border-modern {
   @apply border border-gray-200 rounded-xl;

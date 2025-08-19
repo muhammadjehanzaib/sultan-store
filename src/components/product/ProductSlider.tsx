@@ -75,29 +75,29 @@ export const ProductSlider: React.FC<ProductSliderProps> = ({
 
   return (
     <section className={`bg-white py-12 ${className}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl rounded-xl bg-gray-50 mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Section Header */}
         {showHeader && (
-          <div className={`flex items-center justify-between mb-8 ${isRTL ? 'rtl' : 'ltr'}`}>
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+          <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 ${isRTL ? 'rtl' : 'ltr'}`}>
+            <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
+              <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 leading-tight ${isRTL ? 'mb-7' : 'mb-2'}`}>
                 {displayTitle}
               </h2>
-              <p className="text-gray-600">{displaySubtitle}</p>
+              <p className={`text-gray-600 ${isRTL ? 'mt-3' : 'mt-2'}`}>{displaySubtitle}</p>
             </div>
             
             {/* Action Buttons */}
-            <div className="flex gap-3 items-center">
+            <div className={`flex gap-3 items-center ${isRTL ? 'sm:flex-row-reverse' : ''} justify-start sm:justify-end`}>
               {/* View All Items Button */}
               {showViewAllButton && (
                 <button
                   onClick={onViewAllItems}
-                  className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg text-sm font-medium inline-flex items-center"
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg text-sm font-medium inline-flex items-center"
                 >
                   <svg className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                   </svg>
-                  Feature Products
+                  {t('products.viewAll')}
                 </button>
               )}
               
@@ -157,8 +157,8 @@ export const ProductSlider: React.FC<ProductSliderProps> = ({
         </div>
 
         {/* Product Count Info */}
-        <div className="text-center mt-6 text-sm text-gray-500">
-          Showing {products.length} product{products.length !== 1 ? 's' : ''}
+        <div className={`text-center mt-6 text-sm text-gray-500 ${isRTL ? 'rtl' : 'ltr'}`}>
+          {t('search.showing')} {products.length} {products.length === 1 ? t('common.product') : t('common.products')}
         </div>
       </div>
 

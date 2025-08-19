@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // POST - Sync all product stocks with their variant totals
 export async function POST(request: Request) {

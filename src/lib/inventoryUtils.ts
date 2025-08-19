@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // Initialize stock quantities for all variants
 export async function initializeVariantStock(defaultQuantity: number = 10) {

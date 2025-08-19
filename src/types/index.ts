@@ -270,7 +270,11 @@ export interface Review {
   updatedAt: Date;
   helpful?: number;
   verified?: boolean;
-  response?: ReviewResponse;
+  // Admin reply fields
+  adminReply?: string;
+  adminReplyBy?: string;
+  adminReplyAt?: Date;
+  response?: ReviewResponse; // Legacy field for compatibility
 }
 
 export interface ReviewResponse {

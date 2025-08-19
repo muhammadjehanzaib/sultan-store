@@ -69,7 +69,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
 
   return (
     <section className="bg-white py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-6">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
@@ -81,12 +81,12 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
         </div>
 
         {/* Categories Container */}
-        <div className={`relative ${needsScroll ? 'group' : ''}`}>
+        <div className={`relative ${needsScroll ? 'group' : ''}`} style={{ overflow: 'visible' }}>
           {/* Left Arrow Button - Only show if scroll is needed */}
           {needsScroll && (
             <button
               onClick={isRTL ? scrollRight : scrollLeft}
-              className="absolute text-gray-700 left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/90 hover:bg-white shadow-lg rounded-full border border-gray-200 hover:border-purple-300 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 -ml-2"
+              className="absolute text-gray-700 left-0 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/90 hover:bg-white shadow-lg rounded-full border border-gray-200 hover:border-purple-300 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 -ml-2"
               aria-label="Scroll left"
             >
               <svg className={`w-5 h-5 text-gray-600 hover:text-purple-600 ${isRTL ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,7 +99,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
           {needsScroll && (
             <button
               onClick={isRTL ? scrollLeft : scrollRight}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/90 hover:bg-white shadow-lg rounded-full border border-gray-200 hover:border-purple-300 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 -mr-2"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/90 hover:bg-white shadow-lg rounded-full border border-gray-200 hover:border-purple-300 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 -mr-2"
               aria-label="Scroll right"
             >
               <svg className={`w-5 h-5 text-gray-600 hover:text-purple-600 ${isRTL ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,16 +111,15 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
           {/* Categories Container */}
           <div 
             ref={scrollRef}
-            className={`flex gap-4 pb-2 ${
+            className={`flex gap-4 ${
               needsScroll 
-                ? 'overflow-x-auto scrollbar-hide px-4' 
-                : 'justify-center overflow-hidden'
+                ? 'overflow-x-auto scrollbar-hide px-4 pb-2' 
+                : 'justify-center overflow-visible pb-2'
             }`}
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {activeCategories.map((category) => {
               const categoryPath = category.path || category.slug;
-              const hasSubcategories = category.children && category.children.length > 0;
               
               return (
               <div key={category.id} className="relative group">
@@ -155,48 +154,8 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
                   <h3 className="text-sm font-semibold text-gray-900 group-hover:text-purple-600 transition-colors duration-300 mb-1 line-clamp-2 leading-tight text-center">
                     {category.name[language]}
                   </h3>
-
-                  {/* Subcategory Indicator */}
-                  {hasSubcategories && (
-                    <div className="absolute top-2 right-2 w-2 h-2 bg-purple-500 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
-                  )}
                 </div>
               </Link>
-              
-              {/* Subcategories Tooltip */}
-              {hasSubcategories && (
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-20">
-                  <div className="p-3">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                      {category.name[language]} Categories
-                    </h4>
-                    <ul className="space-y-1">
-                      {category.children?.slice(0, 4).map(child => (
-                        <li key={child.id}>
-                          <Link
-                            href={`/category/${child.path || child.slug}`}
-                            className="block text-xs text-gray-600 hover:text-purple-600 py-1 transition-colors"
-                          >
-                            {child.name[language]}
-                          </Link>
-                        </li>
-                      ))}
-                      {category.children && category.children.length > 4 && (
-                        <li>
-                          <Link
-                            href={`/category/${categoryPath}`}
-                            className="block text-xs text-purple-600 font-medium py-1 hover:underline"
-                          >
-                            +{category.children.length - 4} more...
-                          </Link>
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                  {/* Arrow */}
-                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-white border-l border-t border-gray-200 rotate-45"></div>
-                </div>
-              )}
               </div>
             );})}
           </div>
