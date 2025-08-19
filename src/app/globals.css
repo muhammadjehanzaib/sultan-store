@@ -333,7 +333,7 @@ body {
   @apply px-4 sm:px-6 lg:px-8;
 }
 
-/* E-commerce responsive containers - matches Jarir standards */
+/* E-commerce responsive containers - matches standards */
 .container-ecommerce {
   @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
 }

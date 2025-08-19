@@ -7,7 +7,7 @@
 - **Configured optimal scaling**: `initial-scale=1`, `maximum-scale=5`, `user-scalable=true`
 - **Added format detection**: `telephone=no` to prevent automatic phone number linking
 
-### **2. Container Size Optimization (Matches Jarir Standards)**
+### **2. Container Size Optimization (Matches SaudiSafety Standards)**
 
 #### **Before:** ❌ Too Wide
 ```css
@@ -31,7 +31,7 @@ max-w-7xl (1280px) - Too wide, poor readability
 
 ### **3. Responsive Breakpoint Analysis**
 
-#### **Jarir-Style Responsive Containers:**
+#### **SaudiSafety-Style Responsive Containers:**
 - **Mobile (320px-640px)**: `px-4` (16px padding)
 - **Tablet (640px-1024px)**: `px-6` (24px padding)  
 - **Desktop (1024px+)**: `px-8` (32px padding)
@@ -63,7 +63,7 @@ max-w-7xl (1280px) - Too wide, poor readability
 
 | Site | Main Container Width | Header Width | Content Width |
 |------|---------------------|--------------|---------------|
-| **Jarir** | ~1200px | ~1200px | ~1000px |
+| **SaudiSafety** | ~1200px | ~1200px | ~1000px |
 | **Amazon** | ~1200px | ~1200px | ~1000px |
 | **Your Site (Before)** | 1280px | 1280px | 1280px ❌ |
 | **Your Site (After)** | 1152px | 1280px | 1024px ✅ |
@@ -81,7 +81,7 @@ max-w-7xl (1280px) - Too wide, poor readability
 - **Improved navigation**: Mobile-first responsive design
 
 ### **3. Professional Appearance**
-- **Matches industry standards**: Similar to Jarir, Amazon, etc.
+- **Matches industry standards**: Similar to SaudiSafety, Amazon, etc.
 - **Better visual hierarchy**: Content properly contained
 - **Improved whitespace**: Better balance and breathing room
 
@@ -140,9 +140,9 @@ pnpm dev
 # - Large: 1440px
 ```
 
-### **2. Compare with Jarir**
+### **2. Compare with SaudiSafety**
 1. Open your site: `http://localhost:3000`
-2. Open Jarir.com in another tab
+2. Open SaudiSafety.com in another tab
 3. Compare container widths at same screen size
 4. Verify similar content density
 
@@ -156,7 +156,7 @@ pnpm dev
 ## 🎯 **Results**
 
 ### **Before vs After:**
-- ❌ **Before**: Site appeared "zoomed out" vs Jarir
+- ❌ **Before**: Site appeared "zoomed out" vs SaudiSafety
 - ✅ **After**: Matches professional e-commerce standards
 - ✅ **Mobile**: Better touch experience
 - ✅ **Desktop**: Improved readability and focus

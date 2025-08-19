@@ -11,6 +11,7 @@ import { AuthModal } from '@/components/auth/AuthModal';
 import { Logo } from '@/components/ui/Logo';
 import { CategoryMegaMenu } from '@/components/navigation/CategoryMegaMenu';
 import { CategoryWithChildren } from '@/lib/categoryUtils';
+import { useCategories } from '@/contexts/CategoriesContext';
 import { 
   IoSearch, 
   IoCart, 
@@ -55,25 +56,8 @@ export const Header: React.FC<HeaderProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const productsDropdownRef = useRef<HTMLDivElement>(null);
   const tabletProductsDropdownRef = useRef<HTMLDivElement>(null);
-  const [categories, setCategories] = useState<CategoryWithChildren[]>([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchCategories() {
-      setCategoriesLoading(true);
-      try {
-        const response = await fetch('/api/categories/tree');
-        if (!response.ok) throw new Error('Failed to fetch categories');
-        const data = await response.json();
-        const categories = data.tree || [];
-        setCategories(categories);
-      } catch (error) {
-      } finally {
-        setCategoriesLoading(false);
-      }
-    }
-    fetchCategories();
-  }, []);
+  // Use the global categories context instead of local state
+  const { categoryTree: categories, loading: categoriesLoading } = useCategories();
 
   // Close dropdown when clicking outside
   useEffect(() => {

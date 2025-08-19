@@ -4,6 +4,7 @@ import "./globals.css";
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { CategoriesProvider } from '@/contexts/CategoriesContext';
 import { ClientLayout } from '@/components/layout/ClientLayout';
 import SessionProvider from '@/components/providers/SessionProvider';
 const geistSans = Geist({
@@ -52,9 +53,11 @@ function RootContent({ children }: { children: React.ReactNode }) {
         <SessionProvider>
           <AuthProvider>
             <CartProvider>
-              <ClientLayout>
-                {children}
-              </ClientLayout>
+              <CategoriesProvider>
+                <ClientLayout>
+                  {children}
+                </ClientLayout>
+              </CategoriesProvider>
             </CartProvider>
           </AuthProvider>
         </SessionProvider>

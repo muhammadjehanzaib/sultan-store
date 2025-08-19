@@ -163,7 +163,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         
         {/* Price and Actions */}
         <div className={`flex-shrink-0 ${isRTL ? 'text-left' : 'text-right'}`}>
-          {/* Price - Clean Jarir-style */}
           <div className="mb-3">
             <div className="flex items-center gap-2 flex-wrap">
               {/* Current Price */}
@@ -357,7 +356,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Spacer */}
         <div className="flex-1"></div>
 
-        {/* Price Section - Clean Jarir-style */}
         <div className="mb-3">
           <div className="flex items-center gap-2 flex-wrap">
             {/* Current Price */}

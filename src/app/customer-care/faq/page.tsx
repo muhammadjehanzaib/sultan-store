@@ -288,14 +288,14 @@ export default function FAQPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-sm text-gray-600">
             <div>
-              <h3 className="font-medium text-gray-900 mb-2">Jarir Bookstore</h3>
+              <h3 className="font-medium text-gray-900 mb-2">saudi safety</h3>
               <p><strong>P.O. Box:</strong> 3196, Riyadh 11471</p>
               <p><strong>Unified Number:</strong> 920000089</p>
             </div>
             <div>
               <p><strong>For after sales service requests follow up:</strong> 8003314444</p>
               <p><strong>Fax:</strong> 011-4656363</p>
-              <p><strong>Email:</strong> <a href="mailto:care@jarir.com" className="text-purple-600 hover:underline">care@jarir.com</a></p>
+              <p><strong>Email:</strong> <a href="mailto:care@saudisafety.com" className="text-purple-600 hover:underline">care@saudisafety.com</a></p>
             </div>
             <div>
               <p><strong>Call Center Working Hours:</strong> Friday – Thursday: 8:00 AM – 10:00 PM</p>

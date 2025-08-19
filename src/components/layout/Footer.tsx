@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { scrollToElement } from '@/lib/utils';
@@ -20,44 +20,10 @@ import {
 } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 
-interface Category {
-  id: string;
-  slug: string;
-  name_en: string;
-  name_ar: string;
-  icon?: string;
-  isActive?: boolean;
-  sortOrder?: number;
-}
-
 export const Footer: React.FC = () => {
   const { t, isRTL, language } = useLanguage();
   const router = useRouter();
   const currentYear = new Date().getFullYear();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
-
-  // Fetch categories from API
-  useEffect(() => {
-    async function fetchCategories() {
-      setCategoriesLoading(true);
-      try {
-        const response = await fetch('/api/categories');
-        if (!response.ok) throw new Error('Failed to fetch categories');
-        const data = await response.json();
-        setCategories(data.categories || []);
-      } catch (error) {
-        setCategories([]);
-      } finally {
-        setCategoriesLoading(false);
-      }
-    }
-    fetchCategories();
-  }, []);
-
-  const handleCategoryNavigation = (categorySlug: string) => {
-    router.push(`/category/${categorySlug}`);
-  };
 
   const handleHomeNavigation = () => {
     if (window.location.pathname === '/') {

@@ -10,8 +10,6 @@ interface ProductDashboard {
   products: Product[];
   categories: Category[];
   onAddProduct: () => void;
-  onImportProducts: () => void;
-  onExportProducts: () => void;
 }
 
 interface ProductAnalytics {
@@ -34,8 +32,6 @@ export const ProductDashboard: React.FC<ProductDashboard> = ({
   products,
   categories,
   onAddProduct,
-  onImportProducts,
-  onExportProducts,
 }) => {
   const { t, isRTL } = useLanguage();
   const [analytics, setAnalytics] = useState<ProductAnalytics | null>(null);
@@ -159,12 +155,6 @@ export const ProductDashboard: React.FC<ProductDashboard> = ({
           </p>
         </div>
         <div className={`flex flex-wrap gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-          <Button onClick={onImportProducts} variant="outline" className="text-blue-600">
-            📥 Import Products
-          </Button>
-          <Button onClick={onExportProducts} variant="outline" className="text-green-600">
-            📤 Export Products
-          </Button>
           <Button onClick={onAddProduct} className="bg-blue-600 hover:bg-blue-700">
             ➕ Add New Product
           </Button>
@@ -389,32 +379,6 @@ export const ProductDashboard: React.FC<ProductDashboard> = ({
               <div>
                 <p className="font-semibold text-gray-900 dark:text-white">Add Product</p>
                 <p className="text-sm text-gray-500">Create a new product</p>
-              </div>
-            </div>
-          </button>
-          
-          <button
-            onClick={onImportProducts}
-            className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow text-left"
-          >
-            <div className="flex items-center space-x-3">
-              <span className="text-2xl">📥</span>
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Import Products</p>
-                <p className="text-sm text-gray-500">Bulk import from CSV/Excel</p>
-              </div>
-            </div>
-          </button>
-          
-          <button
-            onClick={onExportProducts}
-            className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow text-left"
-          >
-            <div className="flex items-center space-x-3">
-              <span className="text-2xl">📤</span>
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Export Products</p>
-                <p className="text-sm text-gray-500">Download product data</p>
               </div>
             </div>
           </button>

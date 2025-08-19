@@ -550,8 +550,6 @@ export default function AdminProducts() {
               products={productsData}
               categories={categories}
               onAddProduct={handleAddProduct}
-              onImportProducts={handleImportProducts}
-              onExportProducts={handleExportProducts}
             />
           ) : (
             <EnhancedProductsTable

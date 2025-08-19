@@ -377,7 +377,7 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
                   onClick={resetFilters}
                   variant="outline"
                   size="sm"
-                  className="w-full text-white hover:text-gray-700"
+                  className="w-full text-gray-500 dark:text-white hover:text-gray-700"
                 >
                   🔄 Reset
                 </Button>
@@ -521,7 +521,7 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
                       #{order.id.slice(-8)}
                     </div>
-                    <div className="text-xs text-gray-200">
+                    <div className="text-xs text-gray-700 dark:text-gray-100">
                       {formatDate(order.createdAt)}
                     </div>
                     {order.trackingNumber && (
@@ -538,10 +538,10 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
                       {order.billingAddress.firstName} {order.billingAddress.lastName}
                     </div>
-                    <div className="text-xs text-gray-100">
+                    <div className="text-xs text-black dark:text-gray-100">
                       {order.billingAddress.email}
                     </div>
-                    <div className="text-xs text-gray-200">
+                    <div className="text-xs text-black">
                       {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
                     </div>
                   </div>
@@ -575,7 +575,7 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
                       locale={isRTL ? 'ar' : 'en'}
                       className="text-sm font-semibold text-gray-900 dark:text-white"
                     />
-                    <div className="text-xs text-gray-100">
+                    <div className="text-xs text-black dark:text-gray-100">
                       Subtotal: <Price amount={order.subtotal} locale={isRTL ? 'ar' : 'en'} />
                     </div>
                   </div>
@@ -600,7 +600,7 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
                       onClick={() => onView(order)}
                       variant="outline"
                       size="sm"
-                      className="text-white hover:text-blue-700"
+                      className=" test-black dark:text-white hover:text-blue-700"
                     >
                       View
                     </Button>

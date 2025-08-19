@@ -42,7 +42,18 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     { name: t('admin.reviews.title'), href: '/admin/reviews', icon: '⭐' },
     { name: t('admin.nav.analytics'), href: '/admin/analytics', icon: '📈' },
     { name: t('admin.nav.settings'), href: '/admin/settings', icon: '⚙️' },
+    { name: 'Contact Queries', href: '/admin/queries', icon: '📩' },
   ];
+
+  // Function to check if a navigation item is currently active
+  const isCurrentPath = (href: string) => {
+    if (href === '/admin') {
+      // For dashboard, only match exact path
+      return pathname === '/admin';
+    }
+    // For other paths, match if current path starts with the href
+    return pathname.startsWith(href);
+  };
 
   const handleNavigation = (href: string) => {
     router.push(href);
@@ -82,7 +93,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             {navigation
               .filter(item => user && navRoles[item.href]?.includes(user.role))
               .map((item) => {
-                const current = pathname === item.href;
+                const current = isCurrentPath(item.href);
                 return (
                   <button
                     key={item.name}
@@ -107,18 +118,6 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                   </button>
                 );
               })}
-            {/* Contact Queries link (RBAC) */}
-            {user && navRoles['/admin/queries']?.includes(user.role) && (
-              <div>
-                <a
-                  href="/admin/queries"
-                  className="flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                >
-                  <span className="mr-3">📩</span>
-                  Contact Queries
-                </a>
-              </div>
-            )}
           </div>
         </nav>
 
