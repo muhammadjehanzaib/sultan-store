@@ -135,7 +135,7 @@ export const CartSidebar: React.FC = () => {
                           >
                             -
                           </button>
-                          <span className="w-8 text-center font-semibold text-gray-700">{item.quantity}</span>
+                          <span className="w-8 text-center font-semibold text-gray-700">{item.quantity > 0 ? item.quantity : 1}</span>
                           <button
                             onClick={() => updateQuantity(item.product.id, item.variantId, item.quantity + 1)}
                             className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-purple-100 hover:border-purple-300 transition-colors font-semibold text-gray-600"

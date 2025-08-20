@@ -190,6 +190,15 @@ body {
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
 }
 
+/* DEBUG: Highlight any standalone 0 elements */
+*:not(script):not(style) {
+  /* This will help identify rogue 0 elements */
+}
+*[data-debug="zero"] {
+  border: 3px solid red !important;
+  background: rgba(255, 0, 0, 0.2) !important;
+}
+
 .shadow-card {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }

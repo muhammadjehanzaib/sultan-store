@@ -42,6 +42,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
   
   const discountInfo = calculateProductPrice(productWithDiscount);
+  
+  // The discount calculation now handles all validation internally
+  const shouldShowDiscountBadge = discountInfo.hasDiscount;
+  const discountDisplayValue = discountInfo.discountPercent;
+  
 
   const handleViewProduct = () => {
     if (onViewProduct) {
@@ -101,11 +106,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             }`}
           />
           
-          {/* Discount Badge */}
-          {discountInfo.hasDiscount && (
+          {/* Discount Badge - Only show if discount is meaningful */}
+          {shouldShowDiscountBadge && discountDisplayValue > 0 && discountDisplayValue >= 1 && (
             <div className="absolute -top-1 -right-1 z-20">
               <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-lg">
-                -{Math.round(discountInfo.discountPercent || 0)}%
+                -{discountDisplayValue}%
               </span>
             </div>
           )}
@@ -152,7 +157,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 ))}
               </div>
               <span className="text-sm font-medium text-gray-700">{product.rating.toFixed(1)}</span>
-              <span className="text-xs text-gray-500">({product.reviews} reviews)</span>
+              {product.reviews && product.reviews > 0 ? (
+                <span className="text-xs text-gray-500">({product.reviews} reviews)</span>
+              ) : (
+                <span className="text-xs text-gray-400">(No reviews)</span>
+              )}
             </div>
           ) : (
             <div className="mb-2">
@@ -237,11 +246,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           priority={false}
         />
         
-        {/* Clean Discount Badge */}
-        {discountInfo.hasDiscount && (
+          {/* Clean Discount Badge - Only show if discount is meaningful */}
+        {shouldShowDiscountBadge && discountDisplayValue > 0 && discountDisplayValue >= 1 && (
           <div className={`absolute top-4 ${isRTL ? 'right-4' : 'left-4'} z-20`}>
             <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-lg">
-              -{Math.round(discountInfo.discountPercent || 0)}%
+              -{discountDisplayValue}%
             </span>
           </div>
         )}
@@ -310,7 +319,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </h3>
         </Link>
 
-        {/* Rating & Reviews */}
+          {/* Rating & Reviews */}
         {product.rating !== null && product.rating !== undefined && product.rating > 0 ? (
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-2">
@@ -327,9 +336,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </div>
               <span className="text-sm font-medium text-gray-700">{product.rating.toFixed(1)}</span>
             </div>
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-              {product.reviews} reviews
-            </span>
+            {product.reviews && product.reviews >= 1 ? (
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                {product.reviews} reviews
+              </span>
+            ) : (
+              <span className="text-xs text-gray-400">
+                No reviews
+              </span>
+            )}
           </div>
         ) : (
           <div className="mb-2 h-5 flex items-center">
@@ -338,7 +353,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         )}
 
         {/* Description */}
-        {product.description && (
+        {product.description ? (
           <div className="mb-2 h-10 overflow-hidden">
             <p className="text-sm text-gray-600 line-clamp-2 leading-5 overflow-hidden" style={{
               display: '-webkit-box',
@@ -351,7 +366,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {getLocalizedString(ensureLocalizedContent(product.description), language)}
             </p>
           </div>
-        )}
+        ) : null}
 
         {/* Spacer */}
         <div className="flex-1"></div>

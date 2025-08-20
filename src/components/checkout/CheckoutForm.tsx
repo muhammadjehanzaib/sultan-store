@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { BillingAddress, ShippingAddress } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { BillingAddress, ShippingAddress, Address } from '@/types';
 
 interface CheckoutFormProps {
   billingAddress: BillingAddress | null;
@@ -20,7 +21,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   onNext
 }) => {
   const { t, isRTL } = useLanguage();
+  const { isAuthenticated, user } = useAuth();
   const [sameAsBilling, setSameAsBilling] = useState(true);
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [formData, setFormData] = useState<BillingAddress>({
     firstName: billingAddress?.firstName || '',
     lastName: billingAddress?.lastName || '',
@@ -30,7 +34,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     city: billingAddress?.city || '',
     state: billingAddress?.state || '',
     zipCode: billingAddress?.zipCode || '',
-    country: billingAddress?.country || ''
+    country: billingAddress?.country || 'SA' // Default to Saudi Arabia
   });
 
   const [shippingData, setShippingData] = useState<ShippingAddress>({
@@ -42,8 +46,90 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     city: shippingAddress?.city || '',
     state: shippingAddress?.state || '',
     zipCode: shippingAddress?.zipCode || '',
-    country: shippingAddress?.country || ''
+    country: shippingAddress?.country || 'SA' // Default to Saudi Arabia
   });
+
+  // Load saved addresses when component mounts
+  useEffect(() => {
+    const loadSavedAddresses = async () => {
+      if (!isAuthenticated || user?.isGuest) return;
+      
+      setLoadingAddresses(true);
+      try {
+        const response = await fetch('/api/user/addresses');
+        const result = await response.json();
+        
+        if (response.ok) {
+          setSavedAddresses(result.addresses || []);
+          
+          // Auto-populate with default billing address if form is empty
+          const defaultBilling = result.addresses?.find((addr: Address) => 
+            addr.type === 'billing' && addr.isDefault
+          );
+          const defaultShipping = result.addresses?.find((addr: Address) => 
+            addr.type === 'shipping' && addr.isDefault
+          );
+          
+          if (defaultBilling && !billingAddress?.firstName) {
+            const mappedAddress = {
+              firstName: defaultBilling.firstName,
+              lastName: defaultBilling.lastName,
+              email: user?.email || '',
+              phone: defaultBilling.phone || '',
+              address: defaultBilling.address,
+              city: defaultBilling.city,
+              state: defaultBilling.state,
+              zipCode: defaultBilling.zipCode,
+              country: 'SA' // Always set to Saudi Arabia
+            };
+            setFormData(mappedAddress);
+          }
+          
+          if (defaultShipping && !shippingAddress?.firstName) {
+            const mappedAddress = {
+              firstName: defaultShipping.firstName,
+              lastName: defaultShipping.lastName,
+              email: user?.email || '',
+              phone: defaultShipping.phone || '',
+              address: defaultShipping.address,
+              city: defaultShipping.city,
+              state: defaultShipping.state,
+              zipCode: defaultShipping.zipCode,
+              country: 'SA' // Always set to Saudi Arabia
+            };
+            setShippingData(mappedAddress);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading saved addresses:', error);
+      } finally {
+        setLoadingAddresses(false);
+      }
+    };
+
+    loadSavedAddresses();
+  }, [isAuthenticated, user]);
+
+  // Helper function to populate form with selected address
+  const populateWithAddress = (address: Address, isBilling: boolean = true) => {
+    const mappedAddress = {
+      firstName: address.firstName,
+      lastName: address.lastName,
+      email: user?.email || '',
+      phone: address.phone || '',
+      address: address.address,
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+      country: 'SA' // Always set to Saudi Arabia since we only ship there
+    };
+    
+    if (isBilling) {
+      setFormData(mappedAddress);
+    } else {
+      setShippingData(mappedAddress);
+    }
+  };
 
   const handleInputChange = (field: keyof BillingAddress, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -84,12 +170,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   };
 
   const countries = [
-    { code: 'US', name: 'United States' },
-    { code: 'CA', name: 'Canada' },
-    { code: 'UK', name: 'United Kingdom' },
     { code: 'SA', name: 'Saudi Arabia' },
-    { code: 'AE', name: 'United Arab Emirates' },
-    { code: 'EG', name: 'Egypt' },
   ];
 
   return (
@@ -99,6 +180,38 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       {/* Billing Address */}
       <div>
         <h3 className="text-lg font-semibold mb-4 text-black">{t('checkout.billingAddress')}</h3>
+        
+        {/* Saved Addresses Dropdown for Billing */}
+        {isAuthenticated && !user?.isGuest && savedAddresses.length > 0 && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Use saved address
+            </label>
+            <select
+              onChange={(e) => {
+                if (e.target.value) {
+                  const selectedAddress = savedAddresses.find(addr => addr.id === e.target.value);
+                  if (selectedAddress) {
+                    populateWithAddress(selectedAddress, true);
+                  }
+                }
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-800"
+            >
+              <option value="">Enter address manually</option>
+              {savedAddresses
+                .filter(addr => addr.type === 'billing' || addr.type === 'shipping')
+                .map(address => (
+                  <option key={address.id} value={address.id}>
+                    {address.firstName} {address.lastName} - {address.address}, {address.city}
+                    {address.isDefault ? ' (Default)' : ''}
+                  </option>
+                ))
+              }
+            </select>
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -243,6 +356,38 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         {!sameAsBilling && (
           <div>
             <h3 className="text-lg font-semibold mb-4">{t('checkout.shippingAddress')}</h3>
+            
+            {/* Saved Addresses Dropdown for Shipping */}
+            {isAuthenticated && !user?.isGuest && savedAddresses.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Use saved shipping address
+                </label>
+                <select
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const selectedAddress = savedAddresses.find(addr => addr.id === e.target.value);
+                      if (selectedAddress) {
+                        populateWithAddress(selectedAddress, false);
+                      }
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-800"
+                >
+                  <option value="">Enter address manually</option>
+                  {savedAddresses
+                    .filter(addr => addr.type === 'shipping' || addr.type === 'billing')
+                    .map(address => (
+                      <option key={address.id} value={address.id}>
+                        {address.firstName} {address.lastName} - {address.address}, {address.city}
+                        {address.isDefault ? ' (Default)' : ''}
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

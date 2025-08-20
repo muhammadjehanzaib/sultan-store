@@ -1,27 +1,36 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { OrderHistory } from '@/components/profile/OrderHistory';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { redirect } from 'next/navigation';
 
 export default function OrdersPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { t } = useLanguage();
 
-  // Wait for auth state to hydrate
-  if (isAuthenticated === false) {
-    redirect('/');
+  // Handle authentication redirects only after loading is complete
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      redirect('/');
+    }
+  }, [isLoading, isAuthenticated]);
+
+  // Show loading spinner while authentication state is being determined
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
   }
 
-if (isAuthenticated === null || !user) {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-500">Loading your orders...</p>
-    </div>
-  );
-}
+  // Don't render anything if redirecting
+  if (!isAuthenticated || !user) {
+    return null;
+  }
 
 
   return (

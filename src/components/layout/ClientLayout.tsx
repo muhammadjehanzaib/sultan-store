@@ -7,6 +7,7 @@ import { Header } from './Header';
 import { CartSidebar } from '../cart/CartSidebar';
 import { SearchModal } from '../search/SearchModal';
 import { DynamicLayout } from './DynamicLayout';
+import { ErrorBoundary, CartErrorBoundary } from '../ui/ErrorBoundary';
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -66,8 +67,12 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ children }) => {
 
       {!isAdminRoute && (
         <>
-          <CartSidebar />
-          <SearchModal isOpen={isSearchOpen} onClose={handleSearchClose} />
+          <CartErrorBoundary>
+            <CartSidebar />
+          </CartErrorBoundary>
+          <ErrorBoundary>
+            <SearchModal isOpen={isSearchOpen} onClose={handleSearchClose} />
+          </ErrorBoundary>
         </>
       )}
     </DynamicLayout>

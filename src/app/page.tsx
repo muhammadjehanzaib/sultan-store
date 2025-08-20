@@ -8,6 +8,11 @@ import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { 
+  CampaignSliderSkeleton, 
+  CategorySectionSkeleton, 
+  ProductSliderSkeleton 
+} from '@/components/ui/SkeletonLoaders';
 
 // Helper function to robustly convert various inStock values to boolean
 function convertToInStockBoolean(value: any): boolean {
@@ -143,11 +148,20 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{t('homepage.loadingProducts')}</p>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        {/* Campaign Slider Skeleton */}
+        <CampaignSliderSkeleton />
+        
+        {/* Category Section Skeleton */}
+        <CategorySectionSkeleton />
+        
+        {/* Product Sliders Skeletons */}
+        <ProductSliderSkeleton count={4} />
+        <ProductSliderSkeleton count={4} />
+        <ProductSliderSkeleton count={4} />
+        
+        {/* Footer will be rendered as normal since it doesn't depend on loading data */}
+        <Footer />
       </div>
     );
   }
@@ -160,7 +174,7 @@ export default function Home() {
       <CategorySection categories={categories} />
 
       {/* Sale Products Section */}
-      {saleProducts.length > 0 && (
+      {saleProducts.length > 0 ? (
         <ProductSlider
           products={saleProducts}
           onAddToCart={handleAddToCart}
@@ -171,10 +185,10 @@ export default function Home() {
           showErrorButton={false}
           showViewAllButton={true}
         />
-      )}
+      ) : null}
 
       {/* New Arrivals Section */}
-      {newArrivals.length > 0 && (
+      {newArrivals.length > 0 ? (
         <ProductSlider
           products={newArrivals}
           onAddToCart={handleAddToCart}
@@ -185,7 +199,7 @@ export default function Home() {
           showErrorButton={false}
           showViewAllButton={true}
         />
-      )}
+      ) : null}
 
       {/* Featured Products Section */}
       <ProductSlider

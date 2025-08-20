@@ -117,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
     router.push('/contact');
   };
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-sm">
+    <header className="sticky top-0 z-50 bg-white shadow-sm" role="banner">
       <div className="header-container">
         <div className="flex justify-between items-center py-3 md:py-2">
           {/* Logo */}
@@ -131,10 +131,11 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Navigation - Hidden on mobile */}
-          <nav className={`hidden lg:flex ${isRTL ? 'space-x-reverse space-x-8' : 'space-x-8'}`}>
+          <nav className={`hidden lg:flex ${isRTL ? 'space-x-reverse space-x-8' : 'space-x-8'}`} role="navigation" aria-label="Main navigation">
             <button
               onClick={handleHomeNavigation}
               className="text-gray-500 hover:text-gray-900 transition-colors mx-4"
+              aria-label={t('nav.home')}
             >
               {t('nav.home')}
             </button>
@@ -163,8 +164,9 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={onSearchClick}
                 className="flex items-center px-4 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors w-full"
+                aria-label={t('search.title') || 'Open search'}
               >
-                <IoSearch className="text-lg mr-2 text-gray-500" />
+                <IoSearch className="text-lg mr-2 text-gray-500" aria-hidden="true" />
                 <span className="text-sm truncate">{t('search.placeholder')}</span>
               </button>
             </div>
@@ -172,7 +174,7 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* Tablet Navigation - Hidden on mobile and desktop */}
-          <nav className={`hidden md:flex lg:hidden ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
+          <nav className={`hidden md:flex lg:hidden ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`} role="navigation" aria-label="Tablet navigation">
             {/* Combined All Products and Search Component - Tablet */}
             <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 w-80">
               {/* All Products Dropdown - Tablet Only */}
@@ -183,12 +185,15 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   onClick={() => setIsTabletProductsDropdownOpen(!isTabletProductsDropdownOpen)}
                   className={`px-3 py-2 text-gray-600 hover:text-purple-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 transition-all duration-300 ease-in-out flex items-center justify-between border-r border-gray-200 whitespace-nowrap font-medium shadow-sm hover:shadow-md rounded-l-lg ${isRTL ? 'space-x-reverse' : ''}`}
+                  aria-haspopup="true"
+                  aria-expanded={isTabletProductsDropdownOpen}
+                  aria-label={t('nav.allCategories') + ' menu'}
                 >
                   <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
-                    <span className="text-lg">🏷️</span>
+                    <span className="text-lg" aria-hidden="true">🏷️</span>
                     <span className="text-sm">{t('nav.allCategories')}</span>
                   </div>
-                  <IoChevronDown className={`text-sm transition-transform duration-200 ${isTabletProductsDropdownOpen ? 'rotate-180' : ''} flex-shrink-0`} />
+                  <IoChevronDown className={`text-sm transition-transform duration-200 ${isTabletProductsDropdownOpen ? 'rotate-180' : ''} flex-shrink-0`} aria-hidden="true" />
                 </button>
 
                 {/* Dropdown Menu */}
@@ -219,8 +224,9 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={onSearchClick}
                 className="flex items-center px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors min-w-0 flex-1"
+                aria-label={t('search.title') || 'Open search'}
               >
-                <IoSearch className="text-lg mr-2 text-gray-500" />
+                <IoSearch className="text-lg mr-2 text-gray-500" aria-hidden="true" />
                 <span className="text-sm truncate">{t('search.placeholder')}</span>
               </button>
             </div>
@@ -232,10 +238,10 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onSearchClick}
               className="md:hidden flex items-center justify-center w-10 h-10 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-              aria-label="Search"
+              aria-label={t('search.title') || 'Search'}
               title="Search (Ctrl+K)"
             >
-              <IoSearch className="text-lg" />
+              <IoSearch className="text-lg" aria-hidden="true" />
             </button>
 
             {/* Language Switcher - Desktop Only */}
@@ -250,12 +256,12 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onCartClick}
               className="relative flex items-center justify-center w-10 h-10 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-              aria-label="Shopping Cart"
+              aria-label={`${t('cart.title') || 'Shopping Cart'} ${cartItemCount > 0 ? `(${cartItemCount} items)` : '(empty)'}`}
             >
               <span className="sr-only">Cart</span>
-              <IoCart className="text-lg" />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+              <IoCart className="text-lg" aria-hidden="true" />
+              {cartItemCount > 0 && cartItemCount !== 0 && (
+                <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium" aria-label={`${cartItemCount} items in cart`}>
                   {cartItemCount > 99 ? '99+' : cartItemCount}
                 </span>
               )}
@@ -268,10 +274,13 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                     className={`flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}
+                    aria-haspopup="true"
+                    aria-expanded={isProfileDropdownOpen}
+                    aria-label={`${user.firstName || user.name} profile menu`}
                   >
-                    <HiUser className="text-lg" />
+                    <HiUser className="text-lg" aria-hidden="true" />
                     <span>{user.firstName || user.name}</span>
-                    <IoChevronDown className="text-sm" />
+                    <IoChevronDown className="text-sm" aria-hidden="true" />
                   </button>
 
                   {/* Profile Dropdown */}
@@ -384,9 +393,10 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={toggleMobileMenu}
               className="lg:hidden flex items-center justify-center w-10 h-10 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-              aria-label={t('nav.menu')}
+              aria-label={t('nav.menu') || 'Open navigation menu'}
+              aria-expanded={isMobileMenuOpen}
             >
-              <IoMenu className="text-lg" />
+              <IoMenu className="text-lg" aria-hidden="true" />
             </button>
           </div>
         </div>

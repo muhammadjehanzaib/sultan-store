@@ -17,7 +17,7 @@ import { redirect } from 'next/navigation';
 type ProfileSection = 'overview' | 'personal' | 'addresses' | 'orders' | 'security' | 'notifications';
 
 export default function ProfilePage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { t, isRTL } = useLanguage();
   const searchParams = useSearchParams();
   const [activeSection, setActiveSection] = useState<ProfileSection>('overview');
@@ -30,17 +30,34 @@ export default function ProfilePage() {
     }
   }, [searchParams]);
 
-  // Redirect if not authenticated or if user is a guest
-  if (!isAuthenticated) {
-    redirect('/');
+  // Handle authentication redirects only after loading is complete
+  useEffect(() => {
+    if (!isLoading) {
+      // Redirect if not authenticated
+      if (!isAuthenticated) {
+        redirect('/');
+        return;
+      }
+      
+      // Redirect guest users to home page since they don't have a full profile
+      if (user?.isGuest) {
+        redirect('/');
+        return;
+      }
+    }
+  }, [isLoading, isAuthenticated, user]);
+
+  // Show loading spinner while authentication state is being determined
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
   }
 
-  // Redirect guest users to home page since they don't have a full profile
-  if (user?.isGuest) {
-    redirect('/');
-  }
-
-  if (!user) {
+  // Don't render anything if redirecting
+  if (!isAuthenticated || user?.isGuest || !user) {
     return null;
   }
 

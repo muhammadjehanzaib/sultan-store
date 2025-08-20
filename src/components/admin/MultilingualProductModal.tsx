@@ -10,6 +10,7 @@ import SEOSection from './SEOSection';
 import Image from 'next/image';
 import Price from '@/components/ui/Price';
 import { formatPercentage } from '@/lib/numberFormatter';
+import { DateTimePicker } from '@/components/ui/DateTimePicker';
 
 interface MultilingualProductModalProps {
   isOpen: boolean;
@@ -772,58 +773,37 @@ export function MultilingualProductModal({ isOpen, onClose, onSave, product, cat
                     </div>
 
                     {/* Sale Duration */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Sale Start Date
-                        </label>
-                        <input
-                          type="datetime-local"
-                          value={formData.saleStartDate ? 
-                            (typeof formData.saleStartDate === 'string' ? 
-                              formData.saleStartDate : 
-                              formData.saleStartDate.toISOString().slice(0, 16)
-                            ) : 
-                            ''
+                    <div className="space-y-4">
+                      <DateTimePicker
+                        label="Sale Start Date"
+                        value={formData.saleStartDate}
+                        onChange={(value) => {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            saleStartDate: value
+                          }));
+                        }}
+                        placeholder="Select when the sale should start"
+                      />
+                      
+                      <DateTimePicker
+                        label="Sale End Date"
+                        value={formData.saleEndDate}
+                        onChange={(value) => {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            saleEndDate: value
+                          }));
+                        }}
+                        min={(() => {
+                          if (!formData.saleStartDate) return undefined;
+                          if (typeof formData.saleStartDate === 'string') {
+                            return formData.saleStartDate;
                           }
-                          onChange={(e) => {
-                            setFormData(prev => ({ 
-                              ...prev, 
-                              saleStartDate: e.target.value ? e.target.value : null
-                            }));
-                          }}
-                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Sale End Date
-                        </label>
-                        <input
-                          type="datetime-local"
-                          value={formData.saleEndDate ? 
-                            (typeof formData.saleEndDate === 'string' ? 
-                              formData.saleEndDate : 
-                              formData.saleEndDate.toISOString().slice(0, 16)
-                            ) : 
-                            ''
-                          }
-                          onChange={(e) => {
-                            setFormData(prev => ({ 
-                              ...prev, 
-                              saleEndDate: e.target.value ? e.target.value : null
-                            }));
-                          }}
-                          min={formData.saleStartDate ? 
-                            (typeof formData.saleStartDate === 'string' ? 
-                              formData.saleStartDate : 
-                              formData.saleStartDate.toISOString().slice(0, 16)
-                            ) : 
-                            undefined
-                          }
-                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        />
-                      </div>
+                          return formData.saleStartDate?.toISOString().slice(0, 16);
+                        })()}
+                        placeholder="Select when the sale should end"
+                      />
                     </div>
                   </div>
                 )}

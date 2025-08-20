@@ -156,10 +156,12 @@ export const ProductSlider: React.FC<ProductSliderProps> = ({
           </div>
         </div>
 
-        {/* Product Count Info */}
-        <div className={`text-center mt-6 text-sm text-gray-500 ${isRTL ? 'rtl' : 'ltr'}`}>
-          {t('search.showing')} {products.length} {products.length === 1 ? t('common.product') : t('common.products')}
-        </div>
+        {/* Product Count Info - Only show if we have products */}
+        {products.length > 0 ? (
+          <div className={`text-center mt-6 text-sm text-gray-500 ${isRTL ? 'rtl' : 'ltr'}`}>
+            {t('search.showing')} {products.length} {products.length === 1 ? t('common.product') : t('common.products')}
+          </div>
+        ) : null}
       </div>
 
       <style jsx>{`

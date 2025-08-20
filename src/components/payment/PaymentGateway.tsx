@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSettingsValues } from '@/hooks/useSettings';
 import { PaymentMethod } from '@/types';
@@ -24,26 +25,45 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
   const { t, isRTL } = useLanguage();
   const { codFee } = useSettingsValues();
 
+  const getPaymentLogo = (methodType: string) => {
+    const logoMap: { [key: string]: string } = {
+      'mada': '/logos/payment/mada.png',
+      'stripe': '/logos/payment/stripe2.png'
+    };
+    return logoMap[methodType];
+  };
+
   const paymentMethods: PaymentMethod[] = [
+    {
+      id: 'mada',
+      type: 'mada',
+      name: 'Mada',
+      icon: getPaymentLogo('mada'),
+      isLogo: true,
+      description: 'Pay securely with your mada card - Saudi Arabia\'s national payment network'
+    },
     {
       id: 'stripe',
       type: 'stripe',
-      name: t('payment.creditCard'),
-      icon: '💳',
-      description: t('payment.creditCardDesc')
+      name: 'Stripe',
+      icon: getPaymentLogo('stripe'),
+      isLogo: true,
+      description: 'Pay securely with credit/debit cards via Stripe'
     },
     {
-      id: 'paypal',
-      type: 'paypal',
-      name: 'PayPal',
-      icon: '🅿️',
-      description: t('payment.paypalDesc')
+      id: 'bank_transfer',
+      type: 'bank_transfer',
+      name: 'Bank Transfer',
+      icon: '🏦',
+      isLogo: false,
+      description: 'Transfer payment directly to our bank account'
     },
     {
       id: 'cod',
       type: 'cod',
       name: t('payment.cod'),
       icon: '💵',
+      isLogo: false,
       description: t('payment.codDesc'),
       codFee: codFee // Dynamic COD fee from settings
     },
@@ -77,9 +97,23 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                 className="mt-1 text-purple-600 focus:ring-purple-500"
               />
               <div className="flex-1">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   {method.icon && (
-                    <span className="text-2xl">{method.icon}</span>
+                    method.isLogo ? (
+                      <div className={`relative flex-shrink-0 ${
+                        method.type === 'mada' ? 'w-15 h-14' : 'w-10 h-10'
+                      }`}>
+                        <Image
+                          src={method.icon}
+                          alt={`${method.name} logo`}
+                          width={method.type === 'mada' ? 64 : 40}
+                          height={method.type === 'mada' ? 48 : 40}
+                          className="object-contain rounded"
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-2xl">{method.icon}</span>
+                    )
                   )}
                   <label
                     htmlFor={method.id}
@@ -107,6 +141,31 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                     <div className="flex items-center space-x-1 mt-1">
                       <span>📞</span>
                       <span>{t('payment.codDeliveryCall')}</span>
+                    </div>
+                  </div>
+                )}
+                {method.type === 'bank_transfer' && selectedPaymentMethod?.id === method.id && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                    <div className="font-semibold text-blue-900 mb-2">Bank Transfer Details:</div>
+                    <div className="space-y-1 text-blue-800">
+                      <div><strong>Bank:</strong> Saudi National Bank</div>
+                      <div><strong>Account Name:</strong> Saudi Safety Plus</div>
+                      <div><strong>Account Number:</strong> 12345678901234</div>
+                      <div><strong>IBAN:</strong> SA1234567890123456789012</div>
+                      <div><strong>Swift Code:</strong> SNBLSARI</div>
+                    </div>
+                    <div className="mt-2 text-xs text-blue-700">
+                      <span>⚠️</span> Please include your order number in the transfer reference
+                    </div>
+                  </div>
+                )}
+                {method.type === 'mada' && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    <div className="flex items-center space-x-1">
+                    </div>
+                    <div className="flex items-center space-x-1 mt-1">
+                      <span>🔒</span>
+                      <span>Secure and fast processing</span>
                     </div>
                   </div>
                 )}

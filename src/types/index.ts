@@ -180,11 +180,12 @@ export interface GuestCheckoutData {
 
 export interface PaymentMethod {
   id: string;
-  type: 'card' | 'paypal' | 'stripe' | 'apple_pay' | 'google_pay' | 'cod';
+  type: 'card' | 'paypal' | 'stripe' | 'apple_pay' | 'google_pay' | 'cod' | 'mada' | 'bank_transfer';
   name: string;
   icon?: string;
   description?: string;
   codFee?: number; // Additional fee for COD
+  isLogo?: boolean; // Whether icon is a logo image path or emoji
 }
 
 export interface BillingAddress {

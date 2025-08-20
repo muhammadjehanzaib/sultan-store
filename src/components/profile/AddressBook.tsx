@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Address } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -26,8 +26,31 @@ export const AddressBook: React.FC<AddressBookProps> = ({ user }) => {
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [activeAddress, setActiveAddress] = useState<AddressForm | null>(null);
-  const [addressList, setAddressList] = useState<Address[]>(user.addresses || []);
+  const [addressList, setAddressList] = useState<Address[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
+
+  // Load addresses from API when component mounts
+  useEffect(() => {
+    const loadAddresses = async () => {
+      try {
+        const response = await fetch('/api/user/addresses');
+        const result = await response.json();
+        
+        if (response.ok) {
+          setAddressList(result.addresses || []);
+        } else {
+          console.error('Failed to load addresses:', result.error);
+        }
+      } catch (error) {
+        console.error('Error loading addresses:', error);
+      } finally {
+        setIsLoadingAddresses(false);
+      }
+    };
+
+    loadAddresses();
+  }, []);
 
   const startEditing = (address: Address | null) => {
     setActiveAddress(address ? {
@@ -60,38 +83,74 @@ export const AddressBook: React.FC<AddressBookProps> = ({ user }) => {
   const saveAddress = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       if (activeAddress?.id) {
         // Update existing address
-        const updatedAddress: Address = {
-          ...activeAddress,
-          id: activeAddress.id,
-          phone: activeAddress.phone || undefined
-        };
+        const response = await fetch(`/api/user/addresses/${activeAddress.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(activeAddress),
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to update address');
+        }
+
         setAddressList((prev) =>
-          prev.map((addr) => (addr.id === activeAddress.id ? updatedAddress : addr))
+          prev.map((addr) => (addr.id === activeAddress.id ? result.address : addr))
         );
       } else {
         // Create new address
-        const newAddress: Address = { 
-          ...activeAddress!,
-          id: Date.now().toString(),
-          phone: activeAddress!.phone || undefined
-        };
-        setAddressList((prev) => [...prev, newAddress]);
+        const response = await fetch('/api/user/addresses', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(activeAddress),
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to create address');
+        }
+
+        setAddressList((prev) => [...prev, result.address]);
       }
 
       cancelEditing();
     } catch (error) {
+      console.error('Error saving address:', error);
+      alert('Failed to save address: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const deleteAddress = (id: string) => {
-    setAddressList((prev) => prev.filter((addr) => addr.id !== id));
+  const deleteAddress = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this address?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/user/addresses/${id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete address');
+      }
+
+      setAddressList((prev) => prev.filter((addr) => addr.id !== id));
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      alert('Failed to delete address: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   };
 
   return (
@@ -225,27 +284,38 @@ export const AddressBook: React.FC<AddressBookProps> = ({ user }) => {
         </div>
       ) : (
         <div className="space-y-4">
-          {addressList.map((address) => (
-            <div key={address.id} className="border rounded-lg p-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  {address.firstName} {address.lastName}
-                </h3>
-                <div className="flex space-x-2">
-                  <Button onClick={() => startEditing(address)} variant="outline">
-                    Edit
-                  </Button>
-                  <Button onClick={() => deleteAddress(address.id!)} variant="outline" className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700">
-                    Delete
-                  </Button>
-                </div>
-              </div>
-              <p className="text-gray-600">
-                {address.address}, {address.city}, {address.state}, {address.zipCode}, {address.country}
-              </p>
-              <p className="text-gray-600">Phone: {address.phone}</p>
+          {isLoadingAddresses ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="text-gray-500">Loading addresses...</div>
             </div>
-          ))}
+          ) : addressList.length > 0 ? (
+            addressList.map((address) => (
+              <div key={address.id} className="border rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {address.firstName} {address.lastName}
+                  </h3>
+                  <div className="flex space-x-2">
+                    <Button onClick={() => startEditing(address)} variant="outline">
+                      Edit
+                    </Button>
+                    <Button onClick={() => deleteAddress(address.id!)} variant="outline" className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700">
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-gray-600">
+                  {address.address}, {address.city}, {address.state}, {address.zipCode}, {address.country}
+                </p>
+                <p className="text-gray-600">Phone: {address.phone}</p>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>No addresses found.</p>
+              <p className="text-sm mt-2">Click "Add Address" to create your first address.</p>
+            </div>
+          )}
         </div>
       )}
     </div>

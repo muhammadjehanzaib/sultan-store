@@ -111,7 +111,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
           {/* Categories Container */}
           <div 
             ref={scrollRef}
-            className={`flex gap-4 ${
+            className={`flex gap-3 ${
               needsScroll 
                 ? 'overflow-x-auto scrollbar-hide px-4 pb-2' 
                 : 'justify-center overflow-visible pb-2'
@@ -125,7 +125,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
               <div key={category.id} className="relative group">
                 <Link
                   href={`/category/${categoryPath}`}
-                  className="group flex-shrink-0 bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 border border-gray-200 hover:border-purple-300 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg w-32 h-40 flex flex-col items-center justify-center relative block"
+                  className="group flex-shrink-0 bg-gradient-to-br from-gray-50 to-white rounded-xl p-2 border border-gray-200 hover:border-purple-300 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg w-32 h-33 flex flex-col items-center justify-center relative block"
                 >
                 {/* Background Gradient Effect */}
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>

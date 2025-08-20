@@ -33,10 +33,34 @@ export function calculateProductPrice(product: ProductWithDiscount): DiscountInf
   const originalPrice = product.price;
   
   // Check if sale dates are valid (if they exist)
-  const isValidSaleDate = 
-    !product.saleStartDate || 
-    !product.saleEndDate || 
-    (now >= product.saleStartDate && now <= product.saleEndDate);
+  const isValidSaleDate = (() => {
+    // If no dates are set, sale is always valid (admin can control via onSale flag)
+    if (!product.saleStartDate && !product.saleEndDate) {
+      return true;
+    }
+    
+    // Parse dates to ensure they're Date objects
+    // Handle both string and Date inputs correctly
+    const startDate = product.saleStartDate ? new Date(product.saleStartDate) : null;
+    const endDate = product.saleEndDate ? new Date(product.saleEndDate) : null;
+        
+    // If only start date is set, check if current time is after start
+    if (startDate && !endDate) {
+      return now >= startDate;
+    }
+    
+    // If only end date is set, check if current time is before end
+    if (!startDate && endDate) {
+      return now <= endDate;
+    }
+    
+    // If both dates are set, check if current time is within range
+    if (startDate && endDate) {
+      return now >= startDate && now <= endDate;
+    }
+    
+    return true; // Fallback - should not reach here
+  })();
   
   // If product is not on sale or sale dates are invalid, return original price
   if (!product.onSale || !isValidSaleDate) {
@@ -59,8 +83,8 @@ export function calculateProductPrice(product: ProductWithDiscount): DiscountInf
     discountedPrice = product.salePrice;
     discountType = 'sale_price';
   }
-  // Priority 2: Percentage discount
-  else if (product.discountPercent && product.discountPercent > 0 && product.discountPercent <= 100) {
+  // Priority 2: Percentage discount - only if it's a meaningful discount
+  else if (product.discountPercent && typeof product.discountPercent === 'number' && product.discountPercent > 0 && product.discountPercent <= 100) {
     discountedPrice = originalPrice * (1 - product.discountPercent / 100);
     discountType = 'percentage';
   }
@@ -68,13 +92,19 @@ export function calculateProductPrice(product: ProductWithDiscount): DiscountInf
   const discountAmount = originalPrice - discountedPrice;
   const discountPercent = (discountAmount / originalPrice) * 100;
   
+  // Only consider it a discount if:
+  // 1. There's actually a discount amount > 0
+  // 2. The discount percent rounds to at least 1%
+  // 3. The discount type is not 'none'
+  const hasDiscount = discountAmount > 0 && Math.round(discountPercent) >= 1 && discountType !== 'none';
+  
   return {
-    hasDiscount: discountAmount > 0,
+    hasDiscount,
     originalPrice,
     discountedPrice: Math.round(discountedPrice * 100) / 100, // Round to 2 decimal places
     discountAmount: Math.round(discountAmount * 100) / 100,
-    discountPercent: Math.round(discountPercent * 100) / 100,
-    discountType,
+    discountPercent: hasDiscount ? Math.round(discountPercent * 100) / 100 : 0,
+    discountType: hasDiscount ? discountType : 'none',
     isValidSaleDate
   };
 }

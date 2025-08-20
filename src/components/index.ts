@@ -16,11 +16,20 @@ export { CartSidebar } from './cart/CartSidebar';
 export { SearchModal } from './search/SearchModal';
 
 // UI Components
-export { Button } from './ui/Button';
-export { LanguageSwitcher } from './ui/LanguageSwitcher';
 export { LoadingSpinner } from './ui/LoadingSpinner';
+export { Button } from './ui/Button';
+export { DiscountBadge } from './ui/DiscountBadge';
 export { Breadcrumb } from './ui/Breadcrumb';
 export { Breadcrumbs } from './ui/Breadcrumbs';
+
+// Skeleton Loaders
+export * from './ui/SkeletonLoaders';
+
+// Error Boundaries
+export * from './ui/ErrorBoundary';
+
+// Accessible Forms
+export * from './ui/AccessibleForm';
 export { Logo } from './ui/Logo';
 
 // Navigation Components

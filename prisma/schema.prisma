@@ -211,6 +211,28 @@ model User {
   notificationPreferences NotificationPreferences?
   userReviews             Review[]
   sessions                Session[]
+  addresses               Address[]
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // 'billing' or 'shipping'
+  firstName String
+  lastName  String
+  address   String
+  city      String
+  state     String
+  zipCode   String
+  country   String
+  phone     String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, type])
 }
 
 model VerificationToken {
