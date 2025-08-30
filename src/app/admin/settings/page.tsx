@@ -6,7 +6,7 @@ import { SettingsPage } from '@/components/admin/SettingsPage';
 
 export default function AdminSettings() {
   return (
-    <AdminAuthGuard requiredRole="admin">
+    <AdminAuthGuard requiredRole={["admin", "manager"]}>
       <AdminLayout>
         <SettingsPage />
       </AdminLayout>

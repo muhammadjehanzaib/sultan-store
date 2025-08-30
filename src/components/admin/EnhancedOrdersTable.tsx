@@ -50,7 +50,7 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
     customDateTo: '',
     paymentMethod: 'all',
     minAmount: 0,
-    maxAmount: 10000,
+    maxAmount: 100000000,
     sortBy: 'createdAt',
     sortOrder: 'desc',
   });
@@ -61,10 +61,14 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
   const paymentMethods = useMemo(() => {
     const methods = new Set(
       orders
-        .map(order => order.paymentMethod.name || order.paymentMethod.type || 'Unknown')
-        .filter(method => method && method.trim() !== '') // Remove empty/null values
+        .map(order => {
+          const pm: any = (order as any).paymentMethod;
+          if (!pm) return 'Unknown';
+          return typeof pm === 'string' ? pm : pm.name || pm.type || 'Unknown';
+        })
+        .filter((method: string) => method && method.trim() !== '')
     );
-    return Array.from(methods).sort(); // Sort for consistent order
+    return Array.from(methods).sort();
   }, [orders]);
 
   // Filter and sort orders
@@ -114,7 +118,8 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
 
       // Payment method filter
       if (filters.paymentMethod !== 'all') {
-        const orderPaymentMethod = order.paymentMethod.name || order.paymentMethod.type;
+        const pm: any = (order as any).paymentMethod;
+        const orderPaymentMethod = typeof pm === 'string' ? pm : (pm?.name || pm?.type || '');
         if (orderPaymentMethod !== filters.paymentMethod) return false;
       }
 
@@ -206,7 +211,7 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
       customDateTo: '',
       paymentMethod: 'all',
       minAmount: 0,
-      maxAmount: 10000,
+      maxAmount: 100000000,
       sortBy: 'createdAt',
       sortOrder: 'desc',
     });
@@ -365,7 +370,7 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
                     type="number"
                     placeholder="Max"
                     value={filters.maxAmount}
-                    onChange={(e) => setFilters(prev => ({ ...prev, maxAmount: Number(e.target.value) || 10000 }))}
+                    onChange={(e) => setFilters(prev => ({ ...prev, maxAmount: Number(e.target.value) || 100000000 }))}
                     className="w-full px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700"
                   />
                 </div>
@@ -585,9 +590,13 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-xs">
                     <div className="font-medium text-gray-900 dark:text-white">
-                      {order.paymentMethod.toString() || order.paymentMethod.type}
+                      {typeof (order as any).paymentMethod === 'string'
+                        ? (order as any).paymentMethod
+                        : ((order as any).paymentMethod?.name || (order as any).paymentMethod?.type || 'Unknown')
+                      }
                     </div>
-                    {order.paymentMethod.toString() === 'cod' && (
+                    {((typeof (order as any).paymentMethod === 'string' && (order as any).paymentMethod === 'cod') ||
+                      ((order as any).paymentMethod && (order as any).paymentMethod.type === 'cod')) && (
                       <span className="text-orange-600">Cash on Delivery</span>
                     )}
                   </div>
@@ -603,6 +612,26 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
                       className=" test-black dark:text-white hover:text-blue-700"
                     >
                       View
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (order.status !== 'shipped' && order.status !== 'delivered') return;
+                        const w = window.open(`/admin/orders/${order.id}/label`, '_blank');
+                        if (!w) return;
+                        // Send immediate snapshot so the label can render instantly
+                        const payload = { type: 'ORDER_SNAPSHOT', order };
+                        const send = () => {
+                          try { w.postMessage(payload, window.location.origin); } catch (e) {}
+                        };
+                        setTimeout(send, 300);
+                        // The label page will fetch the fast, normalized order itself if needed.
+                      }}
+                      variant="outline"
+                      size="sm"
+                      disabled={order.status !== 'shipped' && order.status !== 'delivered'}
+                      className={`text-purple-600 hover:text-purple-700 ${!(order.status === 'shipped' || order.status === 'delivered') ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      🏷️ Shipping Label
                     </Button>
                   </div>
                 </td>

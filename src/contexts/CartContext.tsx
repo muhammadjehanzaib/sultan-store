@@ -11,7 +11,7 @@ interface CartState {
 }
 
 type CartAction =
-  | { type: 'ADD_ITEM'; payload: { product: Product; selectedAttributes?: { [attributeId: string]: string }; variantPrice?: number; variantImage?: string } }
+  | { type: 'ADD_ITEM'; payload: { product: Product; selectedAttributes?: { [attributeId: string]: string }; variantId?: string; variantPrice?: number; variantImage?: string } }
   | { type: 'REMOVE_ITEM'; payload: { productId: string; variantId?: string } }
   | { type: 'UPDATE_QUANTITY'; payload: { productId: string; variantId?: string; quantity: number } }
   | { type: 'CLEAR_CART' }
@@ -55,9 +55,9 @@ const CartContext = createContext<{
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'ADD_ITEM': {
-      const { product, selectedAttributes, variantPrice, variantImage } = action.payload;
+      const { product, selectedAttributes, variantId: providedVariantId, variantPrice, variantImage } = action.payload;
       const productId = product.id;
-      const variantId = generateVariantId(productId, selectedAttributes);
+      const variantId = providedVariantId || generateVariantId(productId, selectedAttributes);
       const existingItem = findCartItem(state.items, productId, variantId);
 
       let newItems: CartItem[];

@@ -158,7 +158,8 @@ export const OrderDashboard: React.FC<OrderDashboardProps> = ({
     // Payment methods
     const paymentMap = new Map();
     filteredOrders.forEach(order => {
-      const method = order.paymentMethod.name || order.paymentMethod.type;
+      const pm: any = (order as any).paymentMethod;
+      const method = typeof pm === 'string' ? pm : (pm?.name || pm?.type || 'Unknown');
       paymentMap.set(method, (paymentMap.get(method) || 0) + 1);
     });
 

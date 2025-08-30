@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -38,23 +38,67 @@ export const ProductSlider: React.FC<ProductSliderProps> = ({
   const displayTitle = title || t('products.featured');
   const displaySubtitle = subtitle || t('products.viewAll');
 
+  const getRTLAdjustedScrollLeft = (el: HTMLDivElement) => {
+    // Browsers differ on scrollLeft in RTL:
+    // - Chrome/Edge/Safari: negative values as you scroll right
+    // - Firefox: positive values but start at max and decrease as you scroll right
+    // We'll normalize to a 0..max range from left-most to right-most visual position.
+    const { scrollLeft, scrollWidth, clientWidth, dir } = el;
+    const max = scrollWidth - clientWidth;
+    if (dir !== 'rtl') return { pos: Math.max(0, Math.min(max, scrollLeft)), max };
+
+    // Detect engine behavior
+    if (scrollLeft < 0) {
+      // WebKit/Blink negative
+      return { pos: Math.max(0, Math.min(max, -scrollLeft)), max };
+    }
+    // For positive systems (Firefox), when at visual left, scrollLeft === max; at visual right, === 0
+    // Convert to 0..max with 0 = visual left
+    return { pos: Math.max(0, Math.min(max, max - scrollLeft)), max };
+  };
+
   const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-      setShowLeftArrow(scrollLeft > 0);
-      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+    const el = scrollContainerRef.current;
+    if (el) {
+      const max = el.scrollWidth - el.clientWidth;
+      const sl = el.scrollLeft;
+      const THRESH = 2;
+      setShowLeftArrow(sl > THRESH);
+      setShowRightArrow(sl < max - THRESH);
+    }
+  };
+
+  // Set scrollLeft from normalized position (0..max), handling RTL engine differences
+  const setNormalizedScrollLeft = (el: HTMLDivElement, targetPos: number, behavior: ScrollBehavior = 'smooth') => {
+    const max = el.scrollWidth - el.clientWidth;
+    const clamped = Math.max(0, Math.min(max, targetPos));
+    if (el.dir !== 'rtl') {
+      el.scrollTo({ left: clamped, behavior });
+      return;
+    }
+    // RTL: map normalized position to native scrollLeft
+    if (el.scrollLeft < 0) {
+      // WebKit/Blink (negative values)
+      el.scrollTo({ left: -clamped, behavior });
+    } else {
+      // Firefox (positive, reverse)
+      el.scrollTo({ left: max - clamped, behavior });
     }
   };
 
   const scrollLeft = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    const el = scrollContainerRef.current;
+    if (el) {
+      const step = 300;
+      el.scrollBy({ left: -step, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    const el = scrollContainerRef.current;
+    if (el) {
+      const step = 300;
+      el.scrollBy({ left: step, behavior: 'smooth' });
     }
   };
 
@@ -72,6 +116,45 @@ export const ProductSlider: React.FC<ProductSliderProps> = ({
       </div>
     );
   }
+
+  useEffect(() => {
+    // Initialize scroll position and arrow visibility on mount and when language changes
+    const el = scrollContainerRef.current;
+    if (el) {
+      // Ensure correct initial arrows before layout settles
+      if (isRTL) {
+        setShowLeftArrow(true);
+        setShowRightArrow(false);
+      } else {
+        setShowLeftArrow(false);
+        setShowRightArrow(true);
+      }
+
+      const setToStart = () => {
+        if (!scrollContainerRef.current) return;
+        const node = scrollContainerRef.current;
+        if (isRTL) {
+          const max = node.scrollWidth - node.clientWidth;
+          node.scrollTo({ left: max, behavior: 'auto' });
+        } else {
+          node.scrollTo({ left: 0, behavior: 'auto' });
+        }
+        handleScroll();
+      };
+      // Run immediately and after layout settles (images load)
+      setToStart();
+      const t0 = setTimeout(setToStart, 0);
+      const t1 = setTimeout(setToStart, 100);
+      const t2 = setTimeout(setToStart, 400);
+      // Clean timeouts on unmount/update
+      return () => {
+        clearTimeout(t0);
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+    handleScroll();
+  }, [isRTL, products.length]);
 
   return (
     <section className={`bg-white py-12 ${className}`}>
@@ -107,12 +190,12 @@ export const ProductSlider: React.FC<ProductSliderProps> = ({
 
         {/* Products Slider */}
         <div className="relative">
-          {/* Left Arrow */}
+          {/* Left Arrow (scroll visually left) */}
           {showLeftArrow && (
             <button
               onClick={scrollLeft}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50 transition-all duration-200"
-              style={{ marginLeft: '-20px' }}
+              className="absolute -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50 transition-all duration-200"
+              style={{ top: '50%', left: -20 }}
             >
               <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -120,12 +203,12 @@ export const ProductSlider: React.FC<ProductSliderProps> = ({
             </button>
           )}
 
-          {/* Right Arrow */}
+          {/* Right Arrow (scroll visually right) */}
           {showRightArrow && (
             <button
               onClick={scrollRight}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50 transition-all duration-200"
-              style={{ marginRight: '-20px' }}
+              className="absolute -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50 transition-all duration-200"
+              style={{ top: '50%', right: -20 }}
             >
               <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -139,6 +222,7 @@ export const ProductSlider: React.FC<ProductSliderProps> = ({
             onScroll={handleScroll}
             className="flex gap-6 overflow-x-auto scrollbar-hide pb-2"
             style={{
+              direction: 'ltr',
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}
@@ -171,6 +255,13 @@ export const ProductSlider: React.FC<ProductSliderProps> = ({
         }
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
+        }
+        /* Ensure horizontal layout direction doesn't flip card order in RTL */
+        .rtl {
+          direction: rtl;
+        }
+        .ltr {
+          direction: ltr;
         }
       `}</style>
     </section>

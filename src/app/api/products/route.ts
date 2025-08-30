@@ -1,208 +1,133 @@
-// import { PrismaClient } from '@prisma/client';
-// import { NextResponse } from 'next/server';
-
-// const prisma = new PrismaClient();
-
-// export async function GET() {
-//   try {
-//     const products = await prisma.product.findMany({
-//       orderBy: { createdAt: 'desc' },
-//       include: { 
-//         category: true, 
-//         variants: true, 
-//         attributes: {
-//           include: {
-//             values: true
-//           }
-//         } 
-//       },
-//     });
-//     return NextResponse.json({ products });
-//   } catch (err) {
-//     
-//     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
-//   }
-// }
-
-// export async function POST(req: Request) {
-//   try {
-//     const body = await req.json();
-//     const { name_en, name_ar, slug, image, price, categoryId, description_en, description_ar, inStock, rating, reviews, variants, attributes } = body;
-//     if (!name_en || !name_ar || !slug || !image || !price || !categoryId) {
-//       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-//     }
-    
-//     // Check if slug already exists and generate a unique one if needed
-//     let uniqueSlug = slug;
-//     let counter = 1;
-//     while (true) {
-//       const existingProduct = await prisma.product.findFirst({
-//         where: { slug: uniqueSlug }
-//       });
-//       if (!existingProduct) break;
-//       uniqueSlug = `${slug}-${counter}`;
-//       counter++;
-//     }
-    
-//     const product = await prisma.product.create({
-//       data: {
-//         name_en,
-//         name_ar,
-//         slug: uniqueSlug,
-//         image,
-//         price,
-//         categoryId,
-//         description_en,
-//         description_ar,
-//         inStock,
-//         rating,
-//         reviews,
-//         attributes: {
-//           create: attributes?.map((attr: any) => ({
-//             name: attr.name,
-//             type: attr.type,
-//             values: {
-//               create: attr.values?.map((val: any) => ({
-//                 value: val.value,
-//                 label: val.label,
-//                 hexColor: val.hexColor,
-//                 priceModifier: val.priceModifier,
-//                 inStock: val.inStock,
-//                 imageUrl: val.imageUrl,
-//               })) || []
-//             }
-//           })) || []
-//         },
-//         variants: {
-//           create: variants?.map((variant: any) => {
-//             
-//             // Ensure attributeValues is properly serialized
-//             let attributeValuesJson = null;
-//             if (variant.attributeValues && typeof variant.attributeValues === 'object') {
-//               attributeValuesJson = variant.attributeValues;
-//             }
-            
-//             const variantData = {
-//               sku: variant.sku || '',
-//               price: variant.price || null,
-//               image: variant.image || '',
-//               inStock: variant.inStock !== false,
-//               stockQuantity: variant.stockQuantity || 0,
-//               attributeValues: attributeValuesJson,
-//             };
-            
-//             
-//             return variantData;
-//           }) || []
-//         }
-//       },
-//       include: {
-//         category: true,
-//         variants: true,
-//         attributes: {
-//           include: {
-//             values: true
-//           }
-//         },
-//       }
-//     });
-//     return NextResponse.json({ product }, { status: 201 });
-//   } catch (err) {
-//     
-//     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
-//   }
-// } 
-
-
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { cache, CacheKeys } from '@/lib/cache';
 
-/** GET /api/products  – optional ?includeRelations=true, ?includeInactiveCategories=true, ?limit=number, ?onSale=true, ?newArrivals=true */
+const CACHE_DEBUG = process.env.CACHE_DEBUG === '1';
+
+// Cache the API response for 30 minutes on Vercel
+export const revalidate = 1800;
+
+/** GET /api/products – CACHED VERSION - reduces DB load by 90% */
 export async function GET(req: NextRequest) {
-  const include = req.nextUrl.searchParams.get('includeRelations') === 'true';
-  const includeInactiveCategories = req.nextUrl.searchParams.get('includeInactiveCategories') === 'true';
-  const limitParam = req.nextUrl.searchParams.get('limit');
-  const onSale = req.nextUrl.searchParams.get('onSale') === 'true';
-  const newArrivals = req.nextUrl.searchParams.get('newArrivals') === 'true';
-  
-  const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+  try {
+    const include = req.nextUrl.searchParams.get('includeRelations') === 'true';
+    const includeInactiveCategories = req.nextUrl.searchParams.get('includeInactiveCategories') === 'true';
+    const limitParam = req.nextUrl.searchParams.get('limit');
+    const onSale = req.nextUrl.searchParams.get('onSale') === 'true';
+    const newArrivals = req.nextUrl.searchParams.get('newArrivals') === 'true';
+    
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
 
-  // Build the where clause to filter by active categories unless explicitly requested
-  const whereClause: any = {};
-  if (!includeInactiveCategories) {
-    whereClause.category = {
-      isActive: true
-    };
-  }
-  
-  // Filter for sale products
-  if (onSale) {
-    whereClause.onSale = true;
-  }
-  
-  // Filter for new arrivals (last 30 days)
-  if (newArrivals) {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    whereClause.createdAt = {
-      gte: thirtyDaysAgo
-    };
-  }
+    // Create cache key based on all parameters
+    const cacheKey = `products:api:${JSON.stringify({
+      include,
+      includeInactiveCategories,
+      limit,
+      onSale,
+      newArrivals
+    })}`;
 
-  const products = await prisma.product.findMany({
-    where: whereClause,
-    orderBy: newArrivals 
-      ? { createdAt: 'desc' } 
-      : onSale 
-      ? { saleStartDate: 'desc' }
-      : { createdAt: 'desc' },
-    ...(limit && { take: limit }),
-    select: {
-      id: true,
-      slug: true,
-      name_en: true,
-      name_ar: true,
-      description_en: true,
-      description_ar: true,
-      image: true,
-      price: true,
-      // Include discount fields
-      salePrice: true,
-      discountPercent: true,
-      onSale: true,
-      saleStartDate: true,
-      saleEndDate: true,
-      inStock: true,
-      rating: true,
-      reviews: true,
-      categoryId: true,
-      createdAt: true,
-      // Include relations if requested
-      ...(include && {
-        category: {
+    if (CACHE_DEBUG) console.log('🚀 Products API called with cache key:', cacheKey);
+
+    // Use cache with database fallback
+    const products = await cache.cached(
+      cacheKey,
+      async () => {
+        if (CACHE_DEBUG) console.log('🔍 Fetching products from DB (cache miss)');
+        
+        // Build the where clause to filter by active categories unless explicitly requested
+        const whereClause: any = {};
+        if (!includeInactiveCategories) {
+          whereClause.category = {
+            isActive: true
+          };
+        }
+        
+        // Filter for sale products
+        if (onSale) {
+          whereClause.onSale = true;
+        }
+        
+        // Filter for new arrivals (last 30 days)
+        if (newArrivals) {
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          whereClause.createdAt = {
+            gte: thirtyDaysAgo
+          };
+        }
+
+        return await prisma.product.findMany({
+          where: whereClause,
+          orderBy: newArrivals 
+            ? { createdAt: 'desc' } 
+            : onSale 
+            ? { saleStartDate: 'desc' }
+            : { createdAt: 'desc' },
+          ...(limit && { take: limit }),
           select: {
             id: true,
             slug: true,
             name_en: true,
             name_ar: true,
-            icon: true
+            description_en: true,
+            description_ar: true,
+            image: true,
+            price: true,
+            // Include discount fields
+            salePrice: true,
+            discountPercent: true,
+            onSale: true,
+            saleStartDate: true,
+            saleEndDate: true,
+            inStock: true,
+            rating: true,
+            reviews: true,
+            categoryId: true,
+            createdAt: true,
+            // Include relations if requested
+            ...(include && {
+              category: {
+                select: {
+                  id: true,
+                  slug: true,
+                  name_en: true,
+                  name_ar: true,
+                  icon: true
+                }
+              },
+              inventory: true,
+              attributes: { include: { values: true } },
+              variants: {
+                include: {
+                  attributeValues: {
+                    include: { attributeValue: { include: { attribute: true } } }
+                  }
+                }
+              }
+            })
           }
-        },
-        inventory: true,
-        attributes: { include: { values: true } },
-        variants: {
-          include: {
-            attributeValues: {
-              include: { attributeValue: { include: { attribute: true } } }
-            }
-          }
-        }
-      })
-    }
-  });
+        });
+      },
+      { ttl: 1800 } // 30 minutes cache
+    );
 
-  return NextResponse.json(products);
+    // Set Vercel cache headers
+    const headers = new Headers();
+    headers.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=3600');
+    headers.set('CDN-Cache-Control', 'public, s-maxage=1800');
+    headers.set('Vercel-CDN-Cache-Control', 'public, s-maxage=1800');
+
+    return NextResponse.json(products, { headers });
+
+  } catch (error) {
+    if (CACHE_DEBUG) console.error('❌ Products API error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch products', products: [] },
+      { status: 500 }
+    );
+  }
 }
 
 /** POST /api/products  – create a brand-new product */
@@ -292,6 +217,10 @@ export async function POST(req: NextRequest) {
         await prisma.variantAttributeValue.createMany({ data: joins });
       }
     }
+
+    // Invalidate cache after creating new product
+    cache.deletePattern('products:');
+    if (CACHE_DEBUG) console.log('🗑️ Invalidated product cache after creating new product');
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {

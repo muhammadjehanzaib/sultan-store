@@ -161,7 +161,7 @@ export const CategoryMegaMenu: React.FC<CategoryMegaMenuProps> = ({
         aria-haspopup="true"
       >
         <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
-          <span>Categories</span>
+          <span>{t('nav.allCategories')}</span>
         </div>
         <svg 
           className={`w-4 h-4 transform transition-transform duration-200 ${
@@ -180,7 +180,7 @@ export const CategoryMegaMenu: React.FC<CategoryMegaMenuProps> = ({
         <div className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} w-screen max-w-5xl lg:max-w-5xl md:max-w-4xl sm:max-w-full bg-white shadow-xl border border-gray-200 rounded-lg mt-1 z-50`}>
           {/* Header with controls */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-b border-gray-100 bg-gray-50 rounded-t-lg">
-            <h3 className="text-lg font-semibold text-gray-900">Browse Categories</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('nav.categories')}</h3>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:space-x-4">
               {/* View Mode Toggle */}
               <div className="flex bg-gray-200 rounded-lg p-1">
@@ -496,7 +496,7 @@ const CategoryTreeRenderer: React.FC<CategoryTreeRendererProps> = ({
                     e.stopPropagation();
                     onToggleCategory(category.id);
                   }}
-                  className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors mr-1"
+                  className={`flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors ${isRTL ? 'ml-1' : 'mr-1'}`}
                 >
                   {isExpanded ? (
                     <IoChevronDown className="w-3 h-3 text-gray-500" />
@@ -511,7 +511,7 @@ const CategoryTreeRenderer: React.FC<CategoryTreeRendererProps> = ({
               {/* Category Item */}
               <button
                 onClick={() => onCategoryClick(category)}
-                className={`flex-1 flex items-center px-2 py-1.5 text-sm rounded-md transition-all duration-200 text-left ${
+                className={`flex-1 flex items-center px-2 py-1.5 text-sm rounded-md transition-all duration-200 ${isRTL ? 'text-right' : 'text-left'} ${
                   isActive
                     ? 'bg-purple-100 text-purple-700 font-medium'
                     : 'text-gray-700 hover:bg-gray-50 hover:text-purple-600'
@@ -519,17 +519,17 @@ const CategoryTreeRenderer: React.FC<CategoryTreeRendererProps> = ({
               >
                 {/* Category Icon */}
                 {category.icon && (
-                  <span className={`flex-shrink-0 ${isRTL ? 'ml-2' : 'mr-2'}`}>
+                  <span className={`flex-shrink-0 ${isRTL ? 'order-2 ml-2' : 'order-1 mr-2'}`}>
                     {category.icon}
                   </span>
                 )}
                 
                 {/* Category Name */}
-                <span className="flex-1 truncate">{categoryName}</span>
+                <span className={`flex-1 truncate ${isRTL ? 'order-1' : 'order-2'}`}>{categoryName}</span>
                 
                 {/* Product Count */}
                 {category.productCount !== undefined && category.productCount > 0 && (
-                  <span className="flex-shrink-0 text-xs text-gray-400 ml-2">
+                  <span className={`flex-shrink-0 text-xs text-gray-400 ${isRTL ? 'order-3 mr-2' : 'order-3 ml-2'}`}>
                     {category.productCount}
                   </span>
                 )}
@@ -538,7 +538,7 @@ const CategoryTreeRenderer: React.FC<CategoryTreeRendererProps> = ({
                 <Link
                   href={`/category/${category.path || category.slug}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="flex-shrink-0 ml-2 p-1 text-gray-400 hover:text-purple-600 rounded transition-colors"
+                  className={`flex-shrink-0 ${isRTL ? 'order-4 mr-2' : 'order-4 ml-2'} p-1 text-gray-400 hover:text-purple-600 rounded transition-colors`}
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />

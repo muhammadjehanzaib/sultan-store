@@ -35,8 +35,21 @@ export default function AdminOrders() {
   }, []);
 
   const handleViewOrder = (order: Order) => {
+    // Open modal immediately with current snapshot
     setSelectedOrder(order);
     setIsModalOpen(true);
+    // Then fetch fast, normalized details and refresh the modal data
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/orders/fast/${order.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.order) setSelectedOrder(data.order as Order);
+        }
+      } catch (e) {
+        // ignore and keep snapshot
+      }
+    })();
   };
 
   const handleUpdateOrderStatus = async (orderId: string, status: Order['status']) => {

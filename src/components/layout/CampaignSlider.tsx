@@ -4,6 +4,84 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Image from 'next/image';
 
+// Helper function to ensure proper image URLs
+const normalizeImageUrl = (url: string): string => {
+  if (!url) return '';
+
+  // Allow data: and blob: URLs (for base64 uploads)
+  if (url.startsWith('data:') || url.startsWith('blob:')) {
+    return url;
+  }
+  
+  // If it's already an absolute URL or root-relative, return as is
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) {
+    return url;
+  }
+  
+  // Add leading slash for relative paths
+  return `/${url}`;
+};
+
+// Map a small subset of Tailwind color tokens to hex for gradient parsing
+const TAILWIND_COLOR_HEX: Record<string, string> = {
+  // Purples
+  'purple-100': '#f3e8ff',
+  'purple-200': '#e9d5ff',
+  'purple-300': '#d8b4fe',
+  'purple-400': '#c084fc',
+  'purple-500': '#a855f7',
+  'purple-600': '#7c3aed',
+  'purple-700': '#6d28d9',
+  // Pinks
+  'pink-400': '#f472b6',
+  'pink-500': '#ec4899',
+  'pink-600': '#db2777',
+  'pink-700': '#be185d',
+  // Blues
+  'blue-500': '#3b82f6',
+  'blue-600': '#2563eb',
+  // Teals
+  'teal-500': '#14b8a6',
+  'teal-600': '#0d9488',
+  // Emeralds
+  'emerald-500': '#10b981',
+  'emerald-600': '#059669',
+  // Cyans
+  'cyan-500': '#06b6d4',
+  'cyan-600': '#0891b2',
+  // Grays
+  'gray-900': '#111827',
+  'gray-800': '#1f2937',
+  'white': '#ffffff',
+  'black': '#000000',
+};
+
+// Utility: check if string has any visible characters (filters spaces and zero-width chars)
+const hasVisibleText = (val?: string): boolean => {
+  if (!val) return false;
+  const trimmed = val.trim();
+  if (!trimmed) return false;
+  // Require at least one Unicode letter or digit so strings like "\"\"" or "''" don't count
+  return /[\p{L}\p{N}]/u.test(trimmed);
+};
+
+// Convert a background token like "from-purple-100 to-pink-600" into a CSS gradient
+const tailwindGradientToCss = (bg: string): string => {
+  try {
+    const parts = bg.split(/\s+/g);
+    const fromToken = parts.find((p) => p.startsWith('from-'))?.replace('from-', '') || '';
+    const toToken = parts.find((p) => p.startsWith('to-'))?.replace('to-', '') || '';
+
+    const fromHex = TAILWIND_COLOR_HEX[fromToken] || '#7c3aed';
+    const toHex = TAILWIND_COLOR_HEX[toToken] || '#db2777';
+
+    return `linear-gradient(135deg, ${fromHex}, ${toHex})`;
+  } catch (e) {
+    // Safe fallback
+    return 'linear-gradient(135deg, #7c3aed, #db2777)';
+  }
+};
+
 interface SlideData {
   id: string;
   title: { en: string; ar: string };
@@ -31,7 +109,7 @@ const defaultSlides: SlideData[] = [
     subtitle: { en: 'Up to 50% OFF!', ar: 'خصم يصل إلى 50%!' },
     description: { en: 'Discover our latest collection with amazing discounts', ar: 'اكتشف مجموعتنا الأحدث مع خصومات رائعة' },
     image: '/images/products/tshirt.jpg',
-    ctaText: { en: 'Shop Now', ar: 'تسوق الآن' },
+    ctaText: { en: '', ar: '' },
     ctaLink: '#featured-products',
     backgroundColor: 'from-purple-600 to-pink-600',
     textColor: 'text-white',
@@ -43,7 +121,7 @@ const defaultSlides: SlideData[] = [
     subtitle: { en: 'Fashion Forward', ar: 'أزياء متقدمة' },
     description: { en: 'Stay ahead of trends with our newest collection', ar: 'ابق في المقدمة مع مجموعتنا الأحدث' },
     image: '/images/products/smartwatch.jpg',
-    ctaText: { en: 'Explore', ar: 'استكشف' },
+    ctaText: { en: '', ar: '' },
     ctaLink: '#featured-products',
     backgroundColor: 'from-blue-600 to-teal-600',
     textColor: 'text-white'
@@ -53,8 +131,8 @@ const defaultSlides: SlideData[] = [
     title: { en: 'Premium Quality', ar: 'جودة فائقة' },
     subtitle: { en: 'Best Sellers', ar: 'الأكثر مبيعاً' },
     description: { en: 'Top-rated products loved by thousands of customers', ar: 'منتجات عالية التقييم يحبها الآلاف من العملاء' },
-    image: 'images/products/headphones.jpg',
-    ctaText: { en: 'View Collection', ar: 'عرض المجموعة' },
+    image: '/images/products/headphones.jpg',
+    ctaText: { en: '', ar: '' },
     ctaLink: '#featured-products',
     backgroundColor: 'from-emerald-600 to-cyan-600',
     textColor: 'text-white'
@@ -130,21 +208,27 @@ export const CampaignSlider: React.FC<CampaignSliderProps> = ({
                   : 'opacity-0 translate-x-full scale-95'
             }`}
             style={{
-              background: `linear-gradient(135deg, ${slide.backgroundColor.includes('from-') 
-                ? slide.backgroundColor.replace('from-', '').replace(' to-', ', ').replace('-600', '') 
-                : slide.backgroundColor})`
+              background: slide.backgroundColor.includes('from-')
+                ? tailwindGradientToCss(slide.backgroundColor)
+                : slide.backgroundColor
             }}
           >
             {/* Background Image */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-black/20">
               {slide.image && (
                 <Image
-                  src={slide.image}
+                  src={normalizeImageUrl(slide.image)}
                   alt={slide.title[language]}
                   fill
-                  className="object-cover mix-blend-overlay"
+                  className="object-cover"
                   priority={index === 0}
                   sizes="100vw"
+                  unoptimized={slide.image.startsWith('data:')}
+                  onError={(e) => {
+                    console.warn('Image failed to load:', slide.image);
+                    // Hide the image on error
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
                 />
               )}
             </div>
@@ -177,14 +261,16 @@ export const CampaignSlider: React.FC<CampaignSliderProps> = ({
                     {slide.description[language]}
                   </p>
 
-                  {/* CTA Button */}
-                  <a
-                    href={slide.ctaLink}
-                    className="inline-block bg-white text-gray-900 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
-                    aria-label={`${slide.ctaText[language]} - ${slide.title[language]}`}
-                  >
-                    {slide.ctaText[language]}
-                  </a>
+                  {/* CTA Button (only if text provided) */}
+                  {hasVisibleText(slide.ctaText?.[language]) ? (
+                    <a
+                      href={slide.ctaLink}
+                      className="inline-block bg-white text-gray-900 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
+                      aria-label={`${(slide.ctaText?.[language] || '').trim()} - ${slide.title[language]}`}
+                    >
+                      {(slide.ctaText?.[language] || '').trim()}
+                    </a>
+                  ) : null}
                 </div>
               </div>
             </div>

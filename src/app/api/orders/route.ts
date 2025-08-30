@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const customerEmail = searchParams.get('customerEmail');
-    
+
     const where: any = {};
     if (status) where.status = status;
     if (customerEmail) where.customerEmail = customerEmail;
@@ -25,38 +25,64 @@ export async function GET(request: Request) {
                 category: true,
                 attributes: {
                   include: {
-                    values: true
-                  }
+                    values: true,
+                  },
                 },
-                variants: true
-              }
-            }
-          }
-        }
-      }
+                variants: true,
+              },
+            },
+          },
+        },
+      },
     });
 
+    const normalizePaymentMethod = (pm: any) => {
+      if (!pm) return null;
+      if (typeof pm === 'string') {
+        const type = pm;
+        const nameMap: Record<string, string> = {
+          cod: 'Cash on Delivery',
+          stripe: 'Stripe',
+          mada: 'Mada',
+          bank_transfer: 'Bank Transfer',
+          paypal: 'PayPal',
+          apple_pay: 'Apple Pay',
+          google_pay: 'Google Pay',
+          card: 'Card',
+        };
+        return { id: type, type, name: nameMap[type] || type.toUpperCase() };
+      }
+      // Already an object
+      return pm;
+    };
+
     // Transform the orders to match expected interface
-    const orders = ordersRaw.map(order => ({
+    const orders = ordersRaw.map((order) => ({
       ...order,
-      items: order.items.map(item => ({
+      paymentMethod: normalizePaymentMethod((order as any).paymentMethod),
+      items: order.items.map((item) => ({
         ...item,
         product: {
           ...item.product,
           name: {
             en: item.product.name_en,
-            ar: item.product.name_ar
+            ar: item.product.name_ar,
           },
-          description: item.product.description_en || item.product.description_ar ? {
-            en: item.product.description_en || '',
-            ar: item.product.description_ar || ''
-          } : undefined,
-          category: item.product.category ? {
-            en: item.product.category.name_en,
-            ar: item.product.category.name_ar
-          } : undefined
-        }
-      }))
+          description:
+            item.product.description_en || item.product.description_ar
+              ? {
+                  en: item.product.description_en || '',
+                  ar: item.product.description_ar || '',
+                }
+              : undefined,
+          category: item.product.category
+            ? {
+                en: item.product.category.name_en,
+                ar: item.product.category.name_ar,
+              }
+            : undefined,
+        },
+      })),
     }));
 
     return NextResponse.json({ orders });
@@ -106,18 +132,40 @@ export async function POST(request: Request) {
             quantity: item.quantity,
             price: item.price,
             total: item.total,
-            selectedAttributes: item.selectedAttributes || null
-          }))
-        }
+            selectedAttributes: item.selectedAttributes || null,
+          })),
+        },
       },
       include: {
         items: {
           include: {
-            product: true
-          }
-        }
-      }
+            product: true,
+          },
+        },
+      },
     });
+
+    // Normalize paymentMethod in response
+    const normalizePaymentMethod = (pm: any) => {
+      if (!pm) return null;
+      if (typeof pm === 'string') {
+        const type = pm;
+        const nameMap: Record<string, string> = {
+          cod: 'Cash on Delivery',
+          stripe: 'Stripe',
+          mada: 'Mada',
+          bank_transfer: 'Bank Transfer',
+          paypal: 'PayPal',
+          apple_pay: 'Apple Pay',
+          google_pay: 'Google Pay',
+          card: 'Card',
+        };
+        return { id: type, type, name: nameMap[type] || type.toUpperCase() };
+      }
+      return pm;
+    };
+
+    const orderNormalized: any = { ...order, paymentMethod: normalizePaymentMethod((order as any).paymentMethod) };
 
     // Update inventory for each item
     for (const item of items) {
@@ -161,21 +209,19 @@ export async function POST(request: Request) {
       }
     }
 
-    // Send order confirmation notification
+    // Send order confirmation notification (non-blocking)
     try {
       const session = await getServerSession(authOptions);
       if (session?.user?.id) {
-        await notificationService.notifyOrderCreated(
-          session.user.id, 
-          order.id, 
-          total
-        );
+        void notificationService
+          .notifyOrderCreated(session.user.id, order.id, total)
+          .catch(() => {});
       }
     } catch (notificationError) {
-      // Don't fail the order creation if notification fails
+      // ignore
     }
 
-    return NextResponse.json({ order }, { status: 201 });
+    return NextResponse.json({ order: orderNormalized }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }

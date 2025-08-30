@@ -237,6 +237,26 @@ export function OrdersTable({ orders, onView, onUpdateStatus }: OrdersTableProps
                       >
                         {t('admin.orders.view')}
                       </Button>
+                      <Button
+                        onClick={() => {
+                          if (!(order.status === 'shipped' || order.status === 'delivered')) return;
+                          const w = window.open(`/admin/orders/${order.id}/label`, '_blank');
+                          if (!w) return;
+                          // Send immediate snapshot so the label can render instantly
+                          const payload = { type: 'ORDER_SNAPSHOT', order };
+                          const send = () => {
+                            try { w.postMessage(payload, window.location.origin); } catch (e) {}
+                          };
+                          setTimeout(send, 300);
+                          // The label page will fetch the fast, normalized order itself if needed.
+                        }}
+                        variant="outline"
+                        size="sm"
+                        disabled={!(order.status === 'shipped' || order.status === 'delivered')}
+                        className={`text-purple-600 hover:text-purple-700 ${!(order.status === 'shipped' || order.status === 'delivered') ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        🏷️ Shipping Label
+                      </Button>
                       <select
                         value={order.status}
                         onChange={(e) => onUpdateStatus(order.id, e.target.value as Order['status'])}

@@ -9,7 +9,10 @@
     "lint": "next lint",
     "export": "next build",
     "postinstall": "prisma generate",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "cache:warm": "tsx scripts/warm-cache.ts",
+    "cache:clear": "node -e \"console.log('Cache cleared - restart server to see effect')\"",
+    "cache:test": "tsx scripts/test-cache.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -18,10 +21,14 @@
     "@react-email/components": "^0.5.0",
     "@react-email/render": "^1.2.0",
     "@types/bcryptjs": "^3.0.0",
+    "@types/node-cache": "^4.2.5",
+    "@types/qrcode": "^1.5.5",
     "bcryptjs": "^3.0.2",
     "next": "15.3.4",
     "next-auth": "^4.24.11",
+    "node-cache": "^5.1.2",
     "prisma": "^6.12.0",
+    "qrcode": "^1.5.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",

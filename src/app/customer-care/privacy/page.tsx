@@ -9,6 +9,7 @@ import { Footer } from '@/components';
 const sidebarItems = [
   { id: 'contact', label: 'Contact Us', path: '/customer-care', isActive: false },
   { id: 'faq', label: 'Frequently Asked Questions', path: '/customer-care/faq', isActive: false },
+  { id: 'shopping-guide', label: 'Shopping Guide', path: '/customer-care/shopping-guide', isActive: false },
   { id: 'returns', label: 'Return and Exchange', path: '/customer-care/returns', isActive: false },
   { id: 'privacy', label: 'Privacy Policy', path: '/customer-care/privacy', isActive: true },
 ];

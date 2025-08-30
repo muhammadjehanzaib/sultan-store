@@ -28,6 +28,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     '/admin/inventory': ['admin', 'manager'],
     '/admin/analytics': ['admin'],
     '/admin/settings': ['admin'],
+    '/admin/settings?tab=slides': ['admin'],
     '/admin/queries': ['admin', 'manager', 'support'],
   };
 
@@ -42,6 +43,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     { name: t('admin.reviews.title'), href: '/admin/reviews', icon: '⭐' },
     { name: t('admin.nav.analytics'), href: '/admin/analytics', icon: '📈' },
     { name: t('admin.nav.settings'), href: '/admin/settings', icon: '⚙️' },
+    { name: 'Campaign Slides', href: '/admin/settings?tab=slides', icon: '🖼️' },
     { name: 'Contact Queries', href: '/admin/queries', icon: '📩' },
   ];
 

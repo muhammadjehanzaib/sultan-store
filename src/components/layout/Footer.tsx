@@ -82,23 +82,23 @@ export const Footer: React.FC = () => {
   const trustBadges = [
     {
       icon: FaLock,
-      title: 'Secured Shopping & Payment',
-      description: 'Safe and secure transactions'
+      title: t('footer.trust.securedTitle'),
+      description: t('footer.trust.securedDesc')
     },
     {
       icon: FaShieldAlt,
-      title: 'Authentic & Warranted Products',
-      description: 'Genuine products with warranty'
+      title: t('footer.trust.authenticTitle'),
+      description: t('footer.trust.authenticDesc')
     },
     {
       icon: FaUndo,
-      title: 'Convenient Returns & Support Services',
-      description: 'Easy returns and customer support'
+      title: t('footer.trust.returnsTitle'),
+      description: t('footer.trust.returnsDesc')
     },
     {
       icon: FaTruck,
-      title: 'Fast Delivery',
-      description: 'Quick and reliable shipping'
+      title: t('footer.trust.deliveryTitle'),
+      description: t('footer.trust.deliveryDesc')
     }
   ];
 
@@ -133,7 +133,7 @@ export const Footer: React.FC = () => {
           {/* Text with gradient effect */}
           <span className="relative">
             <span className="block group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-gray-700 group-hover:to-gray-800 transition-all duration-300">
-              Go back to the top
+              {t('footer.backToTop')}
             </span>
             <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-gray-600 to-gray-700 group-hover:w-full transition-all duration-500 ease-out"></div>
           </span>
@@ -150,117 +150,234 @@ export const Footer: React.FC = () => {
       {/* Social Media Section */}
       <div className="bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className={`flex flex-col lg:flex-row items-start justify-between gap-8 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
-            {/* Left side - Social media */}
-            <div className="flex-1">
-              <h3 className="text-gray-700 font-medium mb-4">
-                Be the first to know about the latest technology and offers
-              </h3>
-              <div className={`flex flex-wrap gap-3 ${isRTL ? 'space-x-reverse' : ''}`}>
-                {socialLinks.map((social) => {
-                  const IconComponent = social.icon;
-                  return (
-                    <a
-                      key={social.name}
-                      href={social.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
-                      style={{
-                        backgroundColor: 
-                          social.name === 'Facebook' ? '#1877F2' :
-                          social.name === 'X' ? '#000000' :
-                          social.name === 'Instagram' ? '#E4405F' :
-                          social.name === 'YouTube' ? '#FF0000' :
-                          social.name === 'Snapchat' ? '#FFFC00' :
-                          social.name === 'TikTok' ? '#000000' :
-                          social.name === 'LinkedIn' ? '#0A66C2' : '#1877F2'
-                      }}
-                      title={social.name}
-                      aria-label={`Follow us on ${social.name}`}
-                    >
-                      <IconComponent className={`text-lg ${
-                        social.name === 'Snapchat' ? 'text-black' : 'text-white'
-                      }`} />
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
+          <div className={`flex flex-col lg:flex-row items-start justify-between gap-8`} dir="ltr">
+            {isRTL ? (
+              <>
+                {/* Right side - Payment Methods */}
+                <div className={`flex-1 max-w-md ${isRTL ? 'order-1 lg:order-1' : 'order-2 lg:order-2'}`}>
+                  <h3 className="text-gray-700 font-medium mb-4 text-right">
+                    {t('footer.paymentMethods')}
+                  </h3>
+                  <div className="flex w-full gap-3 md:gap-4 justify-end">
+                    {/* Visa */}
+                    <div className="h-14 flex items-center">
+                      <Image
+                        src="/logos/payment/visa.png"
+                        alt="Visa"
+                        width={120}
+                        height={40}
+                        className="hover:scale-105 transition-transform duration-200 object-contain"
+                      />
+                    </div>
+                    
+                    {/* Mada */}
+                    <div className="h-14 flex items-center">
+                      <Image
+                        src="/logos/payment/mada.png"
+                        alt="Mada"
+                        width={120}
+                        height={40}
+                        className="hover:scale-105 transition-transform duration-200 object-contain"
+                      />
+                    </div>
+                    
+                    {/* STC Pay */}
+                    <div className="h-14 flex items-center">
+                      <Image
+                        src="/logos/payment/stcpay.png"
+                        alt="STC Pay"
+                        width={120}
+                        height={40}
+                        className="hover:scale-105 transition-transform duration-200 object-contain"
+                      />
+                    </div>
+                    
+                    {/* Stripe */}
+                    <div className="h-14 flex items-center">
+                      <Image
+                        src="/logos/payment/strip.png"
+                        alt="Stripe"
+                        width={120}
+                        height={40}
+                        className="hover:scale-105 transition-transform duration-200 object-contain"
+                      />
+                    </div>
 
-            {/* Right side - Payment Methods */}
-            <div className="flex-1 max-w-md">
-              <h3 className="text-gray-700 font-medium mb-4">
-                Payment Methods:
-              </h3>
-              <div className="flex gap-2">
-                {/* Visa */}
-                <div className="h-14 flex items-center">
-                  <Image
-                    src="/logos/payment/visa.png"
-                    alt="Visa"
-                    width={120}
-                    height={40}
-                    className="hover:scale-105 transition-transform duration-200 object-contain"
-                  />
-                </div>
-                
-                {/* Mada */}
-                <div className="h-14 flex items-center">
-                  <Image
-                    src="/logos/payment/mada.png"
-                    alt="Mada"
-                    width={120}
-                    height={40}
-                    className="hover:scale-105 transition-transform duration-200 object-contain"
-                  />
-                </div>
-                
-                {/* STC Pay */}
-                <div className="h-14 flex items-center">
-                  <Image
-                    src="/logos/payment/stcpay.png"
-                    alt="STC Pay"
-                    width={120}
-                    height={40}
-                    className="hover:scale-105 transition-transform duration-200 object-contain"
-                  />
-                </div>
-                
-                {/* Stripe */}
-                <div className="h-14 flex items-center">
-                  <Image
-                    src="/logos/payment/strip.png"
-                    alt="Stripe"
-                    width={120}
-                    height={40}
-                    className="hover:scale-105 transition-transform duration-200 object-contain"
-                  />
+                    {/* Bank Transfer */}
+                    <div className="h-14 flex items-center">
+                      <Image
+                        src="/logos/payment/bank-transfer.png"
+                        alt="Bank Transfer"
+                        width={120}
+                        height={50}
+                        className="hover:scale-105 transition-transform duration-200 object-contain"
+                      />
+                    </div>
+                    
+                    {/* COD */}
+                    <div className="h-14 flex items-center">
+                      <Image
+                        src="/logos/payment/cod.jpg"
+                        alt="Cash on Delivery"
+                        width={120}
+                        height={50}
+                        className="hover:scale-105 transition-transform duration-200 object-contain"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Bank Transfer */}
-                <div className="h-14 flex items-center">
-                  <Image
-                    src="/logos/payment/bank-transfer.png"
-                    alt="Bank Transfer"
-                    width={120}
-                    height={50}
-                    className="hover:scale-105 transition-transform duration-200 object-contain"
-                  />
+                {/* Left side - Social media */}
+                <div className={`flex-1 ${isRTL ? 'order-2 lg:order-2' : 'order-1 lg:order-1'}`}>
+                  <h3 className="text-gray-700 font-medium mb-4 text-right">
+                    {t('footer.beFirstToKnow')}
+                  </h3>
+                  <div className={`flex flex-wrap gap-3 justify-end ${isRTL ? 'space-x-reverse' : ''}`}>
+                    {socialLinks.map((social) => {
+                      const IconComponent = social.icon;
+                      return (
+                        <a
+                          key={social.name}
+                          href={social.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
+                          style={{
+                            backgroundColor: 
+                              social.name === 'Facebook' ? '#1877F2' :
+                              social.name === 'X' ? '#000000' :
+                              social.name === 'Instagram' ? '#E4405F' :
+                              social.name === 'YouTube' ? '#FF0000' :
+                              social.name === 'Snapchat' ? '#FFFC00' :
+                              social.name === 'TikTok' ? '#000000' :
+                              social.name === 'LinkedIn' ? '#0A66C2' : '#1877F2'
+                          }}
+                          title={social.name}
+                          aria-label={`Follow us on ${social.name}`}
+                        >
+                          <IconComponent className={`text-lg ${
+                            social.name === 'Snapchat' ? 'text-black' : 'text-white'
+                          }`} />
+                        </a>
+                      );
+                    })}
+                  </div>
                 </div>
-                
-                {/* COD */}
-                <div className="h-14 flex items-center">
-                  <Image
-                    src="/logos/payment/cod.jpg"
-                    alt="Cash on Delivery"
-                    width={120}
-                    height={50}
-                    className="hover:scale-105 transition-transform duration-200 object-contain"
-                  />
+              </>
+            ) : (
+              <>
+                {/* Left side - Social media */}
+                <div className="flex-1">
+                  <h3 className="text-gray-700 font-medium mb-4">
+                    {t('footer.beFirstToKnow')}
+                  </h3>
+                  <div className="flex flex-wrap gap-3">
+                    {socialLinks.map((social) => {
+                      const IconComponent = social.icon;
+                      return (
+                        <a
+                          key={social.name}
+                          href={social.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
+                          style={{
+                            backgroundColor: 
+                              social.name === 'Facebook' ? '#1877F2' :
+                              social.name === 'X' ? '#000000' :
+                              social.name === 'Instagram' ? '#E4405F' :
+                              social.name === 'YouTube' ? '#FF0000' :
+                              social.name === 'Snapchat' ? '#FFFC00' :
+                              social.name === 'TikTok' ? '#000000' :
+                              social.name === 'LinkedIn' ? '#0A66C2' : '#1877F2'
+                          }}
+                          title={social.name}
+                          aria-label={`Follow us on ${social.name}`}
+                        >
+                          <IconComponent className={`text-lg ${
+                            social.name === 'Snapchat' ? 'text-black' : 'text-white'
+                          }`} />
+                        </a>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            </div>
+
+                {/* Right side - Payment Methods */}
+                <div className={`flex-1 max-w-md ${isRTL ? 'order-1 lg:order-1' : 'order-2 lg:order-2'}`}>
+                  <h3 className="text-gray-700 font-medium mb-4">
+                    {t('footer.paymentMethods')}
+                  </h3>
+                  <div className="flex gap-2">
+                    {/* Visa */}
+                    <div className="h-14 flex items-center">
+                      <Image
+                        src="/logos/payment/visa.png"
+                        alt="Visa"
+                        width={120}
+                        height={40}
+                        className="hover:scale-105 transition-transform duration-200 object-contain"
+                      />
+                    </div>
+                    
+                    {/* Mada */}
+                    <div className="h-14 flex items-center">
+                      <Image
+                        src="/logos/payment/mada.png"
+                        alt="Mada"
+                        width={120}
+                        height={40}
+                        className="hover:scale-105 transition-transform duration-200 object-contain"
+                      />
+                    </div>
+                    
+                    {/* STC Pay */}
+                    <div className="h-14 flex items-center">
+                      <Image
+                        src="/logos/payment/stcpay.png"
+                        alt="STC Pay"
+                        width={120}
+                        height={40}
+                        className="hover:scale-105 transition-transform duration-200 object-contain"
+                      />
+                    </div>
+                    
+                    {/* Stripe */}
+                    <div className="h-14 flex items-center">
+                      <Image
+                        src="/logos/payment/strip.png"
+                        alt="Stripe"
+                        width={120}
+                        height={40}
+                        className="hover:scale-105 transition-transform duration-200 object-contain"
+                      />
+                    </div>
+
+                    {/* Bank Transfer */}
+                    <div className="h-14 flex items-center">
+                      <Image
+                        src="/logos/payment/bank-transfer.png"
+                        alt="Bank Transfer"
+                        width={120}
+                        height={50}
+                        className="hover:scale-105 transition-transform duration-200 object-contain"
+                      />
+                    </div>
+                    
+                    {/* COD */}
+                    <div className="h-14 flex items-center">
+                      <Image
+                        src="/logos/payment/cod.jpg"
+                        alt="Cash on Delivery"
+                        width={120}
+                        height={50}
+                        className="hover:scale-105 transition-transform duration-200 object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -297,29 +414,29 @@ export const Footer: React.FC = () => {
             
             {/* Customer Care */}
             <div>
-              <h4 className="text-lg font-semibold mb-6 text-white border-b border-gray-600 pb-3">Customer Care</h4>
+              <h4 className="text-lg font-semibold mb-6 text-white border-b border-gray-600 pb-3">{t('footer.customerService')}</h4>
               <ul className="space-y-4">
                 <li>
                   <button 
                     onClick={() => router.push('/contact')}
-                    className="text-gray-300 hover:text-white transition-colors text-left block w-full text-sm"
+                    className={`text-gray-300 hover:text-white transition-colors block w-full text-sm ${isRTL ? 'text-right' : 'text-left'}`}
                   >
-                    Contact Us
+                    {t('footer.contact')}
                   </button>
                 </li>
                 <li>
-                  <a href="/faq" className="text-gray-300 hover:text-white transition-colors block text-sm">
-                    Frequently Asked Questions
+                  <a href="/faq" className={`text-gray-300 hover:text-white transition-colors block text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+                    {t('footer.faq')}
                   </a>
                 </li>
                 <li>
-                  <a href="/returns-policy" className="text-gray-300 hover:text-white transition-colors block text-sm">
-                    Return and Exchanges
+                  <a href="/returns-policy" className={`text-gray-300 hover:text-white transition-colors block text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+                    {t('footer.returns')}
                   </a>
                 </li>
                 <li>
-                  <a href="/privacy-policy" className="text-gray-300 hover:text-white transition-colors block text-sm">
-                    Privacy Policy
+                  <a href="/privacy-policy" className={`text-gray-300 hover:text-white transition-colors block text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+                    {t('footer.privacyPolicy')}
                   </a>
                 </li>
               </ul>
@@ -327,11 +444,11 @@ export const Footer: React.FC = () => {
 
             {/* Discover SaudiSafety */}
             <div>
-              <h4 className="text-lg font-semibold mb-6 text-white border-b border-gray-600 pb-3">Discover SaudiSafety</h4>
+              <h4 className="text-lg font-semibold mb-6 text-white border-b border-gray-600 pb-3">{t('footer.quickLinks')}</h4>
               <ul className="space-y-4">
                 <li>
-                  <a href="/shopping-guide" className="text-gray-300 hover:text-white transition-colors block text-sm">
-                    Shopping Guide
+<a href="/customer-care/shopping-guide" className={`text-gray-300 hover:text-white transition-colors block text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+                    {t('footer.shoppingGuide')}
                   </a>
                 </li>
               </ul>
@@ -339,14 +456,14 @@ export const Footer: React.FC = () => {
 
             {/* About SaudiSafety */}
             <div>
-              <h4 className="text-lg font-semibold mb-6 text-white border-b border-gray-600 pb-3">About SaudiSafety</h4>
+              <h4 className="text-lg font-semibold mb-6 text-white border-b border-gray-600 pb-3">{t('footer.about')}</h4>
               <ul className="space-y-4">
                 <li>
                   <button 
                     onClick={() => router.push('/about')}
-                    className="text-gray-300 hover:text-white transition-colors text-left block w-full text-sm"
+                    className={`text-gray-300 hover:text-white transition-colors block w-full text-sm ${isRTL ? 'text-right' : 'text-left'}`}
                   >
-                    Company Profile
+                    {t('footer.companyProfile')}
                   </button>
                 </li>
               </ul>
@@ -360,7 +477,7 @@ export const Footer: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className={`flex flex-col md:flex-row justify-center items-center ${isRTL ? 'md:flex-row-reverse' : ''}`}>
             <div className="text-gray-400 text-sm text-center">
-              <p>© {currentYear} SaudiSafety. All rights reserved.</p>
+              <p>© {currentYear} {t('site.title')}. {t('footer.allRightsReserved')}</p>
             </div>
           </div>
         </div>

@@ -44,20 +44,31 @@ export default function Home() {
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [campaignSlides, setCampaignSlides] = useState<any[] | null>(null);
 
   // Fetch products and categories from API with performance optimization
   useEffect(() => {
     Promise.all([
+      fetch('/api/campaign-slides'),
       fetch('/api/products?includeRelations=true&limit=8'), // Limited featured products
       fetch('/api/products?includeRelations=true&onSale=true&limit=8'), // Sale products
       fetch('/api/products?includeRelations=true&newArrivals=true&limit=8'), // New arrivals
       fetch('/api/categories')
     ])
-      .then(async ([productsRes, saleProductsRes, newArrivalsRes, categoriesRes]) => {
+      .then(async ([slidesRes, productsRes, saleProductsRes, newArrivalsRes, categoriesRes]) => {
         const productsData = await productsRes.json();
         const saleProductsData = await saleProductsRes.json();
         const newArrivalsData = await newArrivalsRes.json();
         const categoriesData = await categoriesRes.json();
+
+        // Slides (fallback to default inside component if empty)
+        try {
+          const slidesJson = await slidesRes.json();
+          const slidesArr = Array.isArray(slidesJson?.slides) ? slidesJson.slides : [];
+          setCampaignSlides(slidesArr);
+        } catch (_) {
+          setCampaignSlides([]);
+        }
 
         // Helper function to transform API products to frontend format
         const transformProducts = (products: any[]) => {
@@ -169,7 +180,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Campaign Slider - Multiple slides with arrows */}
-      <CampaignSlider />
+      <CampaignSlider slides={campaignSlides && campaignSlides.length ? campaignSlides : undefined} />
 
       <CategorySection categories={categories} />
 

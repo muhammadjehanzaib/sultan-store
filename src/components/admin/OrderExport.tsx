@@ -46,7 +46,7 @@ export function OrderExport({ orders }: OrderExportProps) {
         order.tax,
         order.shipping,
         order.total,
-        order.paymentMethod.name,
+        (typeof (order as any).paymentMethod === 'string' ? (order as any).paymentMethod : (order as any).paymentMethod?.name || (order as any).paymentMethod?.type || ''),
         order.trackingNumber || '',
         `${order.shippingAddress.address}, ${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.zipCode}, ${order.shippingAddress.country}`,
         `${order.billingAddress.address}, ${order.billingAddress.city}, ${order.billingAddress.state} ${order.billingAddress.zipCode}, ${order.billingAddress.country}`

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState } from 'react';
 import { useSession, signIn, signOut, getSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { User, AuthState, LoginCredentials, RegisterCredentials, GuestCheckoutData } from '@/types';
 
 interface AuthContextType extends AuthState {
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [guestUser, setGuestUser] = useState<User | null>(null);
 
@@ -50,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Clear guest user data when user logs in normally
     localStorage.removeItem('guest-user');
     setGuestUser(null);
+    router.refresh();
     return { success: true };
   };
 
@@ -95,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     localStorage.removeItem('guest-user');
     setGuestUser(null);
-    signOut();
+    signOut({ redirect: false }).finally(() => router.refresh());
   };
 
   const updateUser = async (updatedUser: Partial<User>) => {
@@ -110,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (session?.user) {
       // Refresh the session to get updated user data
       await getSession();
-      window.location.reload(); // Temporary solution to ensure UI updates
+      router.refresh();
     }
   };
 

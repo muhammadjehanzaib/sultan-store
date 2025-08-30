@@ -152,9 +152,11 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     className={`w-[140px] px-4 py-2 text-gray-600 bg-gray-100 border-r border-gray-200 rounded-l-lg ${isRTL ? 'space-x-reverse' : ''}`}
                     disabled
+                    aria-label={t('nav.allCategories')}
+                    title={t('nav.allCategories')}
                   >
                     <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
-                      <span>{categoriesLoading ? 'Loading...' : 'No Categories'}</span>
+                      <span>{t('nav.allCategories')}</span>
                     </div>
                   </button>
                 )}
@@ -200,9 +202,9 @@ export const Header: React.FC<HeaderProps> = ({
                 {isTabletProductsDropdownOpen && (
                   <div className={`absolute top-full mt-2 w-56 bg-white rounded-lg shadow-xl border py-2 z-[100] ${isRTL ? 'right-0' : 'left-0'}`}>
                     {categoriesLoading ? (
-                      <div className="px-4 py-2 text-gray-400 text-sm">Loading...</div>
+                      <div className="px-4 py-2 text-gray-400 text-sm">{t('common.loading')}</div>
                     ) : categories.length === 0 ? (
-                      <div className="px-4 py-2 text-gray-400 text-sm">No categories</div>
+                      <div className="px-4 py-2 text-gray-400 text-sm">{t('admin.categories.noCategories')}</div>
                     ) : categories.map((category) => (
                       <button
                         key={category.id}
@@ -457,9 +459,9 @@ export const Header: React.FC<HeaderProps> = ({
                 </h3>
                 <div className="space-y-2">
                   {categoriesLoading ? (
-                    <div className="px-4 py-2 text-gray-400 text-sm">Loading...</div>
+                    <div className="px-4 py-2 text-gray-400 text-sm">{t('common.loading')}</div>
                   ) : categories.length === 0 ? (
-                    <div className="px-4 py-2 text-gray-400 text-sm">No categories</div>
+                    <div className="px-4 py-2 text-gray-400 text-sm">{t('admin.categories.noCategories')}</div>
                   ) : categories.map((category) => (
                     <div key={category.id}>
                       {/* Main Category */}

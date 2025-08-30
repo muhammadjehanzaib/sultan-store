@@ -335,3 +335,34 @@ model ContactQuery {
   @@index([messageType])
   @@index([region])
 }
+
+/// Campaign slides for homepage hero/carousel
+model CampaignSlide {
+  id             String   @id @default(cuid())
+  // Localized content
+  title_en       String
+  title_ar       String
+  subtitle_en    String?
+  subtitle_ar    String?
+  description_en String?
+  description_ar String?
+  // Media
+  image          String
+  // Call-to-action
+  ctaText_en     String?
+  ctaText_ar     String?
+  ctaHref        String   @default("#featured-products")
+  // Styling
+  background     String   @default("from-purple-600 to-pink-600")
+  textClass      String   @default("text-white")
+  // Optional discount label like "50%"
+  discount       String?
+  // Control
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  // Timestamps
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}

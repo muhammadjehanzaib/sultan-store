@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 interface AdminAuthContextType {
   user: any;
@@ -15,6 +16,7 @@ const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefin
 
 export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   const { data: session, status } = useSession();
+  const router = useRouter();
 
   const user = session?.user;
   const isAuthenticated = !!user;
@@ -29,11 +31,12 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
     if (result?.error) {
       return { success: false, message: result.error };
     }
+    router.refresh();
     return { success: true };
   };
 
   const logout = () => {
-    signOut();
+    signOut({ redirect: false }).finally(() => router.refresh());
   };
 
   return (

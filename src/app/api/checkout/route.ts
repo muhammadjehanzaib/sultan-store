@@ -35,7 +35,6 @@ export async function POST(request: Request) {
 
     // Calculate totals using the tax and shipping utils
     const calculation = await calculateCartTotals(items);
-    
     // Add COD fee to the total if applicable
     const finalTotal = calculation.total + (codFee || 0);
 
@@ -52,7 +51,8 @@ export async function POST(request: Request) {
           price: itemPrice,
           total: itemPrice * item.quantity,
           selectedAttributes: item.selectedAttributes || null,
-          variantImage: item.variantImage || null
+          variantImage: item.variantImage || null,
+          variantId: item.variantId || null
         };
       }),
       subtotal: calculation.subtotal,
@@ -100,173 +100,117 @@ export async function POST(request: Request) {
     });
 
     // Update inventory for each item (both product-level and variant-specific)
+    const loopStart = Date.now();
+    let perItemMax = 0;
+    let perItemTotal = 0;
     for (const item of orderData.items) {
+      const i0 = Date.now();
       try {
         
-        // Find the specific variant based on selected attributes
-        let targetVariant = null;
-        if (item.selectedAttributes) {
-          
-          // Get all variants for this product with their attribute values
-          const productVariants = await prisma.productVariant.findMany({
-            where: { productId: item.productId },
-            include: {
-              attributeValues: {
-                include: {
-                  attributeValue: {
-                    include: {
-                      attribute: true
-                    }
-                  }
-                }
-              }
-            }
+        // Try fast path: variantId provided by client
+        let targetVariant: { id: string; stockQuantity: number } | null = null;
+        if (item.variantId) {
+          const found = await prisma.productVariant.findUnique({
+            where: { id: item.variantId },
+            select: { id: true, stockQuantity: true, productId: true }
           });
-          
-          // Find the variant that matches all selected attributes
-          targetVariant = productVariants.find(variant => {
-            const variantAttributes: { [key: string]: string } = {};
-            
-            // Build a map of attribute ID to value ID for this variant
-            variant.attributeValues.forEach(av => {
-              variantAttributes[av.attributeValue.attribute.id] = av.attributeValue.id;
-            });
-            
-            // Check if all selected attributes match this variant
-            const selectedAttributeIds = Object.keys(item.selectedAttributes);
-            return selectedAttributeIds.every(attrId => 
-              variantAttributes[attrId] === item.selectedAttributes[attrId]
-            );
-          });
-          
-          if (targetVariant) {
-          } else {
+          if (found && found.productId === item.productId) {
+            targetVariant = { id: found.id, stockQuantity: found.stockQuantity };
           }
         }
-        
-        // Update variant stock if we found a matching variant
-        if (targetVariant) {
-          const newStockQuantity = Math.max(0, targetVariant.stockQuantity - item.quantity);
-          const shouldMarkOutOfStock = newStockQuantity === 0;
-          
-          
-          await prisma.productVariant.update({
-            where: { id: targetVariant.id },
-            data: {
-              stockQuantity: newStockQuantity,
-              inStock: !shouldMarkOutOfStock // Mark as out of stock if quantity is 0
-            }
-          });
-          
-          if (shouldMarkOutOfStock) {
-          }
-        }
-        
-        // Also update general product inventory (for backward compatibility)
-        const existingInventory = await prisma.inventory.findUnique({
-          where: { productId: item.productId }
-        });
 
-        if (existingInventory) {
-          await prisma.inventory.update({
+        // No fallback variant lookup: we rely on client-provided variantId only. If absent or invalid,
+        // we skip variant stock updates and still adjust product-level inventory.
+        // Perform variant update, inventory update, and stock history in a single transaction
+        const invResult = await prisma.$transaction(async (tx) => {
+          // Update variant stock if we found a matching variant
+          if (targetVariant) {
+            const newStockQuantity = Math.max(0, targetVariant.stockQuantity - item.quantity);
+            const shouldMarkOutOfStock = newStockQuantity === 0;
+
+            await tx.productVariant.update({
+              where: { id: targetVariant.id },
+              data: {
+                stockQuantity: newStockQuantity,
+                inStock: !shouldMarkOutOfStock
+              }
+            });
+          }
+
+          // Upsert product inventory and select needed fields
+          const inv = await tx.inventory.upsert({
             where: { productId: item.productId },
-            data: {
+            update: {
               stock: {
                 decrement: item.quantity
               }
-            }
-          });
-        } else {
-          await prisma.inventory.create({
-            data: {
+            },
+            create: {
               productId: item.productId,
               stock: Math.max(0, -item.quantity),
               stockThreshold: 10
+            },
+            select: {
+              stock: true,
+              stockThreshold: true,
+              product: { select: { name_en: true, name_ar: true } }
             }
           });
-        }
 
-        // Record stock history (both product-level and variant-specific)
-        await prisma.stockHistory.create({
-          data: {
-            productId: item.productId,
-            variantId: targetVariant?.id || null, // Add variant ID if available
-            change: -item.quantity,
-            reason: `Order ${order.id}${targetVariant ? ` - Variant ${targetVariant.id}` : ''}`
-          }
-        });
-        
-        
-        // Check for low stock after purchase and send notification if needed
-        try {
-          const updatedInventory = await prisma.inventory.findUnique({
-            where: { productId: item.productId },
-            include: {
-              product: {
-                select: {
-                  name_en: true,
-                  name_ar: true
-                }
-              }
+          // Record stock history (both product-level and variant-specific)
+          await tx.stockHistory.create({
+            data: {
+              productId: item.productId,
+              variantId: (item.variantId as string | null) || null, // Use provided variantId only
+              change: -item.quantity,
+              reason: `Order ${order.id}${item.variantId ? ` - Variant ${item.variantId}` : ''}`
             }
           });
-          
-          if (updatedInventory) {
-            const { stock, stockThreshold, product } = updatedInventory;
-            const productName = product?.name_en || product?.name_ar || `Product ${item.productId}`;
-            
-            // Use default threshold of 10 if stockThreshold is null
-            const threshold = stockThreshold ?? 10;
-            
+
+          return inv;
+        });
+
+        // Check for low stock after purchase and send notification if needed (non-blocking)
+        if (invResult) {
+          try {
+            const stock = invResult.stock;
+            const threshold = (invResult.stockThreshold ?? 10);
+            const productName = invResult.product?.name_en || invResult.product?.name_ar || `Product ${item.productId}`;
             if (stock <= threshold && stock > 0) {
-              await notificationService.notifyLowStock(productName, stock, threshold);
-            } else if (stock === 0) {
-              // Could add out-of-stock notification here if needed
+              void notificationService.notifyLowStock(productName, stock, threshold).catch(() => {});
             }
+          } catch (lowStockError) {
+            // Ignore notification errors
           }
-        } catch (lowStockError) {
-          // Don't fail the order creation if low stock notification fails
         }
         
       } catch (inventoryError) {
         // Continue with other items but log the error
+      } finally {
+        const dt = Date.now() - i0;
+        perItemTotal += dt;
+        if (dt > perItemMax) perItemMax = dt;
       }
     }
 
-    // Send order confirmation notification
+    // Send order confirmation notification (non-blocking)
     try {
       const session = await getServerSession(authOptions);
-      
       if (session?.user?.id) {
-        // Validate that the user exists in the database before creating notification
-        const userExists = await prisma.user.findUnique({
-          where: { id: session.user.id },
-          select: { id: true }
-        });
-        
-        if (userExists) {
-          await notificationService.notifyOrderCreated(
-            session.user.id, 
-            order.id, 
-            orderData.total
-          );
-        } else {
-          console.warn(`Checkout: User ${session.user.id} not found in database, skipping user notification`);
-        }
-      } else {
-        console.info('Checkout: No authenticated user session, skipping user notification');
+        void notificationService
+          .notifyOrderCreated(session.user.id, order.id, orderData.total)
+          .catch(() => {});
       }
-      
       // Always notify admin users about new orders
-      await notificationService.notifyAdminNewOrder(
-        order.id,
-        orderData.customerEmail,
-        orderData.total
-      );
-      
+      void notificationService
+        .notifyAdminNewOrder(
+          order.id,
+          orderData.customerEmail,
+          orderData.total
+        )
+        .catch(() => {});
     } catch (notificationError) {
-      console.error('Checkout notification error:', notificationError);
-      // Don't fail the order creation if notification fails
+      // Ignore notification errors
     }
 
     // TODO: Integrate with payment gateway here

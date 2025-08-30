@@ -90,13 +90,17 @@ class NotificationService {
         }
       });
 
-      // Send via enabled channels
+      // Send via enabled channels (non-blocking)
       if (sendEmail && input.userId) {
-        await this.sendEmailNotification(notification.id);
+        void this.sendEmailNotification(notification.id).catch((err) => {
+          console.error('sendEmailNotification failed:', err);
+        });
       }
 
       if (sendInApp) {
-        await this.broadcastToApp(notification.id);
+        void this.broadcastToApp(notification.id).catch((err) => {
+          console.error('broadcastToApp failed:', err);
+        });
       }
 
       return notification.id;
@@ -466,30 +470,27 @@ class NotificationService {
         return;
       }
 
-      // Create notification for each admin
+      // Create notification for each admin (non-blocking)
       for (const admin of adminUsers) {
-        try {
-          await this.create({
-            userId: admin.id,
-            type: 'order_created',
-            title: {
-              en: 'New Order Received!',
-              ar: 'تم استلام طلب جديد!'
-            },
-            message: {
-              en: `New order #${orderId} from ${customerEmail} for ${orderTotal} SAR`,
-              ar: `طلب جديد #${orderId} من ${customerEmail} بقيمة ${orderTotal} ريال سعودي`
-            },
-            actionUrl: `/admin/orders`,
-            sendEmail: true,
-            sendInApp: true,
-            priority: 'high',
-            metadata: { orderId, customerEmail, orderTotal, type: 'admin_new_order' }
-          });
-        } catch (adminNotificationError) {
+        this.create({
+          userId: admin.id,
+          type: 'order_created',
+          title: {
+            en: 'New Order Received!',
+            ar: 'تم استلام طلب جديد!'
+          },
+          message: {
+            en: `New order #${orderId} from ${customerEmail} for ${orderTotal} SAR`,
+            ar: `طلب جديد #${orderId} من ${customerEmail} بقيمة ${orderTotal} ريال سعودي`
+          },
+          actionUrl: `/admin/orders`,
+          sendEmail: true,
+          sendInApp: true,
+          priority: 'high',
+          metadata: { orderId, customerEmail, orderTotal, type: 'admin_new_order' }
+        }).catch((adminNotificationError) => {
           console.error(`Failed to create notification for admin ${admin.id}:`, adminNotificationError);
-          // Continue with other admins
-        }
+        });
       }
 
     } catch (error) {

@@ -9,6 +9,7 @@ import { Footer } from '@/components';
 const sidebarItems = [
   { id: 'contact', label: 'Contact Us', path: '/customer-care', isActive: false },
   { id: 'faq', label: 'Frequently Asked Questions', path: '/customer-care/faq', isActive: true },
+  { id: 'shopping-guide', label: 'Shopping Guide', path: '/customer-care/shopping-guide', isActive: false },
   { id: 'returns', label: 'Return and Exchange', path: '/customer-care/returns', isActive: false },
   { id: 'privacy', label: 'Privacy Policy', path: '/customer-care/privacy', isActive: false },
 ];
@@ -183,7 +184,7 @@ export default function FAQPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Type your question or keyword..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
 

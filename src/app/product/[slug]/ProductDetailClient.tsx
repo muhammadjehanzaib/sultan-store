@@ -194,6 +194,7 @@ const ProductDetailClient = memo(function ProductDetailClient({ product, allProd
         payload: { 
           product, 
           selectedAttributes: Object.keys(selectedAttributes).length > 0 ? selectedAttributes : undefined,
+          variantId: selectedVariant?.id, // Use real DB variant id if available
           variantPrice: priceToUse, // Use discounted price when applicable
           variantImage: currentImage // Pass the currently displayed image
         } 
