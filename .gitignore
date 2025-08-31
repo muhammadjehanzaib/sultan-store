@@ -47,3 +47,6 @@ next-env.d.ts
 /backup.sql
 /data.sql
 /db_backups/
+/exported.sh
+/backups
+/data_inserts_no_notifications.sql

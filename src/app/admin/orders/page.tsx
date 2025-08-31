@@ -23,15 +23,42 @@ export default function AdminOrders() {
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'enhanced' | 'basic'>('enhanced');
 
+  // Centralized fetch with optional spinner for first load
+  const fetchOrders = async (showSpinner = false) => {
+    try {
+      if (showSpinner) setLoading(true);
+      const res = await fetch('/api/orders', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to fetch orders');
+      const data = await res.json();
+      setOrdersData(data.orders || []);
+    } catch (e) {
+      // swallow; optional: surface a toast
+    } finally {
+      if (showSpinner) setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    setLoading(true);
-    fetch('/api/orders')
-      .then(res => res.json())
-      .then(data => {
-        setOrdersData(data.orders || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    // Initial load
+    fetchOrders(true);
+
+    // Poll every 10s for new orders and status changes
+    const intervalId: number = window.setInterval(() => {
+      fetchOrders(false);
+    }, 10000);
+
+    // Refresh when tab regains focus
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchOrders(false);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   const handleViewOrder = (order: Order) => {

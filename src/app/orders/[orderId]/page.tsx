@@ -87,10 +87,10 @@ export default function OrderDetailsPage() {
       return;
     }
 
-    const fetchOrder = async () => {
+    const fetchOrder = async (showSpinner = false) => {
       try {
-        setLoading(true);
-        const response = await fetch(`/api/orders/${orderId}`);
+        if (showSpinner) setLoading(true);
+        const response = await fetch(`/api/orders/${orderId}`, { cache: 'no-store' });
 
         if (response.status === 404) {
           setError('Order not found');
@@ -116,11 +116,30 @@ export default function OrderDetailsPage() {
       } catch (err) {
         setError('Failed to load order details');
       } finally {
-        setLoading(false);
+        if (showSpinner) setLoading(false);
       }
     };
 
-    fetchOrder();
+    // initial fetch
+    fetchOrder(true);
+
+    // poll every 10s for status updates
+    const intervalId: number = window.setInterval(() => {
+      fetchOrder(false);
+    }, 10000);
+
+    // refresh when tab regains focus
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchOrder(false);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [orderId, isAuthenticated, user?.email, user?.role, router]);
 
   const getStatusColor = (status: OrderStatus) => {

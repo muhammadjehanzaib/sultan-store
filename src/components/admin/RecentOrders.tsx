@@ -27,30 +27,47 @@ export function RecentOrders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchRecentOrders();
-  }, []);
-
-  const fetchRecentOrders = async () => {
+  const fetchRecentOrders = async (showSpinner = false) => {
     try {
-      setLoading(true);
+      if (showSpinner) setLoading(true);
       setError(null);
-      
-      const response = await fetch('/api/orders');
+      const response = await fetch('/api/orders', { cache: 'no-store' });
       if (!response.ok) {
         throw new Error('Failed to fetch orders');
       }
-      
       const data = await response.json();
-      // Get the 5 most recent orders
+      // Get the 5 most recent orders (server already returns desc by createdAt)
       const recentOrders = (data.orders || []).slice(0, 5);
       setOrders(recentOrders);
     } catch (err) {
       setError('Failed to load recent orders');
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // initial load
+    fetchRecentOrders(true);
+
+    // poll every 10s
+    const intervalId: number = window.setInterval(() => {
+      fetchRecentOrders(false);
+    }, 10000);
+
+    // refresh on tab focus
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchRecentOrders(false);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
