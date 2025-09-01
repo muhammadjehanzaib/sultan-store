@@ -13,15 +13,15 @@ export default function AdminOrderLabel() {
   const [order, setOrder] = useState<Order | null>(null);
   const [trackUrl, setTrackUrl] = useState<string>('');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
-  const [copyMsg, setCopyMsg] = useState<string>(''); // ✅ feedback message
+  const [copyMsg, setCopyMsg] = useState<string>('');
 
-  // UX toggles (not printed)
+  // UX toggles
   const [showItems, setShowItems] = useState(true);
   const [showPrices, setShowPrices] = useState(true);
   const [compact, setCompact] = useState(false);
   const [showBranding, setShowBranding] = useState(true);
 
-  // Receive snapshot from opener
+  // Snapshot handler
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       if (e.origin !== window.location.origin) return;
@@ -45,14 +45,14 @@ export default function AdminOrderLabel() {
             return;
           }
         }
-      } catch {}
+      } catch { }
       try {
         const res2 = await fetch(`/api/orders/${orderId}`);
         if (res2.ok) {
           const data2 = await res2.json();
           if (data2?.order) setOrder(data2.order as Order);
         }
-      } catch {}
+      } catch { }
     })();
   }, [orderId]);
 
@@ -65,7 +65,7 @@ export default function AdminOrderLabel() {
             { type: 'REQUEST_SNAPSHOT', orderId },
             window.location.origin
           );
-        } catch {}
+        } catch { }
       }
     }, 250);
     const t2 = setTimeout(() => {
@@ -75,7 +75,7 @@ export default function AdminOrderLabel() {
             { type: 'REQUEST_SNAPSHOT', orderId },
             window.location.origin
           );
-        } catch {}
+        } catch { }
       }
     }, 800);
     return () => {
@@ -88,7 +88,7 @@ export default function AdminOrderLabel() {
   useEffect(() => {
     if (!orderId) return;
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    setTrackUrl(`${origin}/orders/${encodeURIComponent(orderId)}`);
+    setTrackUrl(` Order ID: ${encodeURIComponent(orderId)}`);
   }, [orderId]);
 
   // Generate QR
@@ -101,7 +101,7 @@ export default function AdminOrderLabel() {
           width: 256,
         });
         setQrDataUrl(dataUrl);
-      } catch {}
+      } catch { }
     })();
   }, [trackUrl]);
 
@@ -114,7 +114,6 @@ export default function AdminOrderLabel() {
     const raw = it?.selectedAttributes;
     if (!raw) return null;
 
-    // If already human-readable (from fast API), just render as-is
     if (typeof raw === 'object' && raw !== null) {
       const entries = Object.entries(raw as Record<string, unknown>);
       if (!entries.length) return null;
@@ -133,7 +132,6 @@ export default function AdminOrderLabel() {
       }
     }
 
-    // Try to resolve using product.attributes metadata
     const productAttrs = (it?.product as any)?.attributes as any[] | undefined;
     if (productAttrs && typeof raw === 'object' && raw !== null) {
       const pairs: { label: string; value: string }[] = [];
@@ -163,17 +161,15 @@ export default function AdminOrderLabel() {
         ));
       }
     }
-
-    // Fallback: avoid showing raw attr_/val_ ids
     return null;
   };
 
-  // ✅ Copy with feedback
+  // Copy helper
   const copy = async (text: string, msg: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopyMsg(msg);
-      setTimeout(() => setCopyMsg(''), 2000); // auto-hide after 2s
+      setTimeout(() => setCopyMsg(''), 2000);
     } catch {
       setCopyMsg('❌ Failed to copy');
       setTimeout(() => setCopyMsg(''), 2000);
@@ -190,7 +186,7 @@ export default function AdminOrderLabel() {
 
   return (
     <div className="font-sans p-3">
-      {/* Controls (hidden when printing) */}
+      {/* Controls */}
       <div className="mb-3 flex flex-wrap gap-2 items-center print:hidden">
         <button
           onClick={() => window.print()}
@@ -261,41 +257,48 @@ export default function AdminOrderLabel() {
       </div>
 
       {/* Printable Label */}
-      <div className="relative w-[150mm] min-h-[200mm] bg-white text-black rounded-md shadow border border-gray-200 p-3 overflow-hidden print:shadow-none print:border-0 print:w-[150mm] print:min-h-[200mm] print:break-after-page print:block">
+      <div
+        className={`relative bg-white text-black rounded-md shadow border border-gray-200 overflow-hidden print:shadow-none print:border-0 print:break-after-page print:block
+        ${compact ? 'w-[110mm] min-h-[160mm] p-2 text-xs' : 'w-[150mm] min-h-[200mm] p-3 text-sm'}`}
+      >
         {/* Header */}
-        <div className="flex justify-between items-start border-b border-gray-200 pb-2 mb-2">
+        <div className={`flex justify-between items-start border-b border-gray-200 ${compact ? 'pb-1 mb-1' : 'pb-2 mb-2'}`}>
           <div className="flex flex-col gap-1">
             {showBranding ? (
               <>
                 <img
                   src="/logos/logo-english.png"
                   alt="Logo"
-                  className="w-50 h-50 object-contain"
+                  className={`${compact ? 'w-28 h-8' : 'w-50 h-50'} object-contain`}
                 />
-                <div className="text-gray-600 text-sm">
+                <div className={`${compact ? 'text-gray-600 text-xs' : 'text-gray-600 text-sm'}`}>
                   Shipping Label / بطاقة الشحن
                 </div>
               </>
             ) : (
               <div className="font-bold text-base">Shipping Label</div>
             )}
-            <div className="text-gray-600 text-xs">
+            <div className={`${compact ? 'text-gray-600 text-[10px]' : 'text-gray-600 text-xs'}`}>
               Order #{String(orderId).slice(-8).toUpperCase()}{' '}
               {createdAt ? `• ${createdAt.toLocaleString()}` : ''}
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-right flex flex-col items-end">
             {qrDataUrl ? (
               <img
                 src={qrDataUrl}
                 alt="QR"
-                className="w-24 h-24 object-contain"
+                className={`${compact ? 'w-24 h-24' : 'w-32 h-32'} object-contain`}
               />
             ) : (
               <div className="text-gray-500 text-xs">Generating QR…</div>
             )}
+
             {order?.trackingNumber && (
-              <div className="font-semibold text-sm mt-1">
+              <div
+                className={`font-semibold mt-1 ${compact ? 'text-sm' : 'text-lg'
+                  }`}
+              >
                 {order.trackingNumber}
               </div>
             )}
@@ -306,7 +309,7 @@ export default function AdminOrderLabel() {
         <div>
           <div className="font-bold">Ship To / إلى</div>
           {order ? (
-            <div className="mt-1 leading-tight text-sm">
+            <div className={`mt-1 leading-tight ${compact ? 'text-xs' : 'text-sm'}`}>
               <div>
                 <strong>
                   {order.shippingAddress.firstName}{' '}
@@ -336,13 +339,12 @@ export default function AdminOrderLabel() {
         </div>
 
         {/* Payment / Status */}
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        <div className={`mt-2 flex flex-wrap items-center gap-2 ${compact ? 'text-xs' : 'text-sm'}`}>
           <span
-            className={`px-2 py-0.5 rounded-full text-s font-semibold border ${
-              isCOD
+            className={`px-2 py-0.5 rounded-full font-semibold border ${isCOD
                 ? 'bg-orange-50 text-orange-700 border-orange-200'
                 : 'bg-cyan-50 text-cyan-700 border-cyan-200'
-            }`}
+              }`}
           >
             {isCOD
               ? 'COD (Cash on Delivery) / الدفع عند الاستلام'
@@ -355,11 +357,11 @@ export default function AdminOrderLabel() {
 
         {/* Items */}
         {order && showItems && (
-          <div className="mt-2 border-t border-dashed border-gray-300 pt-2">
-            <div className="font-bold text-sm mb-1">
+          <div className={`mt-2 border-t border-dashed border-gray-300 pt-2 ${compact ? 'text-xs' : 'text-sm'}`}>
+            <div className="font-bold mb-1">
               Items / العناصر ({itemCount})
             </div>
-            <ul className="divide-y divide-dashed text-sm">
+            <ul className="divide-y divide-dashed">
               {order.items.map((it, idx) => {
                 const name =
                   (it.product as any)?.name_en ||
@@ -370,18 +372,18 @@ export default function AdminOrderLabel() {
                   typeof it.price === 'number'
                     ? it.price
                     : typeof it.total === 'number' && qty > 0
-                    ? it.total / qty
-                    : 0;
+                      ? it.total / qty
+                      : 0;
 
                 const attrsNode = resolveAttrs(it);
 
                 return (
                   <li
                     key={idx}
-                    className="flex justify-between items-start py-1"
+                    className={`flex justify-between items-start ${compact ? 'py-0.5' : 'py-1'}`}
                   >
                     <span className="flex flex-col">
-                      <span className="font-medium truncate max-w-[180px]">
+                      <span className={`font-medium truncate ${compact ? 'max-w-[140px]' : 'max-w-[180px]'}`}>
                         {name}
                       </span>
                       <span className="text-gray-600 text-xs">
@@ -392,12 +394,7 @@ export default function AdminOrderLabel() {
                     </span>
                     {showPrices && (
                       <span className="text-right">
-                        {/* <span className="text-gray-600 text-xs block">
-                          Unit
-                        </span> */}
-                        <span>
-                          <Price amount={unitNum} />
-                        </span>
+                        <Price amount={unitNum} />
                       </span>
                     )}
                   </li>
@@ -409,7 +406,7 @@ export default function AdminOrderLabel() {
 
         {/* Totals */}
         {order && showPrices && (
-          <div className="mt-2 border-t border-dashed border-gray-300 pt-2 text-sm">
+          <div className={`mt-2 border-t border-dashed border-gray-300 pt-2 ${compact ? 'text-xs' : 'text-sm'}`}>
             <div className="flex justify-between">
               <span className="text-gray-600">Subtotal / المجموع:</span>
               <strong>
