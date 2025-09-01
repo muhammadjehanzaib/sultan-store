@@ -269,7 +269,7 @@ export default function AdminOrderLabel() {
                 <img
                   src="/logos/logo-english.png"
                   alt="Logo"
-                  className={`${compact ? 'w-28 h-8' : 'w-50 h-50'} object-contain`}
+                  className={`${compact ? 'w-28 h-28' : 'w-40 h-40'} object-contain`}
                 />
                 <div className={`${compact ? 'text-gray-600 text-xs' : 'text-gray-600 text-sm'}`}>
                   Shipping Label / بطاقة الشحن
