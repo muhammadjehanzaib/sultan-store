@@ -14,8 +14,9 @@ interface EnhancedOrdersTableProps {
   onBulkUpdateStatus?: (orderIds: string[], status: Order['status']) => void;
   onExportSelected?: (orderIds: string[]) => void;
   selectedOrders?: string[];
-  onSelectOrder?: (orderId: string) => void;
-  onSelectAll?: () => void;
+  onSelectOrder?: (orderId: string, checked: boolean) => void;
+  onSelectAll?: (orderIds: string[], checked: boolean) => void;
+
 }
 
 interface FilterState {
@@ -469,7 +470,7 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
                     ref={(input) => {
                       if (input) input.indeterminate = isIndeterminate;
                     }}
-                    onChange={onSelectAll}
+                    onChange={(e) => onSelectAll?.(processedOrders.map(o => o.id), e.target.checked)}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </th>
@@ -514,7 +515,7 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
                     <input
                       type="checkbox"
                       checked={selectedOrders.includes(order.id)}
-                      onChange={() => onSelectOrder(order.id)}
+                      onChange={(e) => onSelectOrder?.(order.id, e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                   </td>
@@ -597,8 +598,8 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
                     </div>
                     {((typeof (order as any).paymentMethod === 'string' && (order as any).paymentMethod === 'cod') ||
                       ((order as any).paymentMethod && (order as any).paymentMethod.type === 'cod')) && (
-                      <span className="text-orange-600">Cash on Delivery</span>
-                    )}
+                        <span className="text-orange-600">Cash on Delivery</span>
+                      )}
                   </div>
                 </td>
 
@@ -621,7 +622,7 @@ export const EnhancedOrdersTable: React.FC<EnhancedOrdersTableProps> = ({
                         // Send immediate snapshot so the label can render instantly
                         const payload = { type: 'ORDER_SNAPSHOT', order };
                         const send = () => {
-                          try { w.postMessage(payload, window.location.origin); } catch (e) {}
+                          try { w.postMessage(payload, window.location.origin); } catch (e) { }
                         };
                         setTimeout(send, 300);
                         // The label page will fetch the fast, normalized order itself if needed.

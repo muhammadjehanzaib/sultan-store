@@ -153,21 +153,19 @@ export default function AdminOrders() {
     alert(`Export ${orderIds.length} selected orders feature will be implemented soon!`);
   };
 
-  const handleSelectOrder = (orderId: string) => {
-    setSelectedOrders(prev => 
-      prev.includes(orderId)
-        ? prev.filter(id => id !== orderId)
-        : [...prev, orderId]
-    );
-  };
+  const handleSelectOrder = (orderId: string, checked: boolean) => {
+  setSelectedOrders(prev =>
+    checked ? [...prev, orderId] : prev.filter(id => id !== orderId)
+  );
+};
 
-  const handleSelectAllOrders = () => {
-    if (selectedOrders.length === ordersData.length) {
-      setSelectedOrders([]);
-    } else {
-      setSelectedOrders(ordersData.map(order => order.id));
-    }
-  };
+const handleSelectAllOrders = (orderIds: string[], checked: boolean) => {
+  setSelectedOrders(prev =>
+    checked
+      ? [...new Set([...prev, ...orderIds])] // add only visible
+      : prev.filter(id => !orderIds.includes(id)) // remove only visible
+  );
+};
 
   return (
     <AdminAuthGuard requiredRole={["admin", "manager", "support"]}>
